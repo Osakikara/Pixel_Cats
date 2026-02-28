@@ -1825,8 +1825,17 @@ class Cat {
         let dx = 0; if (left) { dx = -moveSpeed * timeScale; this.facingRight = false; } if (right) { dx = moveSpeed * timeScale; this.facingRight = true; }
         if (dx !== 0 && !this.checkWallCollision(dx)) this.x += dx; if (this.x < camera.x) this.x = camera.x;
         const visibleWidth = canvas.width / zoomFactor; if (this.x + this.width > camera.x + visibleWidth) this.x = camera.x + visibleWidth - this.width;
-        let groundY = canvas.height + 1000, midX = this.x + this.width / 2;
-        for (let block of terrain) { if (midX >= block.x && midX < block.x + block.w) { groundY = block.y; break; } }
+        // Ground detection: check left edge, center, and right edge to prevent falling into block seams
+        let groundY = canvas.height + 1000;
+        const checkXs = [this.x + 4, this.x + this.width / 2, this.x + this.width - 4];
+        for (const cx of checkXs) {
+            for (let block of terrain) {
+                if (cx >= block.x && cx < block.x + block.w) {
+                    if (block.y < groundY) groundY = block.y;
+                    break;
+                }
+            }
+        }
         if (up && this.onGround) { this.dy = jumpStrength; this.onGround = false; AudioEngine.sfx.jump(); }
         this.dy += gravity * timeScale; this.y += this.dy * timeScale;
         if (this.dy > 0 && this.y + this.height >= groundY) { if (this.y + this.height - (this.dy * timeScale) <= groundY + 10) { this.y = groundY - this.height; this.dy = 0; this.onGround = true; } }

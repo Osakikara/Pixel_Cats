@@ -375,14 +375,14 @@ function addTerrainBlock(canHaveHazards = true) {
     let createGap = false, diffSettings;
     if (currentDifficulty === 'easy') diffSettings = { gapChance: 0.12, maxGapSize: 2, minSafe: 3, cactusChance: 0.15, minCactus: 4, heightChange: 0.3 };
     else if (currentDifficulty === 'hard') diffSettings = { gapChance: 0.15, maxGapSize: 2, minSafe: 2, cactusChance: 0.18, minCactus: 4, heightChange: 0.35 };
-    else if (currentDifficulty === 'megahard') diffSettings = { gapChance: 0.24, maxGapSize: 3, minSafe: 1, cactusChance: 0.28, minCactus: 2, heightChange: 0.5 };
-    else if (currentDifficulty === 'infinity') diffSettings = { gapChance: 0.24, maxGapSize: 3, minSafe: 1, cactusChance: 0.28, minCactus: 2, heightChange: 0.5 };
+    else if (currentDifficulty === 'megahard') diffSettings = { gapChance: 0.20, maxGapSize: 2, minSafe: 2, cactusChance: 0.22, minCactus: 2, heightChange: 0.42 };
+    else if (currentDifficulty === 'infinity') diffSettings = { gapChance: 0.20, maxGapSize: 2, minSafe: 2, cactusChance: 0.22, minCactus: 2, heightChange: 0.42 };
     if (canHaveHazards && !lastBlockWasGap && rng() < diffSettings.heightChange) lastHeight += (Math.floor(rng() * 3) - 1) * 60;
     // FIX #1: границы высоты привязаны к getWorldGround(), а не к canvas.height
     const _wg = getWorldGround();
     if (lastHeight < _wg - 350) lastHeight = _wg - 350;
     if (lastHeight > _wg + 50) lastHeight = _wg + 50;
-    if (canHaveHazards && blocksSinceLastGap > diffSettings.minSafe && rng() < diffSettings.gapChance) createGap = true;
+    if (canHaveHazards && blocksSinceLastGap > diffSettings.minSafe && blocksSinceLastCactus > 1 && rng() < diffSettings.gapChance) createGap = true;
     if (lastBlockWasGap && consecutiveGaps < diffSettings.maxGapSize && rng() < 0.6) createGap = true; else if (lastBlockWasGap) createGap = false;
     if (createGap) { lastBlockWasGap = true; consecutiveGaps++; blocksSinceLastGap = 0; blocksSinceLastCactus++; }
     else {
@@ -586,8 +586,8 @@ function checkCollisions() {
             // Skip trees (decoration only)
             if (item.type === 'tree') return;
             
-            // Check collision
-            if (!item.taken && cat.x < hitX + hitW && cat.x + cat.width > hitX && 
+            // Check collision — cat hitbox inset by 4px on sides for fair feel
+            if (!item.taken && cat.x + 4 < hitX + hitW && cat.x + cat.width - 4 > hitX && 
                 cat.y < hitY + hitH && cat.y + cat.height > hitY) {
                 
                 if (item.type.includes('fish')) { 

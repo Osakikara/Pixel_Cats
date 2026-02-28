@@ -11,7 +11,7 @@ pixel-cats/
 │   ├── audio.js        ← Аудиодвижок
 │   ├── controls.js     ← Редактор расположения кнопок
 │   ├── settings.js     ← Экран настроек + магазин скинов
-│   ├── i18n.js         ← Переводы (RU/EN), функция t()
+│   ├── language.js     ← Переводы (RU/EN), функция t()
 │   ├── globals.js      ← Глобальные переменные, константы, SKINS
 │   ├── networking.js   ← Сеть: Firebase + PeerJS + онлайн лобби
 │   ├── game.js         ← Игровая логика, рендеринг, игровой цикл
@@ -40,7 +40,7 @@ pixel-cats/
 - `shopBuySkin() / shopEquipP1() / shopEquipP2()`
 - Обёртки над AudioEngine для UI: `setMusicOn()`, `setSfxOn()`, etc.
 
-### `js/i18n.js` (~425 строк)
+### `js/language.js` (~425 строк)
 - `translations` — объект со всеми строками (RU + EN)
 - `t(key)` — получить перевод по ключу
 - `toggleLanguage()` — переключение языка
@@ -90,7 +90,7 @@ pixel-cats/
 ## 🔧 Порядок загрузки скриптов
 Важен! Каждый файл зависит от предыдущих:
 ```
-audio → controls → settings → i18n → globals → networking → game → boss → main
+audio → controls → settings → language → globals → networking → game → boss → main
 ```
 
 ## 💡 Советы по доработке
@@ -99,7 +99,7 @@ audio → controls → settings → i18n → globals → networking → game →
 |---|---|
 | Звук прыжка, музыку | `js/audio.js` |
 | Добавить нового скина | `js/globals.js` → массив `SKINS` |
-| Переводы, новый язык | `js/i18n.js` → объект `translations` |
+| Переводы, новый язык | `js/language.js` → объект `translations` |
 | Физику прыжка, скорость | `js/game.js` → `init()`, класс игрока |
 | Нового босса | `js/boss.js` → массив `BOSSES` |
 | Онлайн протокол | `js/networking.js` → `handlePeerData()` |
