@@ -20,7 +20,7 @@ const translations = {
         nextLevel: "СЛЕДУЮЩИЙ УРОВЕНЬ", hardUnlocked: "СЛОЖНЫЙ РЕЖИМ ОТКРЫТ!", megaUnlocked: "МЕГАСЛОЖНО ОТКРЫТО!",
         infinityUnlocked: "БЕСКОНЕЧНОСТЬ ОТКРЫТА!", secretUnlocked: "СЕКРЕТНЫЙ СКИН САМУРАЯ ОТКРЫТ!",
         skins: { white: "БЕЛЫЙ", orange: "РЫЖИЙ", black: "ЧЁРНЫЙ", calico: "ТРЁХЦВЕТНЫЙ", pink: "РОЗОВЫЙ", witch: "ВЕДЬМА",
-            cyber: "КИБЕР", froggy: "ЛЯГУШКА", sims: "СИМС", newyear: "НОВЫЙ ГОД", angel: "АНГЕЛ", samurai: "САМУРАЙ ★" },
+            cyber: "КИБЕР", froggy: "ЛЯГУШКА", sims: "СИМС", newyear: "НОВЫЙ ГОД", angel: "АНГЕЛ", samurai: "САМУРАЙ ★", foxcoat: "АЛХИМИК" },
         npcMessage: "Ваша цель: дойти до замка!", npcMessageInfinity: "Ваша цель: ... у самурая нет цели, только путь.", rotate: "ПОВЕРНИТЕ УСТРОЙСТВО", landscapeRequired: "Требуется альбомная ориентация",
         notEnough: "НЕДОСТАТОЧНО", fish: "РЫБЫ!",
         bossBattle: "БИТВА С БОССОМ", bossSelectHint: "Выберите босса для битвы", bossBack: "НАЗАД",
@@ -30,7 +30,8 @@ const translations = {
         dodgeHint: "УКЛОНЯЙСЯ ОТ АТАК!", bosses: {
             fireGolem: { name: "ОГНЕННЫЙ ГОЛЕМ", desc: "Медленные, но мощные огненные шары" },
             iceDragon: { name: "ЛЕДЯНОЙ ДРАКОН", desc: "Быстрые ледяные снаряды", locked: "Победите Огненного Голема" },
-            shadowLord: { name: "ТЕНЕВОЙ ЛОРД", desc: "Неуловимые теневые атаки", locked: "Победите Ледяного Дракона" }
+            alchemist: { name: "АЛХИМИК", desc: "Кислотные бомбы, расщепляющиеся снаряды и лазер", locked: "Победите Ледяного Дракона" },
+            shadowLord: { name: "ТЕНЕВОЙ ЛОРД", desc: "Неуловимые теневые атаки", locked: "Победите Алхимика" }
         },
         settings: "⚙ НАСТРОЙКИ", settingsBack: "← НАЗАД",
         musicLabel: "🎵 МУЗЫКА", sfxLabel: "🔊 ЗВУКИ",
@@ -136,7 +137,7 @@ const translations = {
         nextLevel: "PLAY NEXT LEVEL", hardUnlocked: "HARD MODE UNLOCKED!", megaUnlocked: "MEGAHARD UNLOCKED!",
         infinityUnlocked: "INFINITY UNLOCKED!", secretUnlocked: "SECRET SAMURAI SKIN UNLOCKED!",
         skins: { white: "WHITE", orange: "ORANGE", black: "BLACK", calico: "CALICO", pink: "PINK", witch: "WITCH",
-            cyber: "CYBER", froggy: "FROG", sims: "SIMS", newyear: "XMAS", angel: "ANGEL", samurai: "SAMURAI ★" },
+            cyber: "CYBER", froggy: "FROG", sims: "SIMS", newyear: "XMAS", angel: "ANGEL", samurai: "SAMURAI ★", foxcoat: "ALCHEMIST" },
         npcMessage: "Your goal is to reach the castle!", npcMessageInfinity: "Your goal: ... a samurai has no goal, only the path.", rotate: "PLEASE ROTATE YOUR DEVICE", landscapeRequired: "Landscape mode required",
         notEnough: "NOT ENOUGH", fish: "FISH!",
         bossBattle: "BOSS BATTLE", bossSelectHint: "Select a boss to fight", bossBack: "BACK",
@@ -146,7 +147,8 @@ const translations = {
         dodgeHint: "DODGE THE ATTACKS!", bosses: {
             fireGolem: { name: "FIRE GOLEM", desc: "Slow but powerful fireballs" },
             iceDragon: { name: "ICE DRAGON", desc: "Fast ice projectiles", locked: "Defeat Fire Golem" },
-            shadowLord: { name: "SHADOW LORD", desc: "Elusive shadow attacks", locked: "Defeat Ice Dragon" }
+            alchemist: { name: "ALCHEMIST", desc: "Acid bombs, splitting projectiles & laser", locked: "Defeat Ice Dragon" },
+            shadowLord: { name: "SHADOW LORD", desc: "Elusive shadow attacks", locked: "Defeat Alchemist" }
         },
         settings: "⚙ SETTINGS", settingsBack: "← BACK",
         musicLabel: "🎵 MUSIC", sfxLabel: "🔊 SOUND FX",

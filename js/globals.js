@@ -201,7 +201,8 @@ const SKINS = [
     { id: 'sims', nameKey: 'skins.sims', body: '#dfe6e9', nose: '#ffafcc', eye: 'black', type: 'solid', hat: 'plumbob', cost: 50, currency: 'orange' },
     { id: 'newyear', nameKey: 'skins.newyear', body: '#ffeaa7', nose: '#ff9ff3', eye: '#63421d', type: 'tabby', hat: 'santa', acc: 'garland' },
     { id: 'angel', nameKey: 'skins.angel', body: '#ffffff', nose: '#ffafcc', eye: '#3498db', type: 'solid', hat: 'halo', acc: 'wings', reqInfinityScore: 300 },
-    { id: 'samurai', nameKey: 'skins.samurai', body: '#1a1a1a', nose: '#8b0000', eye: '#ff0000', type: 'samurai', hat: 'samurai', acc: 'katana', secret: true }
+    { id: 'samurai', nameKey: 'skins.samurai', body: '#1a1a1a', nose: '#8b0000', eye: '#ff0000', type: 'samurai', hat: 'samurai', acc: 'katana', secret: true },
+    { id: 'foxcoat', nameKey: 'skins.foxcoat', body: '#f1c40f', nose: '#ffafcc', eye: '#f39c12', type: 'foxcoat', cost: 30, currency: 'orange' }
 ];
 
 let p1SkinIndex = 0, p2SkinIndex = 1;
