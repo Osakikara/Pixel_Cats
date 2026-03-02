@@ -64,8 +64,9 @@ function checkMobile() {
     else isMobile = ('ontouchstart' in window) || (window.innerWidth <= 900);
     const controlsLayer = document.getElementById('mobile-controls-layer');
     if (isMobile) {
-        zoomFactor = Math.min(1.0, window.innerWidth / 1300);
-        if (zoomFactor < 0.6) zoomFactor = 0.6;
+        // Уменьшаем зум сильнее — больше мира видно на экране
+        zoomFactor = Math.min(1.0, window.innerWidth / 1500);
+        if (zoomFactor < 0.5) zoomFactor = 0.5;
         // Only show controls if they were active before resize (e.g. during gameplay or settings)
         if (controlsLayer) controlsLayer.style.display = _mobileCtrlsActive ? 'block' : 'none';
     } else {

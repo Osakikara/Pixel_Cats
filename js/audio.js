@@ -501,6 +501,100 @@ const AudioEngine = (() => {
         if (bossGen === gen) bossTimerId = setTimeout(() => scheduleBossShadowLord(gen, T0 + loopDur), (loopDur - 0.5) * 1000);
     }
 
+    // ── ТРЕК БОССА: АЛХИМИК ──
+    // Am, 155 BPM — кислотный индастриал, бурлящий и нестабильный
+    // Acid bassline (303-style) + булькающий синт + тяжёлые удары
+    function scheduleBossAlchemist(gen, T0) {
+        const B = 60/155, e = B/2, s = B/4, q = B, h = B*2;
+        const loopDur = B * 16;
+
+        // Acid bassline в Am — характерные скользящие ноты
+        const acid = [
+            [n('A',2),e], [n('A',2),s], [n('C',3),s], [n('E',3),e], [n('D',3),e],
+            [n('A',2),e], [n('G',2),s], [n('A',2),s], [n('C',3),e], [n('B',2),e],
+            [n('A',2),e], [n('A',2),s], [n('E',2),s], [n('G',2),e], [n('A',2),e],
+            [n('E',2),h], [n('G',2),e], [n('A',2),e],
+        ];
+        // Acid ноты через лёгкий distortion (эффект 303)
+        let at = T0;
+        acid.forEach(([f, d]) => {
+            if (!actx || !bossMusicGain || f === null) { at += d; return; }
+            const osc = actx.createOscillator();
+            const flt = actx.createBiquadFilter();
+            const dist = makeDist(6);
+            const g = actx.createGain();
+            flt.type = 'bandpass'; flt.frequency.value = 600; flt.Q.value = 8;
+            osc.type = 'sawtooth'; osc.frequency.value = f;
+            // Питч-слайд вверх (характерный "кислотный" звук)
+            osc.frequency.setValueAtTime(f * 0.88, at);
+            osc.frequency.exponentialRampToValueAtTime(f, at + 0.04);
+            osc.connect(flt); flt.connect(dist); dist.connect(g); g.connect(bossMusicGain);
+            g.gain.setValueAtTime(0.0001, at);
+            g.gain.linearRampToValueAtTime(0.19, at + 0.01);
+            g.gain.setValueAtTime(0.19, at + d - 0.04);
+            g.gain.exponentialRampToValueAtTime(0.0001, at + d);
+            osc.start(at); osc.stop(at + d + 0.04);
+            at += d;
+        });
+
+        // Бас-линия (дублирует на октаву ниже, через lowpass)
+        const bassLine = [
+            [n('A',1),h], [n('C',2),e], [n('E',2),e],
+            [n('A',1),h], [n('G',1),e], [n('A',1),e],
+            [n('A',1),q], [n('E',1),q], [n('G',1),e], [n('A',1),e],
+            [n('E',1),h], [n('A',1),h],
+        ];
+        let bt = T0;
+        bassLine.forEach(([f,d]) => { bNote(f, d*0.9, bt, 0.24); bt += d; });
+
+        // Мелодия — "булькающий" синт с быстрыми атаками (имитация пузырьков)
+        const bubbleMel = [
+            [n('A',4),s],[R,s],[n('C',5),s],[R,s],[n('E',5),s],[n('D',5),s],[R,e],
+            [n('A',4),s],[R,s],[n('G',4),s],[n('A',4),s],[n('C',5),s],[R,e],[R,s],
+            [n('E',5),s],[n('D',5),s],[n('C',5),s],[R,s],[n('A',4),e],[R,e],
+            [n('E',4),e],[n('G',4),e],[n('A',4),h],
+        ];
+        let mt = T0;
+        bubbleMel.forEach(([f,d]) => {
+            if (!actx || !bossMusicGain || f === null) { mt += d; return; }
+            const osc = actx.createOscillator();
+            const flt = actx.createBiquadFilter();
+            const g = actx.createGain();
+            flt.type = 'lowpass'; flt.frequency.value = 2200; flt.Q.value = 2;
+            osc.type = 'square'; osc.frequency.value = f;
+            // Быстрый "булькающий" питч-дроп вниз
+            osc.frequency.setValueAtTime(f * 1.12, mt);
+            osc.frequency.exponentialRampToValueAtTime(f, mt + 0.03);
+            osc.connect(flt); flt.connect(g); g.connect(bossMusicGain);
+            g.gain.setValueAtTime(0.0001, mt);
+            g.gain.linearRampToValueAtTime(0.09, mt + 0.008);
+            g.gain.exponentialRampToValueAtTime(0.0001, mt + Math.min(d, 0.12));
+            osc.start(mt); osc.stop(mt + 0.18);
+            mt += d;
+        });
+
+        // Барабаны: тяжёлый kickbass + плотный snare + частые хэты
+        for (let bar = 0; bar < 4; bar++) {
+            const b0 = T0 + bar * B * 4;
+            // Двойной кик (industrial feel)
+            bKick(b0, 0.32);
+            bKick(b0 + e * 0.5, 0.18);  // быстрый второй удар
+            bKick(b0 + B*2, 0.32);
+            bKick(b0 + B*2 + e * 0.5, 0.18);
+            // Snare на 2 и 4, с ранним флэмом на такте 3
+            bSnare(b0 + B, 0.22);
+            bSnare(b0 + B*3 - s*0.8, 0.12);  // флэм (предудар)
+            bSnare(b0 + B*3, 0.26);
+            // Частые хэты (16th — индастриал ритм)
+            for (let i = 0; i < 16; i++) {
+                const hv = (i % 4 === 0) ? 0.08 : (i % 2 === 0) ? 0.05 : 0.03;
+                bHat(b0 + i * s, hv, i % 8 === 4);
+            }
+        }
+
+        if (bossGen === gen) bossTimerId = setTimeout(() => scheduleBossAlchemist(gen, T0 + loopDur), (loopDur - 0.5) * 1000);
+    }
+
     function startBossMusic(bossId) {
         if (!S.musicOn) return;
         boot();
@@ -539,9 +633,10 @@ const AudioEngine = (() => {
         bossMusicGain.gain.linearRampToValueAtTime(S.musicVol * 0.5, actx.currentTime + 0.4);
 
         const T0 = actx.currentTime + 0.1;
-        if (bossId === 'fireGolem')      scheduleBossFireGolem(gen, T0);
-        else if (bossId === 'iceDragon') scheduleBossIceDragon(gen, T0);
-        else                             scheduleBossShadowLord(gen, T0);
+        if (bossId === 'fireGolem')        scheduleBossFireGolem(gen, T0);
+        else if (bossId === 'iceDragon')   scheduleBossIceDragon(gen, T0);
+        else if (bossId === 'alchemist')   scheduleBossAlchemist(gen, T0);
+        else                               scheduleBossShadowLord(gen, T0);
     }
 
     function stopBossMusic(resume) {

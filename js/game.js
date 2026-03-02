@@ -3,255 +3,658 @@
 // ============================================================
 
 
+// ============================================================
+// drawPixelCat — рисует пиксельного кота
+//
+// Порядок отрисовки (снизу вверх по слоям):
+//   1. Катана (samurai, за спиной)
+//   2. Хвост
+//   3. Крылья сзади (angel)
+//   4. Тело / костюм
+//   5. Голова
+//   6. Уши
+//   7. Аксессуары на голове (антенна, горб)
+//   8. Морда / глаза / нос
+//   9. Шляпы и аксессуары
+//  10. Ноги
+//
+// Скины и их типы:
+//   solid   → white, orange, black, pink, sims, angel, witch
+//   calico  → calico
+//   tabby   → froggy, newyear
+//   cyber   → cyber
+//   samurai → samurai
+//   foxcoat → foxcoat (Edward Elric coat)
+// ============================================================
 function drawPixelCat(drawCtx, x, y, skin, facingRight, controls, isPlayer1, isJumping = false, forcedMoving = null) {
-    const size = 3, width = 10 * size;
-    drawCtx.save(); drawCtx.translate(x + width / 2, y);
+    const size = 3;
+    const width = 10 * size;
+    const drawX = -width / 2;
+    const drawY = 0;
+
+    drawCtx.save();
+    drawCtx.translate(x + width / 2, y);
     if (!facingRight) drawCtx.scale(-1, 1);
-    const drawX = -width / 2, drawY = 0;
+
+    // Определяем, движется ли кот
     let isMoving = false;
-    if (forcedMoving !== null) { isMoving = forcedMoving; } else if (controls) { if (numPlayers === 1 && isPlayer1) isMoving = keys['KeyA'] || keys['ArrowLeft'] || keys['KeyD'] || keys['ArrowRight']; else isMoving = keys[controls.left] || keys[controls.right]; } else isMoving = true;
-
-    // ============================================
-    // SAMURAI KATANA
-    // ============================================
-    if (skin.acc === 'katana') {
-        const katanaBob = Math.sin(gameTime * 0.15) * 1;
-        drawCtx.save();
-        const katanaX = drawX + 5 * size; 
-        const katanaY = drawY + 2 * size + katanaBob; 
-        drawCtx.translate(katanaX, katanaY);
-        drawCtx.rotate(-0.3); 
-        drawCtx.fillStyle = "#1a1a1a"; drawCtx.fillRect(-1 * size, -6 * size, 2.5 * size, 14 * size);
-        drawCtx.fillStyle = "#8b0000"; drawCtx.fillRect(-1.2 * size, -6 * size, 0.5 * size, 14 * size); drawCtx.fillRect(1.2 * size, -6 * size, 0.5 * size, 14 * size);
-        drawCtx.fillStyle = "#ffd700"; drawCtx.fillRect(-2 * size, -6.5 * size, 4.5 * size, 1.5 * size);
-        drawCtx.fillStyle = "#8b0000"; drawCtx.fillRect(-0.5 * size, -6.3 * size, 1.5 * size, 1 * size);
-        drawCtx.fillStyle = "#0a0a0a"; drawCtx.fillRect(-0.8 * size, -9 * size, 2 * size, 3 * size);
-        drawCtx.fillStyle = "#333"; for(let k = 0; k < 3; k++) { drawCtx.fillRect(-0.5 * size, -8.5 * size + k * 1 * size, 1.2 * size, 0.3 * size); }
-        drawCtx.fillStyle = "#ffd700"; drawCtx.fillRect(-1 * size, -10 * size, 2.5 * size, 1.5 * size);
-        if (isMoving) { drawCtx.fillStyle = "rgba(255, 0, 0, 0.15)"; drawCtx.fillRect(-2.5 * size, -7 * size, 5.5 * size, 16 * size); drawCtx.fillStyle = "rgba(255, 0, 0, 0.3)"; drawCtx.fillRect(-1.5 * size, -6 * size, 3.5 * size, 14 * size); }
-        drawCtx.restore();
+    if (forcedMoving !== null) {
+        isMoving = forcedMoving;
+    } else if (controls) {
+        if (numPlayers === 1 && isPlayer1)
+            isMoving = keys['KeyA'] || keys['ArrowLeft'] || keys['KeyD'] || keys['ArrowRight'];
+        else
+            isMoving = keys[controls.left] || keys[controls.right];
+    } else {
+        isMoving = true;
     }
 
-    // TAIL
-    let tailBaseX = drawX + 2.2 * size;
-    for (let i = 0; i < 6; i++) {
-        let wag = Math.sin(gameTime * (isMoving ? 0.3 : 0.08) + i * 0.2) * ((isMoving ? 0.4 : 0.1) * size);
-        let segX = tailBaseX - size + (-Math.sin(i * 1.1) * 2 * size) + wag + (-i * 1.6 * size);
-        let segY = drawY + 11 * size + (-i * 1.5 * size);
-        
-        if (skin.type === 'calico') drawCtx.fillStyle = (i % 2 === 0) ? "#e67e22" : "#2c3e50";
-        else if (skin.type === 'tabby') { let stripeColor = (skin.id === 'newyear') ? "#e67e22" : "#2f3542"; drawCtx.fillStyle = (i % 2 === 0) ? stripeColor : skin.body; }
-        else if (skin.type === 'samurai') drawCtx.fillStyle = (i < 4) ? skin.body : "#8b0000";
-        else if (skin.type === 'foxcoat') drawCtx.fillStyle = "#fdd16aff"; // Золотой хвост
-        else drawCtx.fillStyle = skin.body;
-        
-        drawCtx.fillRect(segX, segY, 2.5 * size, 2.5 * size);
+    // ----------------------------------------------------------------
+    // ----------------------------------------------------------------
+    // 2. ХВОСТ
+    // ----------------------------------------------------------------
+    {
+        const tailBaseX = drawX + 2.2 * size;
+        for (let i = 0; i < 6; i++) {
+            const wag = Math.sin(gameTime * (isMoving ? 0.3 : 0.08) + i * 0.2)
+                      * ((isMoving ? 0.4 : 0.1) * size);
+            const segX = tailBaseX - size + (-Math.sin(i * 1.1) * 2 * size) + wag + (-i * 1.6 * size);
+            const segY = drawY + 11 * size + (-i * 1.5 * size);
+
+            // --- calico: двухцветный хвост ---
+            if (skin.type === 'calico')
+                drawCtx.fillStyle = (i % 2 === 0) ? '#e67e22' : '#2c3e50';
+            // --- tabby: полосатый хвост ---
+            else if (skin.type === 'tabby') {
+                const stripe = (skin.id === 'newyear') ? '#e67e22' : '#2f3542';
+                drawCtx.fillStyle = (i % 2 === 0) ? stripe : skin.body;
+            }
+            // --- samurai: тёмный с алым кончиком ---
+            else if (skin.type === 'samurai')
+                drawCtx.fillStyle = (i < 4) ? skin.body : '#8b0000';
+            // --- foxcoat: золотой хвост ---
+            else if (skin.type === 'foxcoat')
+                drawCtx.fillStyle = '#fdd16a';
+            // --- все остальные: цвет тела ---
+            else
+                drawCtx.fillStyle = skin.body;
+
+            drawCtx.fillRect(segX, segY, 2.5 * size, 2.5 * size);
+        }
     }
 
-    // WINGS HELPER
+    // ----------------------------------------------------------------
+    // 3. КРЫЛЬЯ — вспомогательная функция + задние крылья (angel)
+    // ----------------------------------------------------------------
     const drawDetailedWing = (dx, dy, isBack, mirror) => {
-        drawCtx.save(); drawCtx.translate(dx, dy); if (mirror) drawCtx.scale(-1, 1);
-        const cOut = "#b2bec3", cFill = "#ffffff", cShad = "#82ccdd";
-        drawCtx.fillStyle = cFill; drawCtx.fillRect(1*size, -1*size, 4*size, 4*size); drawCtx.fillRect(0, 1*size, 1*size, 2*size); drawCtx.fillRect(0, -0.5*size, 1*size, 1.5*size); drawCtx.fillRect(2*size, -2*size, 4*size, 1*size); drawCtx.fillRect(4*size, -3*size, 3*size, 1*size); drawCtx.fillRect(6*size, -2*size, 1*size, 2*size); drawCtx.fillRect(5*size, 0, 1*size, 2*size);
-        drawCtx.fillStyle = cOut; drawCtx.fillRect(0, 0, 1*size, 1*size); drawCtx.fillRect(1*size, -1*size, 1*size, 1*size); drawCtx.fillRect(2*size, -2*size, 1*size, 1*size); drawCtx.fillRect(3*size, -3*size, 2*size, 1*size); drawCtx.fillRect(5*size, -4*size, 2*size, 1*size); drawCtx.fillRect(7*size, -3*size, 1*size, 2*size); drawCtx.fillRect(6*size, -1*size, 1*size, 1*size); drawCtx.fillRect(6*size, 0, 1*size, 1*size); drawCtx.fillRect(5*size, 1*size, 1*size, 1*size); drawCtx.fillRect(5*size, 2*size, 1*size, 1*size); drawCtx.fillRect(2*size, 3*size, 3*size, 1*size); drawCtx.fillRect(1*size, 2*size, 1*size, 1*size); drawCtx.fillRect(0, 1*size, 1*size, 1*size); drawCtx.fillRect(-1*size, 2*size, 0*size, 1*size); drawCtx.fillRect(0, -1*size, 1*size, 2*size);
-        drawCtx.fillStyle = cShad; drawCtx.fillRect(4*size, -1*size, 2*size, 1*size); drawCtx.fillRect(3*size, 1*size, 2*size, 1*size); drawCtx.fillRect(1*size, 1*size, 1*size, 1*size);
+        drawCtx.save();
+        drawCtx.translate(dx, dy);
+        if (mirror) drawCtx.scale(-1, 1);
+        const cFill = '#ffffff', cOut = '#b2bec3', cShad = '#82ccdd';
+        drawCtx.fillStyle = cFill;
+        drawCtx.fillRect(1*size, -1*size, 4*size, 4*size);
+        drawCtx.fillRect(0, 1*size, 1*size, 2*size);
+        drawCtx.fillRect(0, -0.5*size, 1*size, 1.5*size);
+        drawCtx.fillRect(2*size, -2*size, 4*size, 1*size);
+        drawCtx.fillRect(4*size, -3*size, 3*size, 1*size);
+        drawCtx.fillRect(6*size, -2*size, 1*size, 2*size);
+        drawCtx.fillRect(5*size, 0, 1*size, 2*size);
+        drawCtx.fillStyle = cOut;
+        drawCtx.fillRect(0, 0, 1*size, 1*size);
+        drawCtx.fillRect(1*size, -1*size, 1*size, 1*size);
+        drawCtx.fillRect(2*size, -2*size, 1*size, 1*size);
+        drawCtx.fillRect(3*size, -3*size, 2*size, 1*size);
+        drawCtx.fillRect(5*size, -4*size, 2*size, 1*size);
+        drawCtx.fillRect(7*size, -3*size, 1*size, 2*size);
+        drawCtx.fillRect(6*size, -1*size, 1*size, 1*size);
+        drawCtx.fillRect(6*size, 0, 1*size, 1*size);
+        drawCtx.fillRect(5*size, 1*size, 1*size, 1*size);
+        drawCtx.fillRect(5*size, 2*size, 1*size, 1*size);
+        drawCtx.fillRect(2*size, 3*size, 3*size, 1*size);
+        drawCtx.fillRect(1*size, 2*size, 1*size, 1*size);
+        drawCtx.fillRect(0, 1*size, 1*size, 1*size);
+        drawCtx.fillRect(0, -1*size, 1*size, 2*size);
+        drawCtx.fillStyle = cShad;
+        drawCtx.fillRect(4*size, -1*size, 2*size, 1*size);
+        drawCtx.fillRect(3*size, 1*size, 2*size, 1*size);
+        drawCtx.fillRect(1*size, 1*size, 1*size, 1*size);
         drawCtx.restore();
     };
+
+    // --- angel: заднее крыло (левое) ---
     if (skin.acc === 'wings') {
-        let flap = Math.sin(gameTime * (isJumping ? 0.8 : 0.5)) * 2;
-        if (isJumping) { drawDetailedWing(drawX + 6*size, drawY + 4*size + flap, true, false); } else { const wx = drawX + 7*size, wy = drawY + 5*size + flap; drawCtx.fillStyle = "#b2bec3"; drawCtx.fillRect(wx, wy, 4*size, 1*size); drawCtx.fillRect(wx + 3*size, wy + 1*size, 1*size, 3*size); drawCtx.fillRect(wx, wy + 1*size, 1*size, 2*size); drawCtx.fillRect(wx + 1*size, wy + 3*size, 2*size, 1*size); }
+        const flap = Math.sin(gameTime * (isJumping ? 0.8 : 0.5)) * 2;
+        if (isJumping) {
+            drawDetailedWing(drawX + 6*size, drawY + 4*size + flap, true, false);
+        } else {
+            const wx = drawX + 7*size, wy = drawY + 5*size + flap;
+            drawCtx.fillStyle = '#b2bec3';
+            drawCtx.fillRect(wx, wy, 4*size, 1*size);
+            drawCtx.fillRect(wx + 3*size, wy + 1*size, 1*size, 3*size);
+            drawCtx.fillRect(wx, wy + 1*size, 1*size, 2*size);
+            drawCtx.fillRect(wx + 1*size, wy + 3*size, 2*size, 1*size);
+        }
     }
 
-    // ============================================
-    // BODY & COAT LOGIC
-    // ============================================
+    // ----------------------------------------------------------------
+    // 4. ТЕЛО
+    // ----------------------------------------------------------------
+
+    // === foxcoat (Edward Elric red coat) ===
     if (skin.type === 'foxcoat') {
-        // --- FULLMETAL ALCHEMIST DETAILED COAT ---
-        const redMain = "#a01101ff"; // Основной красный
-        const redDark = "#7b0000"; // Тень внизу плаща (как на референсе)
-        const blackBase = "#1e272e"; // Черная одежда
-        const whiteTrim = "#ffffff"; // Белая окантовка
+        const redMain  = '#a01101';
+        const redDark  = '#7b0000';
+        const blackBase = '#1e272e';
+        const whiteTrim = '#ffffff';
 
-        // 1. ЗАДНИЙ ВОРОТНИК (Высокий, за головой)
+        // Задний воротник (рисуется перед телом)
         drawCtx.fillStyle = redMain;
-        drawCtx.fillRect(drawX - 0.75 * size, drawY + 3.5 * size, 3 * size, 2.5 * size); // Левый
-        drawCtx.fillRect(drawX + 7.5 * size, drawY + 3.5 * size, 3 * size, 2.5 * size); // Правый
+        drawCtx.fillRect(drawX - 0.75*size, drawY + 3.5*size, 3*size, 2.5*size);
+        drawCtx.fillRect(drawX + 7.5*size,  drawY + 3.5*size, 3*size, 2.5*size);
 
-        // 2. ЧЕРНАЯ ОДЕЖДА (База)
-        // Рисуем уже, чем обычно, чтобы плащ казался шире
-        drawCtx.fillStyle = blackBase; 
-        drawCtx.fillRect(drawX + 3.5 * size, drawY + 5 * size, 5 * size, 8 * size);
-
-        // 3. БЕЛЫЕ ДЕТАЛИ (Молния и пояс)
-        drawCtx.fillStyle = whiteTrim;
-        // Вертикальная линия (молния)
-        drawCtx.fillRect(drawX + 6 * size, drawY + 7 * size, 0.6 * size, 6 * size);
-        //горизоантальная линия вверху (воротник)
-        drawCtx.fillRect(drawX + 3.5 * size, drawY + 6.5 * size, 5 * size, 1 * size);
-        // Горизонтальная линия внизу (пояс)
-        drawCtx.fillRect(drawX + 3.5 * size, drawY + 12 * size, 5 * size, 1 * size);
-        // Небольшой V-вырез сверху
+        // Чёрная одежда (база)
         drawCtx.fillStyle = blackBase;
-        drawCtx.fillRect(drawX + 4.5 * size, drawY + 5 * size, 1.2 * size, 1 * size);
+        drawCtx.fillRect(drawX + 3.5*size, drawY + 5*size, 5*size, 8*size);
 
+        // Белые детали: молния, воротник, пояс
+        drawCtx.fillStyle = whiteTrim;
+        drawCtx.fillRect(drawX + 6*size,   drawY + 7*size,  0.6*size, 6*size);   // молния
+        drawCtx.fillRect(drawX + 3.5*size, drawY + 6.5*size, 5*size, 1*size);    // воротник
+        drawCtx.fillRect(drawX + 3.5*size, drawY + 12*size,  5*size, 1*size);    // пояс
+        // V-вырез
+        drawCtx.fillStyle = blackBase;
+        drawCtx.fillRect(drawX + 4.5*size, drawY + 5*size, 1.2*size, 1*size);
 
-        // 4. КРАСНЫЙ ПЛАЩ (ЛЕВАЯ СТОРОНА)
-        // Объемное плечо
+        // Красный плащ — левая сторона
         drawCtx.fillStyle = redDark;
-        drawCtx.fillRect(drawX - 0.5 * size, drawY + 5 * size, 5.5 * size, 6 * size ); //5 * size, 2 * size
-        // Нижняя часть (тень)
-        drawCtx.fillStyle = redDark;
-        drawCtx.fillRect(drawX - 1.25 * size, drawY + 11 * size, 6 * size, 2 * size ); //5 * size, 6 * size
+        drawCtx.fillRect(drawX - 0.5*size,  drawY + 5*size,  5.5*size, 6*size);
+        drawCtx.fillRect(drawX - 1.25*size, drawY + 11*size, 6*size,   2*size);
         drawCtx.fillStyle = redMain;
-        drawCtx.fillRect(drawX - 1.5 * size, drawY + 12 * size, 5.5 * size, 1.5 * size ); //5 * size, 6 * size
+        drawCtx.fillRect(drawX - 1.5*size,  drawY + 12*size, 5.5*size, 1.5*size);
 
-        // 5. КРАСНЫЙ ПЛАЩ (ПРАВАЯ СТОРОНА)
-        // Объемное плечо
+        // Красный плащ — правая сторона
         drawCtx.fillStyle = redDark;
-        drawCtx.fillRect(drawX + 7.5 * size, drawY + 5 * size, 3 * size, 6 * size); //3 * size, 2 * size
-        // Нижняя часть (тень)
-        drawCtx.fillStyle = redDark;
-        drawCtx.fillRect(drawX + 8 * size, drawY + 11 * size, 3 * size, 2 * size); //3 * size, 6 * size
+        drawCtx.fillRect(drawX + 7.5*size, drawY + 5*size,  3*size, 6*size);
+        drawCtx.fillRect(drawX + 8*size,   drawY + 11*size, 3*size, 2*size);
         drawCtx.fillStyle = redMain;
-        drawCtx.fillRect(drawX + 8.25 * size, drawY + 12 * size, 3.25 * size, 1.5 * size); //3 * size, 6 * size
+        drawCtx.fillRect(drawX + 8.25*size, drawY + 12*size, 3.25*size, 1.5*size);
 
-        //воротник спереди
+        // Передний и задний воротник
         drawCtx.fillStyle = redMain;
-        drawCtx.fillRect(drawX - 1.5 * size, drawY + 5 * size, 5.5 * size, 2 * size ); //5 * size, 6 * size
-        //воротник сзади
-        drawCtx.fillStyle = redMain;
-        drawCtx.fillRect(drawX + 8.5 * size, drawY + 5 * size, 3 * size, 2 * size); //3 * size, 6 * size
+        drawCtx.fillRect(drawX - 1.5*size, drawY + 5*size, 5.5*size, 2*size);
+        drawCtx.fillRect(drawX + 8.5*size, drawY + 5*size, 3*size,   2*size);
 
+    // === cyber ===
+    } else if (skin.type === 'cyber') {
+        // Тело cyber полностью перерисовывается в секции FACE,
+        // здесь только цвет тела как база (перекрывается ниже)
+        drawCtx.fillStyle = skin.body;
+        drawCtx.fillRect(drawX, drawY + 5*size, 10*size, 8*size);
+
+    // === все остальные (solid, calico, tabby, samurai) ===
     } else {
-        // Стандартное тело для остальных скинов
-        drawCtx.fillStyle = skin.body; drawCtx.fillRect(drawX, drawY + 5 * size, 10 * size, 8 * size);
-        if (skin.type === 'calico') { drawCtx.fillStyle = "#e67e22"; drawCtx.fillRect(drawX + 4 * size, drawY + 5 * size, 4 * size, 3 * size); drawCtx.fillStyle = "#2c3e50"; drawCtx.fillRect(drawX + 1 * size, drawY + 8 * size, 3 * size, 3 * size); }
+        // Базовое тело
+        drawCtx.fillStyle = skin.body;
+        drawCtx.fillRect(drawX, drawY + 5*size, 10*size, 8*size);
+
+        // --- calico: цветные пятна на теле ---
+        if (skin.type === 'calico') {
+            drawCtx.fillStyle = '#e67e22';
+            drawCtx.fillRect(drawX + 4*size, drawY + 5*size, 4*size, 3*size);
+            drawCtx.fillStyle = '#2c3e50';
+            drawCtx.fillRect(drawX + 1*size, drawY + 8*size, 3*size, 3*size);
+        }
+
+        // --- tabby: полоски на теле ---
         if (skin.type === 'tabby') {
-            let stripeColor = (skin.id === 'newyear') ? "#e67e22" : "#2f3542"; drawCtx.fillStyle = stripeColor;
-            if (skin.id === 'newyear') { drawCtx.fillRect(drawX - 1 * size, drawY + 6 * size, 3 * size, 1.5 * size); drawCtx.fillRect(drawX - 1 * size, drawY + 9 * size, 3 * size, 1.5 * size); }
-            else { drawCtx.fillRect(drawX + 1 * size, drawY + 6 * size, 2 * size, 1 * size); drawCtx.fillRect(drawX + 1 * size, drawY + 8 * size, 2 * size, 1 * size); drawCtx.fillRect(drawX + 7 * size, drawY + 6 * size, 2 * size, 1 * size); drawCtx.fillRect(drawX + 7 * size, drawY + 8 * size, 2 * size, 1 * size); }
+            const stripe = (skin.id === 'newyear') ? '#e67e22' : '#2f3542';
+            drawCtx.fillStyle = stripe;
+            if (skin.id === 'newyear') {
+                drawCtx.fillRect(drawX - 1*size, drawY + 6*size, 3*size, 1.5*size);
+                drawCtx.fillRect(drawX - 1*size, drawY + 9*size, 3*size, 1.5*size);
+            } else {
+                // froggy и другие tabby
+                drawCtx.fillRect(drawX + 1*size, drawY + 6*size, 2*size, 1*size);
+                drawCtx.fillRect(drawX + 1*size, drawY + 8*size, 2*size, 1*size);
+                drawCtx.fillRect(drawX + 7*size, drawY + 6*size, 2*size, 1*size);
+                drawCtx.fillRect(drawX + 7*size, drawY + 8*size, 2*size, 1*size);
+            }
         }
+
+        // --- samurai: броня поверх тела ---
         if (skin.type === 'samurai') {
-            drawCtx.fillStyle = "#111111"; drawCtx.fillRect(drawX + 0 * size, drawY + 5 * size, 10 * size, 8 * size);
-            drawCtx.fillStyle = "#0a0a0a"; drawCtx.fillRect(drawX + 3 * size, drawY + 5 * size, 1.5 * size, 5 * size); drawCtx.fillRect(drawX + 5.5 * size, drawY + 5 * size, 1.5 * size, 5 * size);
-            drawCtx.fillStyle = "#d0d0d0"; drawCtx.fillRect(drawX + 3.5 * size, drawY + 5 * size, 3 * size, 1.5 * size);
-            drawCtx.fillStyle = "#6b0000"; drawCtx.fillRect(drawX + 0 * size, drawY + 9 * size, 10 * size, 2 * size);
-            drawCtx.fillStyle = "#8b0000"; drawCtx.fillRect(drawX + 4 * size, drawY + 9 * size, 2 * size, 2 * size);
-            drawCtx.fillStyle = "#b8860b"; drawCtx.fillRect(drawX + 4.5 * size, drawY + 9.5 * size, 1 * size, 1 * size);
+            drawCtx.fillStyle = '#111111';
+            drawCtx.fillRect(drawX, drawY + 5*size, 10*size, 8*size);
+            // Пластины доспеха
+            drawCtx.fillStyle = '#0a0a0a';
+            drawCtx.fillRect(drawX + 3*size,   drawY + 5*size, 1.5*size, 5*size);
+            drawCtx.fillRect(drawX + 5.5*size, drawY + 5*size, 1.5*size, 5*size);
+            // Нагрудник
+            drawCtx.fillStyle = '#d0d0d0';
+            drawCtx.fillRect(drawX + 3.5*size, drawY + 5*size, 3*size, 1.5*size);
+            // Пояс
+            drawCtx.fillStyle = '#6b0000';
+            drawCtx.fillRect(drawX, drawY + 9*size, 10*size, 2*size);
+            drawCtx.fillStyle = '#8b0000';
+            drawCtx.fillRect(drawX + 4*size, drawY + 9*size, 2*size, 2*size);
+            // Застёжка
+            drawCtx.fillStyle = '#b8860b';
+            drawCtx.fillRect(drawX + 4.5*size, drawY + 9.5*size, 1*size, 1*size);
         }
     }
 
-    // HEAD
-    let headColor = (skin.type === 'foxcoat') ? "#fdd16aff" : skin.body;
-    drawCtx.fillStyle = headColor; 
-    drawCtx.fillRect(drawX, drawY, 10 * size, 5.5 * size);
-    drawCtx.fillRect(drawX + 3.75 * size, drawY + 5 * size, 4.5 * size, 1.5 * size);
+    // ----------------------------------------------------------------
+    // 5. ГОЛОВА
+    // ----------------------------------------------------------------
+    {
+        const headColor = (skin.type === 'foxcoat') ? '#fdd16a' : skin.body;
+        drawCtx.fillStyle = headColor;
+        drawCtx.fillRect(drawX,           drawY,          10*size, 5.5*size);
+        drawCtx.fillRect(drawX + 3.75*size, drawY + 5*size, 4.5*size, 1.5*size);
 
-    if (skin.type === 'calico') { drawCtx.fillStyle = "#2c3e50"; drawCtx.fillRect(drawX, drawY, 4 * size, 2 * size); drawCtx.fillStyle = "#e67e22"; drawCtx.fillRect(drawX + 6 * size, drawY + 1 * size, 4 * size, 2 * size); }
-    if (skin.type === 'tabby' && skin.id !== 'newyear') { drawCtx.fillStyle = "#2f3542"; drawCtx.fillRect(drawX, drawY + 3 * size, 2 * size, 1 * size); drawCtx.fillRect(drawX + 8 * size, drawY + 3 * size, 2 * size, 1 * size); drawCtx.fillRect(drawX + 4.5 * size, drawY + 0.5 * size, 1 * size, 1.5 * size); }
-    if (skin.type === 'samurai') { drawCtx.fillStyle = "#111111"; drawCtx.fillRect(drawX + 0 * size, drawY - 2 * size, 3 * size, 2 * size); drawCtx.fillRect(drawX + 7 * size, drawY - 2 * size, 3 * size, 2 * size); }
+        // --- calico: пятна на голове ---
+        if (skin.type === 'calico') {
+            drawCtx.fillStyle = '#2c3e50';
+            drawCtx.fillRect(drawX, drawY, 4*size, 2*size);
+            drawCtx.fillStyle = '#e67e22';
+            drawCtx.fillRect(drawX + 6*size, drawY + 1*size, 4*size, 2*size);
+        }
 
-    // EARS
-    drawCtx.fillStyle = (skin.type === 'calico') ? "#2c3e50" : headColor;
-    drawCtx.fillRect(drawX, drawY - 2 * size, 3 * size, 2 * size); drawCtx.fillRect(drawX, drawY - 3 * size, 1 * size, 1 * size);
-    drawCtx.fillStyle = (skin.type === 'calico') ? "#e67e22" : headColor;
-    drawCtx.fillRect(drawX + 7 * size, drawY - 2 * size, 3 * size, 2 * size); drawCtx.fillRect(drawX + 9 * size, drawY - 3 * size, 1 * size, 1 * size);
-    if (skin.id === 'newyear' || skin.id === 'angel') { drawCtx.fillStyle = "#ffafcc"; drawCtx.fillRect(drawX + 1 * size, drawY - 1.5 * size, 1 * size, 1 * size); drawCtx.fillRect(drawX + 8 * size, drawY - 1.5 * size, 1 * size, 1 * size); }
+        // --- tabby (не newyear): полоски на голове ---
+        if (skin.type === 'tabby' && skin.id !== 'newyear') {
+            drawCtx.fillStyle = '#2f3542';
+            drawCtx.fillRect(drawX,            drawY + 3*size,   2*size, 1*size);
+            drawCtx.fillRect(drawX + 8*size,   drawY + 3*size,   2*size, 1*size);
+            drawCtx.fillRect(drawX + 4.5*size, drawY + 0.5*size, 1*size, 1.5*size);
+        }
 
-    // --- FULLMETAL AHOGE (Волосинка-антенна) ---
-    // Символ ")": снизу наклон вправо, сверху влево
+        // --- samurai: затылочные пластины ---
+        if (skin.type === 'samurai') {
+            drawCtx.fillStyle = '#111111';
+            drawCtx.fillRect(drawX,         drawY - 2*size, 3*size, 2*size);
+            drawCtx.fillRect(drawX + 7*size, drawY - 2*size, 3*size, 2*size);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // 6. УШИ
+    // ----------------------------------------------------------------
+    {
+        const headColor = (skin.type === 'foxcoat') ? '#fdd16a' : skin.body;
+
+        // Левое ухо
+        drawCtx.fillStyle = (skin.type === 'calico') ? '#2c3e50' : headColor;
+        drawCtx.fillRect(drawX,          drawY - 2*size, 3*size, 2*size);
+        drawCtx.fillRect(drawX,          drawY - 3*size, 1*size, 1*size);
+
+        // Правое ухо
+        drawCtx.fillStyle = (skin.type === 'calico') ? '#e67e22' : headColor;
+        drawCtx.fillRect(drawX + 7*size, drawY - 2*size, 3*size, 2*size);
+        drawCtx.fillRect(drawX + 9*size, drawY - 3*size, 1*size, 1*size);
+
+        // --- newyear / angel: розовые внутренности ушей ---
+        if (skin.id === 'newyear' || skin.id === 'angel') {
+            drawCtx.fillStyle = '#ffafcc';
+            drawCtx.fillRect(drawX + 1*size, drawY - 1.5*size, 1*size, 1*size);
+            drawCtx.fillRect(drawX + 8*size, drawY - 1.5*size, 1*size, 1*size);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // 7. АНТЕННА / ОСОБЫЕ ЭЛЕМЕНТЫ НА ГОЛОВЕ
+    // ----------------------------------------------------------------
+
+    // --- foxcoat: аникэ-антенна (волосинка в форме дуги) ---
     if (skin.type === 'foxcoat') {
-        drawCtx.fillStyle = "#fdd16aff"; 
-        
-        // 1. Основание (центр)
-        drawCtx.fillRect(drawX + 4.5 * size, drawY - 1 * size, 1 * size, 1 * size);
-        
-        // 2. Середина (сдвиг вправо, начало дуги)
-        drawCtx.fillRect(drawX + 5.0 * size, drawY - 2.5 * size, 1 * size, 1.5 * size);
-        
-        // 3. Верх (сдвиг влево и вверх, конец дуги)
-        drawCtx.fillRect(drawX + 4.0 * size, drawY - 3.5 * size, 1.5 * size, 1 * size);
-        
-        // 4. Кончик (еще левее и вверх)
-        drawCtx.fillRect(drawX + 3.5 * size, drawY - 4 * size, 1 * size, 1 * size);
+        drawCtx.fillStyle = '#fdd16a';
+        drawCtx.fillRect(drawX + 4.5*size, drawY - 1*size,   1*size,   1*size);    // основание
+        drawCtx.fillRect(drawX + 5.0*size, drawY - 2.5*size, 1*size,   1.5*size);  // середина
+        drawCtx.fillRect(drawX + 4.0*size, drawY - 3.5*size, 1.5*size, 1*size);    // верх
+        drawCtx.fillRect(drawX + 3.5*size, drawY - 4*size,   1*size,   1*size);    // кончик
     }
 
-    // FACE
+    // ----------------------------------------------------------------
+    // 8. МОРДА (глаза, нос, специальные лица)
+    // ----------------------------------------------------------------
+
+    // === cyber: полностью кастомная морда + детали тела ===
     if (skin.type === 'cyber') {
-        // ... (код кибер-лица без изменений)
-        drawCtx.fillStyle = "#1abc9c"; drawCtx.fillRect(drawX, drawY, 10 * size, 5 * size); drawCtx.fillRect(drawX, drawY - 2 * size, 3 * size, 2 * size); drawCtx.fillRect(drawX + 7 * size, drawY - 2 * size, 3 * size, 2 * size);
-        drawCtx.fillRect(drawX, drawY - 3 * size, 1 * size, 1 * size); drawCtx.fillRect(drawX + 9 * size, drawY - 3 * size, 1 * size, 1 * size);
-        drawCtx.fillStyle = "#ffffff"; drawCtx.fillRect(drawX + 2 * size, drawY + 3 * size, 6 * size, 2 * size);
-        drawCtx.fillStyle = "#2c3e50"; drawCtx.fillRect(drawX + 4.5 * size, drawY + 3.5 * size, 1 * size, 0.5 * size);
-        drawCtx.fillStyle = "#2c3e50"; drawCtx.fillRect(drawX + 1.5 * size, drawY + 1 * size, 2 * size, 2 * size); drawCtx.fillRect(drawX + 4 * size, drawY + 0.5 * size, 2 * size, 2 * size); drawCtx.fillRect(drawX + 6.5 * size, drawY + 1 * size, 2 * size, 2 * size);
-        drawCtx.fillStyle = "#34495e"; drawCtx.fillRect(drawX + 2 * size, drawY + 1.5 * size, 1 * size, 1 * size); drawCtx.fillRect(drawX + 4.5 * size, drawY + 1 * size, 1 * size, 1 * size); drawCtx.fillRect(drawX + 7 * size, drawY + 1.5 * size, 1 * size, 1 * size);
-        drawCtx.fillStyle = "#81ecec"; drawCtx.fillRect(drawX + 2.2 * size, drawY + 1.5 * size, 0.4 * size, 0.4 * size); drawCtx.fillRect(drawX + 4.7 * size, drawY + 1 * size, 0.4 * size, 0.4 * size); drawCtx.fillRect(drawX + 7.2 * size, drawY + 1.5 * size, 0.4 * size, 0.4 * size);
-        drawCtx.fillStyle = "#2d3436"; drawCtx.fillRect(drawX - 1 * size, drawY + 1 * size, 1.5 * size, 3 * size);
-        drawCtx.fillStyle = "#00ff00"; drawCtx.fillRect(drawX - 1 * size, drawY + 2 * size, 1 * size, 1 * size);
-        drawCtx.fillStyle = "#ff0099"; drawCtx.fillRect(drawX + 3 * size, drawY + 6 * size, 6 * size, 2.5 * size);
-        drawCtx.fillStyle = "#00ffff"; drawCtx.fillRect(drawX + 4.5 * size, drawY + 6 * size, 1 * size, 2.5 * size); drawCtx.fillRect(drawX + 7 * size, drawY + 6 * size, 1 * size, 2.5 * size);
-        drawCtx.fillStyle = "#e67e22"; drawCtx.fillRect(drawX + 9 * size, drawY + 6.5 * size, 1 * size, 1.5 * size);
-        drawCtx.fillStyle = "#2d3436"; drawCtx.fillRect(drawX, drawY + 11 * size, 10 * size, 1 * size);
-        drawCtx.fillStyle = "#8e44ad"; drawCtx.fillRect(drawX + 4 * size, drawY + 11 * size, 2 * size, 1.5 * size);
-        drawCtx.fillStyle = "#00ff00"; drawCtx.fillRect(drawX + 4.5 * size, drawY + 11.2 * size, 1 * size, 0.5 * size);
+        // Переопределяем голову в цвет схемы
+        drawCtx.fillStyle = '#1abc9c';
+        drawCtx.fillRect(drawX, drawY, 10*size, 5*size);
+        drawCtx.fillRect(drawX, drawY - 2*size, 3*size, 2*size);
+        drawCtx.fillRect(drawX + 7*size, drawY - 2*size, 3*size, 2*size);
+        drawCtx.fillRect(drawX, drawY - 3*size, 1*size, 1*size);
+        drawCtx.fillRect(drawX + 9*size, drawY - 3*size, 1*size, 1*size);
+        // Рот — сканер
+        drawCtx.fillStyle = '#ffffff';
+        drawCtx.fillRect(drawX + 2*size, drawY + 3*size, 6*size, 2*size);
+        drawCtx.fillStyle = '#2c3e50';
+        drawCtx.fillRect(drawX + 4.5*size, drawY + 3.5*size, 1*size, 0.5*size);
+        // Три глаза
+        drawCtx.fillStyle = '#2c3e50';
+        drawCtx.fillRect(drawX + 1.5*size, drawY + 1*size,   2*size, 2*size);
+        drawCtx.fillRect(drawX + 4*size,   drawY + 0.5*size, 2*size, 2*size);
+        drawCtx.fillRect(drawX + 6.5*size, drawY + 1*size,   2*size, 2*size);
+        drawCtx.fillStyle = '#34495e';
+        drawCtx.fillRect(drawX + 2*size,   drawY + 1.5*size, 1*size, 1*size);
+        drawCtx.fillRect(drawX + 4.5*size, drawY + 1*size,   1*size, 1*size);
+        drawCtx.fillRect(drawX + 7*size,   drawY + 1.5*size, 1*size, 1*size);
+        // Блики
+        drawCtx.fillStyle = '#81ecec';
+        drawCtx.fillRect(drawX + 2.2*size, drawY + 1.5*size, 0.4*size, 0.4*size);
+        drawCtx.fillRect(drawX + 4.7*size, drawY + 1*size,   0.4*size, 0.4*size);
+        drawCtx.fillRect(drawX + 7.2*size, drawY + 1.5*size, 0.4*size, 0.4*size);
+        // Боковая панель
+        drawCtx.fillStyle = '#2d3436';
+        drawCtx.fillRect(drawX - 1*size, drawY + 1*size, 1.5*size, 3*size);
+        drawCtx.fillStyle = '#00ff00';
+        drawCtx.fillRect(drawX - 1*size, drawY + 2*size, 1*size, 1*size);
+        // Детали тела
+        drawCtx.fillStyle = '#ff0099';
+        drawCtx.fillRect(drawX + 3*size, drawY + 6*size, 6*size, 2.5*size);
+        drawCtx.fillStyle = '#00ffff';
+        drawCtx.fillRect(drawX + 4.5*size, drawY + 6*size, 1*size, 2.5*size);
+        drawCtx.fillRect(drawX + 7*size,   drawY + 6*size, 1*size, 2.5*size);
+        drawCtx.fillStyle = '#e67e22';
+        drawCtx.fillRect(drawX + 9*size,   drawY + 6.5*size, 1*size, 1.5*size);
+        drawCtx.fillStyle = '#2d3436';
+        drawCtx.fillRect(drawX, drawY + 11*size, 10*size, 1*size);
+        drawCtx.fillStyle = '#8e44ad';
+        drawCtx.fillRect(drawX + 4*size, drawY + 11*size, 2*size, 1.5*size);
+        drawCtx.fillStyle = '#00ff00';
+        drawCtx.fillRect(drawX + 4.5*size, drawY + 11.2*size, 1*size, 0.5*size);
+
+    // === samurai: маска, глаза-щели, наплечники ===
     } else if (skin.type === 'samurai') {
-        drawCtx.fillStyle = '#2a2a2a'; drawCtx.fillRect(drawX + 1 * size, drawY + 1 * size, 8 * size, 4 * size);
-        drawCtx.fillStyle = skin.eye; drawCtx.fillRect(drawX + 2 * size, drawY + 2 * size, 2.5 * size, 1 * size); drawCtx.fillRect(drawX + 6.5 * size, drawY + 2 * size, 2.5 * size, 1 * size);
-        drawCtx.fillStyle = 'rgba(255,0,0,0.25)'; drawCtx.fillRect(drawX + 2 * size, drawY + 1.5 * size, 2.5 * size, 2 * size); drawCtx.fillRect(drawX + 6.5 * size, drawY + 1.5 * size, 2.5 * size, 2 * size);
-        drawCtx.fillStyle = '#ff3333'; drawCtx.fillRect(drawX + 2.5 * size, drawY + 2 * size, 1 * size, 0.8 * size); drawCtx.fillRect(drawX + 7 * size, drawY + 2 * size, 1 * size, 0.8 * size);
-        drawCtx.fillStyle = '#8b0000'; drawCtx.fillRect(drawX + 2 * size, drawY + 1.5 * size, 0.5 * size, 0.8 * size); drawCtx.fillRect(drawX + 8 * size, drawY + 1.5 * size, 0.5 * size, 0.8 * size);
-        drawCtx.fillStyle = '#3d1010'; drawCtx.fillRect(drawX + 3.5 * size, drawY + 4 * size, 3 * size, 0.5 * size);
-        drawCtx.fillStyle = '#c8c8c8'; drawCtx.fillRect(drawX - 0.5 * size, drawY + 0 * size, 1 * size, 5 * size); drawCtx.fillRect(drawX + 10 * size, drawY + 0 * size, 1 * size, 5 * size);
+        // Маска
+        drawCtx.fillStyle = '#2a2a2a';
+        drawCtx.fillRect(drawX + 1*size, drawY + 1*size, 8*size, 4*size);
+        // Глаза
+        drawCtx.fillStyle = skin.eye;
+        drawCtx.fillRect(drawX + 2*size,   drawY + 2*size, 2.5*size, 1*size);
+        drawCtx.fillRect(drawX + 6.5*size, drawY + 2*size, 2.5*size, 1*size);
+        // Свечение глаз
+        drawCtx.fillStyle = 'rgba(255,0,0,0.25)';
+        drawCtx.fillRect(drawX + 2*size,   drawY + 1.5*size, 2.5*size, 2*size);
+        drawCtx.fillRect(drawX + 6.5*size, drawY + 1.5*size, 2.5*size, 2*size);
+        drawCtx.fillStyle = '#ff3333';
+        drawCtx.fillRect(drawX + 2.5*size, drawY + 2*size, 1*size, 0.8*size);
+        drawCtx.fillRect(drawX + 7*size,   drawY + 2*size, 1*size, 0.8*size);
+        drawCtx.fillStyle = '#8b0000';
+        drawCtx.fillRect(drawX + 2*size,   drawY + 1.5*size, 0.5*size, 0.8*size);
+        drawCtx.fillRect(drawX + 8*size,   drawY + 1.5*size, 0.5*size, 0.8*size);
+        // Рот
+        drawCtx.fillStyle = '#3d1010';
+        drawCtx.fillRect(drawX + 3.5*size, drawY + 4*size, 3*size, 0.5*size);
+        // Наплечники
+        drawCtx.fillStyle = '#c8c8c8';
+        drawCtx.fillRect(drawX - 0.5*size, drawY, 1*size, 5*size);
+        drawCtx.fillRect(drawX + 10*size,  drawY, 1*size, 5*size);
+
+    // === все остальные: стандартные глаза и нос ===
     } else {
-        // Standard eyes/nose - GOLD EYES for Fullmetal
-        let eyeColor = (skin.type === 'foxcoat') ? "#f39c12" : skin.eye; 
-        drawCtx.fillStyle = eyeColor; drawCtx.fillRect(drawX + 2 * size, drawY + 2 * size, 2 * size, 2 * size); drawCtx.fillRect(drawX + 7 * size, drawY + 2 * size, 2 * size, 2 * size);
-        drawCtx.fillStyle = "white"; drawCtx.fillRect(drawX + 2 * size, drawY + 2 * size, 1 * size, 1 * size); drawCtx.fillRect(drawX + 7 * size, drawY + 2 * size, 1 * size, 1 * size);
-        drawCtx.fillStyle = skin.nose; drawCtx.fillRect(drawX + 5 * size, drawY + 4 * size, 1 * size, 0.5 * size);
+        // foxcoat имеет золотые глаза
+        const eyeColor = (skin.type === 'foxcoat') ? '#f39c12' : skin.eye;
+        drawCtx.fillStyle = eyeColor;
+        drawCtx.fillRect(drawX + 2*size, drawY + 2*size, 2*size, 2*size);
+        drawCtx.fillRect(drawX + 7*size, drawY + 2*size, 2*size, 2*size);
+        // Блик
+        drawCtx.fillStyle = 'white';
+        drawCtx.fillRect(drawX + 2*size, drawY + 2*size, 1*size, 1*size);
+        drawCtx.fillRect(drawX + 7*size, drawY + 2*size, 1*size, 1*size);
+        // Нос
+        drawCtx.fillStyle = skin.nose;
+        drawCtx.fillRect(drawX + 5*size, drawY + 4*size, 1*size, 0.5*size);
     }
 
-    // ACCESSORIES
-    if (skin.hat === 'santa') { drawCtx.fillStyle = "#ffffff"; drawCtx.fillRect(drawX, drawY - 2 * size, 10 * size, 1.5 * size); drawCtx.fillStyle = "#d63031"; drawCtx.fillRect(drawX + 1 * size, drawY - 5 * size, 8 * size, 3 * size); drawCtx.fillRect(drawX - 1 * size, drawY - 4 * size, 2 * size, 3 * size); drawCtx.fillRect(drawX - 2 * size, drawY - 2 * size, 2 * size, 2 * size); drawCtx.fillStyle = "#ffffff"; drawCtx.fillRect(drawX - 3.5 * size, drawY - 1 * size, 2 * size, 2 * size); }
-    if (skin.acc === 'garland') { drawCtx.fillStyle = "#1e272e"; drawCtx.fillRect(drawX - 1 * size, drawY + 6 * size, 2 * size, 1 * size); drawCtx.fillRect(drawX + 1 * size, drawY + 7 * size, 2 * size, 1 * size); drawCtx.fillRect(drawX + 3 * size, drawY + 8 * size, 2 * size, 1 * size); drawCtx.fillRect(drawX + 5 * size, drawY + 9 * size, 2 * size, 1 * size); drawCtx.fillRect(drawX + 7 * size, drawY + 8 * size, 2 * size, 1 * size); drawCtx.fillRect(drawX + 9 * size, drawY + 7 * size, 2 * size, 1 * size); const t = Math.floor(gameTime / 15); const colors = ["#f1c40f", "#2ecc71", "#e74c3c", "#3498db"]; const drawLight = (lx, ly, col) => { drawCtx.fillStyle = col; drawCtx.fillRect(lx, ly - 0.5 * size, 1 * size, 2 * size); drawCtx.fillRect(lx - 0.5 * size, ly, 2 * size, 1 * size); }; drawLight(drawX, drawY + 6 * size, colors[t % 4]); drawLight(drawX + 3 * size, drawY + 8 * size, colors[(t + 1) % 4]); drawLight(drawX + 6 * size, drawY + 9 * size, colors[(t + 2) % 4]); drawLight(drawX + 9 * size, drawY + 7 * size, colors[(t + 3) % 4]); }
-    if (skin.hat === 'halo') { let floatY = Math.sin(gameTime * 0.15) * 2; drawCtx.fillStyle = "#f1c40f"; drawCtx.fillRect(drawX + 2 * size, drawY - 7 * size + floatY, 6 * size, 1 * size); drawCtx.fillRect(drawX + 2 * size, drawY - 5 * size + floatY, 6 * size, 1 * size); drawCtx.fillRect(drawX + 1 * size, drawY - 6 * size + floatY, 1 * size, 1 * size); drawCtx.fillRect(drawX + 8 * size, drawY - 6 * size + floatY, 1 * size, 1 * size); }
-    if (skin.acc === 'wings') { 
-        let flap = Math.sin(gameTime * (isJumping ? 0.8 : 0.5)) * 2; 
-        if (isJumping) { 
+    // ----------------------------------------------------------------
+    // 9. АКСЕССУАРЫ (шляпы, ободки, гирлянды)
+    // ----------------------------------------------------------------
+
+    // --- newyear: шапка Санты ---
+    if (skin.hat === 'santa') {
+        drawCtx.fillStyle = '#ffffff';
+        drawCtx.fillRect(drawX, drawY - 2*size, 10*size, 1.5*size);
+        drawCtx.fillStyle = '#d63031';
+        drawCtx.fillRect(drawX + 1*size, drawY - 5*size, 8*size, 3*size);
+        drawCtx.fillRect(drawX - 1*size, drawY - 4*size, 2*size, 3*size);
+        drawCtx.fillRect(drawX - 2*size, drawY - 2*size, 2*size, 2*size);
+        drawCtx.fillStyle = '#ffffff';
+        drawCtx.fillRect(drawX - 3.5*size, drawY - 1*size, 2*size, 2*size);
+    }
+
+    // --- newyear: гирлянда на теле ---
+    if (skin.acc === 'garland') {
+        drawCtx.fillStyle = '#1e272e';
+        drawCtx.fillRect(drawX - 1*size, drawY + 6*size, 2*size, 1*size);
+        drawCtx.fillRect(drawX + 1*size, drawY + 7*size, 2*size, 1*size);
+        drawCtx.fillRect(drawX + 3*size, drawY + 8*size, 2*size, 1*size);
+        drawCtx.fillRect(drawX + 5*size, drawY + 9*size, 2*size, 1*size);
+        drawCtx.fillRect(drawX + 7*size, drawY + 8*size, 2*size, 1*size);
+        drawCtx.fillRect(drawX + 9*size, drawY + 7*size, 2*size, 1*size);
+        const tick = Math.floor(gameTime / 15);
+        const xmasColors = ['#f1c40f', '#2ecc71', '#e74c3c', '#3498db'];
+        const drawLight = (lx, ly, col) => {
+            drawCtx.fillStyle = col;
+            drawCtx.fillRect(lx, ly - 0.5*size, 1*size, 2*size);
+            drawCtx.fillRect(lx - 0.5*size, ly, 2*size, 1*size);
+        };
+        drawLight(drawX,          drawY + 6*size, xmasColors[tick % 4]);
+        drawLight(drawX + 3*size, drawY + 8*size, xmasColors[(tick + 1) % 4]);
+        drawLight(drawX + 6*size, drawY + 9*size, xmasColors[(tick + 2) % 4]);
+        drawLight(drawX + 9*size, drawY + 7*size, xmasColors[(tick + 3) % 4]);
+    }
+
+    // --- angel: нимб ---
+    if (skin.hat === 'halo') {
+        const floatY = Math.sin(gameTime * 0.15) * 2;
+        drawCtx.fillStyle = '#f1c40f';
+        drawCtx.fillRect(drawX + 2*size, drawY - 7*size + floatY, 6*size, 1*size);
+        drawCtx.fillRect(drawX + 2*size, drawY - 5*size + floatY, 6*size, 1*size);
+        drawCtx.fillRect(drawX + 1*size, drawY - 6*size + floatY, 1*size, 1*size);
+        drawCtx.fillRect(drawX + 8*size, drawY - 6*size + floatY, 1*size, 1*size);
+    }
+
+    // --- angel: переднее крыло (правое) ---
+    if (skin.acc === 'wings') {
+        const flap = Math.sin(gameTime * (isJumping ? 0.8 : 0.5)) * 2;
+        if (isJumping) {
             drawDetailedWing(drawX + 1*size, drawY + 4*size + flap, false, true);
-        } else { 
-            const wx = drawX - 3 * size, wy = drawY + 5 * size + flap; 
-            drawCtx.fillStyle = "#b2bec3"; drawCtx.fillRect(wx + 1 * size, wy, 3 * size, 1 * size); drawCtx.fillRect(wx, wy + 1 * size, 1 * size, 4 * size); drawCtx.fillRect(wx + 4 * size, wy + 1 * size, 1 * size, 2 * size); drawCtx.fillRect(wx + 3 * size, wy + 3 * size, 1 * size, 2 * size); drawCtx.fillRect(wx + 1 * size, wy + 4 * size, 1 * size, 1 * size); drawCtx.fillStyle = "#ffffff"; drawCtx.fillRect(wx + 1 * size, wy + 1 * size, 3 * size, 2 * size); drawCtx.fillRect(wx + 1 * size, wy + 3 * size, 2 * size, 1 * size); drawCtx.fillStyle = "#b2bec3"; drawCtx.fillRect(wx + 2 * size, wy + 1.5 * size, 1 * size, 0.5 * size); drawCtx.fillRect(wx + 1.5 * size, wy + 3 * size, 1 * size, 0.5 * size); 
-        } 
-    }
-    if (skin.hat === 'witch') { drawCtx.fillStyle = "#2c2c2c"; drawCtx.fillRect(drawX - 2 * size, drawY - 1 * size, 14 * size, 1.5 * size); drawCtx.fillRect(drawX + 1 * size, drawY - 3 * size, 8 * size, 2 * size); drawCtx.fillStyle = "#8e44ad"; drawCtx.fillRect(drawX + 1 * size, drawY - 2.5 * size, 8 * size, 1 * size); drawCtx.fillStyle = "#2c2c2c"; drawCtx.fillRect(drawX + 2 * size, drawY - 5 * size, 6 * size, 2 * size); drawCtx.fillRect(drawX + 3 * size, drawY - 7 * size, 4 * size, 2 * size); drawCtx.fillRect(drawX + 4 * size, drawY - 8 * size, 2 * size, 1 * size); }
-    if (skin.hat === 'plumbob') { let bobY = drawY - 12 * size + Math.sin(gameTime * 0.1) * 3, bobX = drawX + 3.5 * size; drawCtx.fillStyle = "#2ecc71"; drawCtx.beginPath(); drawCtx.moveTo(bobX + 1.5 * size, bobY); drawCtx.lineTo(bobX + 3 * size, bobY + 3 * size); drawCtx.lineTo(bobX, bobY + 3 * size); drawCtx.fill(); drawCtx.fillStyle = "#27ae60"; drawCtx.beginPath(); drawCtx.moveTo(bobX, bobY + 3 * size); drawCtx.lineTo(bobX + 3 * size, bobY + 3 * size); drawCtx.lineTo(bobX + 1.5 * size, bobY + 6 * size); drawCtx.fill(); }
-    if (skin.hat === 'frog') { const green = "#badc58", white = "#ffffff", black = "#000000"; drawCtx.fillStyle = green; drawCtx.fillRect(drawX - 1 * size, drawY - 1.5 * size, 12 * size, 3.5 * size); drawCtx.fillRect(drawX - 1.5 * size, drawY + 1 * size, 3 * size, 5 * size); drawCtx.fillRect(drawX + 8.5 * size, drawY + 1 * size, 3 * size, 5 * size); drawCtx.fillRect(drawX + 1 * size, drawY + 4.5 * size, 8 * size, 1.5 * size); drawCtx.fillStyle = green; drawCtx.fillRect(drawX + 0.5 * size, drawY - 4 * size, 3.5 * size, 3 * size); drawCtx.fillStyle = white; drawCtx.fillRect(drawX + 1 * size, drawY - 3.5 * size, 2.5 * size, 2.5 * size); drawCtx.fillStyle = black; drawCtx.fillRect(drawX + 2 * size, drawY - 3 * size, 1 * size, 1 * size); drawCtx.fillStyle = green; drawCtx.fillRect(drawX + 6 * size, drawY - 4 * size, 3.5 * size, 3 * size); drawCtx.fillStyle = white; drawCtx.fillRect(drawX + 6.5 * size, drawY - 3.5 * size, 2.5 * size, 2.5 * size); drawCtx.fillStyle = black; drawCtx.fillRect(drawX + 7 * size, drawY - 3 * size, 1 * size, 1 * size); drawCtx.fillStyle = "#2d3436"; drawCtx.fillRect(drawX + 4 * size, drawY - 0.5 * size, 0.5 * size, 0.5 * size); drawCtx.fillRect(drawX + 5.5 * size, drawY - 0.5 * size, 0.5 * size, 0.5 * size); }
-    if (skin.hat === 'samurai') {
-        const hatY = drawY - 4 * size;
-        drawCtx.fillStyle = "rgba(0,0,0,0.55)"; drawCtx.fillRect(drawX + 0 * size, drawY - 0.5 * size, 10 * size, 3 * size);
-        drawCtx.fillStyle = "#1a1008"; drawCtx.fillRect(drawX - 5 * size, hatY + 0.5 * size, 20 * size, 3 * size);
-        drawCtx.fillStyle = "#2d1f0e"; drawCtx.fillRect(drawX - 4 * size, hatY, 18 * size, 2.5 * size);
-        drawCtx.fillStyle = "#4a3015"; drawCtx.fillRect(drawX - 3 * size, hatY, 16 * size, 0.8 * size);
-        drawCtx.fillStyle = "#1a1008"; for (let ti = 0; ti < 9; ti++) { drawCtx.fillRect(drawX - 3 * size + ti * 2 * size, hatY + 0.8 * size, 0.4 * size, 1.8 * size); }
-        drawCtx.fillStyle = "#2d1f0e"; drawCtx.fillRect(drawX + 0 * size, hatY - 1.5 * size, 10 * size, 2 * size);
-        drawCtx.fillStyle = "#261a0a"; drawCtx.fillRect(drawX + 1 * size, hatY - 3.5 * size, 8 * size, 2 * size);
-        drawCtx.fillStyle = "#1e1206"; drawCtx.fillRect(drawX + 2 * size, hatY - 5.5 * size, 6 * size, 2 * size); drawCtx.fillRect(drawX + 3 * size, hatY - 7 * size, 4 * size, 1.5 * size); drawCtx.fillRect(drawX + 4 * size, hatY - 8.2 * size, 2 * size, 1.2 * size); drawCtx.fillRect(drawX + 4.5 * size, hatY - 9 * size, 1 * size, 1 * size);
-        drawCtx.fillStyle = "#0a0500"; drawCtx.fillRect(drawX + 0 * size, hatY - 1.5 * size, 10 * size, 0.8 * size);
-        drawCtx.fillStyle = "#8b0000"; drawCtx.fillRect(drawX + 1 * size, hatY - 1 * size, 8 * size, 0.5 * size);
+        } else {
+            const wx = drawX - 3*size, wy = drawY + 5*size + flap;
+            drawCtx.fillStyle = '#b2bec3';
+            drawCtx.fillRect(wx + 1*size, wy,          3*size, 1*size);
+            drawCtx.fillRect(wx,          wy + 1*size,  1*size, 4*size);
+            drawCtx.fillRect(wx + 4*size, wy + 1*size,  1*size, 2*size);
+            drawCtx.fillRect(wx + 3*size, wy + 3*size,  1*size, 2*size);
+            drawCtx.fillRect(wx + 1*size, wy + 4*size,  1*size, 1*size);
+            drawCtx.fillStyle = '#ffffff';
+            drawCtx.fillRect(wx + 1*size, wy + 1*size,  3*size, 2*size);
+            drawCtx.fillRect(wx + 1*size, wy + 3*size,  2*size, 1*size);
+            drawCtx.fillStyle = '#b2bec3';
+            drawCtx.fillRect(wx + 2*size, wy + 1.5*size, 1*size, 0.5*size);
+            drawCtx.fillRect(wx + 1.5*size, wy + 3*size, 1*size, 0.5*size);
+        }
     }
 
-    // LEGS
-    let legColor = (skin.body === '#fff' || skin.type === 'calico' || skin.nameKey === 'skins.sims') ? "#ccc" : (skin.body === '#2c3e50' ? "#34495e" : (skin.type === 'cyber' ? '#1e272e' : (skin.type === 'tabby' ? skin.body : "#fff")));
-    if (skin.id === 'newyear') legColor = "#ffeaa7"; 
-    else if (skin.id === 'angel') legColor = "#dcdde1"; 
-    else if (skin.id === 'samurai') legColor = "#1a1a1a"; 
-    // Fullmetal Legs: Black
-    else if (skin.type === 'foxcoat') legColor = "#1e272e";
-    
-    drawCtx.fillStyle = legColor;
-    let legOff = (isMoving && Math.floor(gameTime / 10) % 2 === 0) ? 1 * size : 0;
-    drawCtx.fillRect(drawX + 2 * size, drawY + 13 * size - legOff, 2 * size, 2 * size);
-    drawCtx.fillRect(drawX + 7 * size, drawY + 13 * size + legOff, 2 * size, 2 * size);
+    // --- witch: ведьминская шляпа ---
+    if (skin.hat === 'witch') {
+        drawCtx.fillStyle = '#2c2c2c';
+        drawCtx.fillRect(drawX - 2*size, drawY - 1*size,  14*size, 1.5*size);
+        drawCtx.fillRect(drawX + 1*size, drawY - 3*size,   8*size, 2*size);
+        drawCtx.fillStyle = '#8e44ad';
+        drawCtx.fillRect(drawX + 1*size, drawY - 2.5*size, 8*size, 1*size);
+        drawCtx.fillStyle = '#2c2c2c';
+        drawCtx.fillRect(drawX + 2*size, drawY - 5*size,   6*size, 2*size);
+        drawCtx.fillRect(drawX + 3*size, drawY - 7*size,   4*size, 2*size);
+        drawCtx.fillRect(drawX + 4*size, drawY - 8*size,   2*size, 1*size);
+    }
+
+    // --- sims: плумбоб ---
+    if (skin.hat === 'plumbob') {
+        const bobY = drawY - 12*size + Math.sin(gameTime * 0.1) * 3;
+        const bobX = drawX + 3.5*size;
+        drawCtx.fillStyle = '#2ecc71';
+        drawCtx.beginPath();
+        drawCtx.moveTo(bobX + 1.5*size, bobY);
+        drawCtx.lineTo(bobX + 3*size,   bobY + 3*size);
+        drawCtx.lineTo(bobX,            bobY + 3*size);
+        drawCtx.fill();
+        drawCtx.fillStyle = '#27ae60';
+        drawCtx.beginPath();
+        drawCtx.moveTo(bobX,          bobY + 3*size);
+        drawCtx.lineTo(bobX + 3*size, bobY + 3*size);
+        drawCtx.lineTo(bobX + 1.5*size, bobY + 6*size);
+        drawCtx.fill();
+    }
+
+    // --- froggy: шапка-лягушка ---
+    if (skin.hat === 'frog') {
+        const green = '#badc58', white = '#ffffff', black = '#000000';
+        drawCtx.fillStyle = green;
+        drawCtx.fillRect(drawX - 1*size,   drawY - 1.5*size, 12*size, 3.5*size);
+        drawCtx.fillRect(drawX - 1.5*size, drawY + 1*size,    3*size, 5*size);
+        drawCtx.fillRect(drawX + 8.5*size, drawY + 1*size,    3*size, 5*size);
+        drawCtx.fillRect(drawX + 1*size,   drawY + 4.5*size,  8*size, 1.5*size);
+        // Левый глаз лягушки
+        drawCtx.fillStyle = green;
+        drawCtx.fillRect(drawX + 0.5*size, drawY - 4*size, 3.5*size, 3*size);
+        drawCtx.fillStyle = white;
+        drawCtx.fillRect(drawX + 1*size,   drawY - 3.5*size, 2.5*size, 2.5*size);
+        drawCtx.fillStyle = black;
+        drawCtx.fillRect(drawX + 2*size,   drawY - 3*size, 1*size, 1*size);
+        // Правый глаз лягушки
+        drawCtx.fillStyle = green;
+        drawCtx.fillRect(drawX + 6*size,   drawY - 4*size, 3.5*size, 3*size);
+        drawCtx.fillStyle = white;
+        drawCtx.fillRect(drawX + 6.5*size, drawY - 3.5*size, 2.5*size, 2.5*size);
+        drawCtx.fillStyle = black;
+        drawCtx.fillRect(drawX + 7*size,   drawY - 3*size, 1*size, 1*size);
+        // Ноздри
+        drawCtx.fillStyle = '#2d3436';
+        drawCtx.fillRect(drawX + 4*size,   drawY - 0.5*size, 0.5*size, 0.5*size);
+        drawCtx.fillRect(drawX + 5.5*size, drawY - 0.5*size, 0.5*size, 0.5*size);
+    }
+
+    // --- samurai: шлем-кабуто ---
+    if (skin.hat === 'samurai') {
+        const hatY = drawY - 2*size;
+        // Тень под шлемом
+        drawCtx.fillStyle = 'rgba(0,0,0,0.55)';
+        drawCtx.fillRect(drawX, drawY - 0.5*size, 10*size, 3*size);
+        // Поля (широкий флэнж)
+        drawCtx.fillStyle = '#1a1008';
+        drawCtx.fillRect(drawX - 5*size, hatY + 0.5*size, 20*size, 3*size);
+        drawCtx.fillStyle = '#2d1f0e';
+        drawCtx.fillRect(drawX - 4*size, hatY, 18*size, 2.5*size);
+        drawCtx.fillStyle = '#4a3015';
+        drawCtx.fillRect(drawX - 3*size, hatY, 16*size, 0.8*size);
+        // Ламинарные пластины
+        drawCtx.fillStyle = '#1a1008';
+        for (let ti = 0; ti < 9; ti++)
+            drawCtx.fillRect(drawX - 3*size + ti * 2*size, hatY + 0.8*size, 0.4*size, 1.8*size);
+        // Купол шлема
+        drawCtx.fillStyle = '#2d1f0e';
+        drawCtx.fillRect(drawX - 2*size, hatY - 0.5*size, 14*size, 1*size);
+        drawCtx.fillRect(drawX - 1*size, hatY - 1.5*size, 12*size, 1*size);
+        drawCtx.fillStyle = '#261a0a';
+        drawCtx.fillRect(drawX + 1*size, hatY - 3*size, 8*size, 2*size);
+        drawCtx.fillStyle = '#1e1206';
+        drawCtx.fillRect(drawX + 2*size, hatY - 4*size, 6*size, 2*size);
+        drawCtx.fillRect(drawX + 3*size, hatY - 5*size,   4*size, 1.5*size);
+        drawCtx.fillRect(drawX + 4*size, hatY - 6*size, 2*size, 1.2*size);
+        drawCtx.fillRect(drawX + 4.5*size, hatY - 7*size, 1*size, 1*size);
+        // Обводка
+        drawCtx.fillStyle = '#0a0500';
+        drawCtx.fillRect(drawX, hatY - 1.5*size, 10*size, 0.8*size);
+        // Красная лента
+        drawCtx.fillStyle = '#8b0000';
+        drawCtx.fillRect(drawX - 1*size, hatY - 1*size, 12*size, 0.5*size);
+    }
+
+    // ----------------------------------------------------------------
+    // 9.5 КАТАНА (samurai — рисуется НА ПЕРЕДНЕМ ПЛАНЕ, поверх тела)
+    // ----------------------------------------------------------------
+    if (skin.acc === 'katana') {
+        const bob = Math.sin(gameTime * 0.15);
+        drawCtx.save();
+        drawCtx.translate(drawX - 2 * size, drawY + 10 * size + bob);
+        drawCtx.rotate(1.2);
+
+        // Лезвие
+        drawCtx.fillStyle = '#1a1a1a';
+        drawCtx.fillRect(-1 * size, -6 * size, 2.5 * size, 10 * size);
+        drawCtx.fillRect(-1 * size, -6 * size, 1.7 * size, 11 * size);
+        drawCtx.fillRect(-1 * size, -6 * size, 0.9 * size, 12 * size);
+        // Кровосток
+        drawCtx.fillStyle = '#8b0000';
+        // drawCtx.fillRect(-1.2 * size, -6 * size, 0.5 * size, 10 * size);
+        drawCtx.fillRect( 1.2 * size, -6 * size, 0.5 * size, 9 * size);
+        // Гарда
+        drawCtx.fillStyle = '#ffd700';
+        drawCtx.fillRect(-2 * size, -6.5 * size, 4.5 * size, 1.5 * size);
+        drawCtx.fillStyle = '#8b0000';
+        drawCtx.fillRect(-0.5 * size, -6.3 * size, 1.5 * size, 1 * size);
+        // Рукоять
+        drawCtx.fillStyle = '#0a0a0a';
+        drawCtx.fillRect(-0.8 * size, -9 * size, 2 * size, 3 * size);
+        drawCtx.fillStyle = '#333';
+        for (let k = 0; k < 3; k++)
+            drawCtx.fillRect(-0.5 * size, -8.5 * size + k * size, 1.2 * size, 0.3 * size);
+        // Навершие
+        drawCtx.fillStyle = '#ffd700';
+        drawCtx.fillRect(-1 * size, -10 * size, 2.5 * size, 1.5 * size);
+        // Аура при движении
+        // if (isMoving) {
+        //     drawCtx.fillStyle = 'rgba(255,0,0,0.15)';
+        //     drawCtx.fillRect(-2.5 * size, -7 * size, 5.5 * size, 16 * size);
+        //     drawCtx.fillStyle = 'rgba(255,0,0,0.3)';
+        //     drawCtx.fillRect(-1.5 * size, -6 * size, 3.5 * size, 14 * size);
+        // }
+        drawCtx.restore();
+    }
+
+    // ----------------------------------------------------------------
+    // 10. НОГИ
+    // ----------------------------------------------------------------
+    {
+        let legColor;
+
+        // --- samurai ---
+        if (skin.id === 'samurai')
+            legColor = '#1a1a1a';
+        // --- foxcoat (Edward): чёрные штаны ---
+        else if (skin.type === 'foxcoat')
+            legColor = '#1e272e';
+        // --- newyear: жёлтые лапки ---
+        else if (skin.id === 'newyear')
+            legColor = '#ffeaa7';
+        // --- angel: светлые лапки ---
+        else if (skin.id === 'angel')
+            legColor = '#dcdde1';
+        // --- cyber: тёмные ---
+        else if (skin.type === 'cyber')
+            legColor = '#1e272e';
+        // --- calico / sims / белые тела: серые лапки ---
+        else if (skin.body === '#fff' || skin.type === 'calico' || skin.nameKey === 'skins.sims')
+            legColor = '#ccc';
+        // --- тёмные тела (#2c3e50): чуть светлее ---
+        else if (skin.body === '#2c3e50')
+            legColor = '#34495e';
+        // --- tabby: цвет тела ---
+        else if (skin.type === 'tabby')
+            legColor = skin.body;
+        // --- остальные ---
+        else
+            legColor = '#fff';
+
+        drawCtx.fillStyle = legColor;
+        const legOff = (isMoving && Math.floor(gameTime / 10) % 2 === 0) ? size : 0;
+        drawCtx.fillRect(drawX + 2*size, drawY + 13*size - legOff, 2*size, 2*size);
+        drawCtx.fillRect(drawX + 7*size, drawY + 13*size + legOff, 2*size, 2*size);
+    }
+
     drawCtx.restore();
 }
 
@@ -380,8 +783,8 @@ function drawWorld() {
     drawForest(ctx); const renderWidth = canvas.width / zoomFactor;
     terrain.forEach(block => {
         let renderMargin = block.isCastleCenter ? 400 : 0; if (block.x > camera.x + renderWidth + renderMargin || block.x + block.w < camera.x - renderMargin) return;
-        if (currentDifficulty === 'infinity') { ctx.fillStyle = "#1a1a1a"; ctx.fillRect(block.x, block.y, block.w, block.h); ctx.fillStyle = "#2d3436"; ctx.fillRect(block.x, block.y, block.w, 15); ctx.fillStyle = "#636e72"; ctx.fillRect(block.x, block.y + 12, block.w, 3); ctx.fillStyle = "#b2bec3"; ctx.fillRect(block.x + 10, block.y + 30, 4, 4); }
-        else { ctx.fillStyle = "#6d4c41"; ctx.fillRect(block.x, block.y, block.w, block.h); ctx.fillStyle = "#66bb6a"; ctx.fillRect(block.x, block.y, block.w, 15); ctx.fillStyle = "#43a047"; ctx.fillRect(block.x, block.y + 12, block.w, 3); ctx.fillStyle = "#5d4037"; ctx.fillRect(block.x + 10, block.y + 30, 6, 6); }
+        if (currentDifficulty === 'infinity') { ctx.fillStyle = "#1a1a1a"; ctx.fillRect(block.x, block.y, block.w + 1, block.h); ctx.fillStyle = "#2d3436"; ctx.fillRect(block.x, block.y, block.w + 1, 15); ctx.fillStyle = "#636e72"; ctx.fillRect(block.x, block.y + 12, block.w + 1, 3); ctx.fillStyle = "#b2bec3"; ctx.fillRect(block.x + 10, block.y + 30, 4, 4); }
+        else { ctx.fillStyle = "#6d4c41"; ctx.fillRect(block.x, block.y, block.w + 1, block.h); ctx.fillStyle = "#66bb6a"; ctx.fillRect(block.x, block.y, block.w + 1, 15); ctx.fillStyle = "#43a047"; ctx.fillRect(block.x, block.y + 12, block.w + 1, 3); ctx.fillStyle = "#5d4037"; ctx.fillRect(block.x + 10, block.y + 30, 6, 6); }
         if (block.type === 'castle_area' && block.isCastleCenter) drawCastle(ctx, block.x, block.y);
     });
     items.forEach(item => {
@@ -753,9 +1156,15 @@ function drawBackground(vOffset) {
         if (currentDifficulty !== 'easy') { drawRainbow(ctx, camera.x, vOffset); drawSun(ctx, camera.x + renderWidth - 150, -vOffset + 100, 40, "#f1c40f", "#f39c12"); if (currentDifficulty === 'hard') drawSun(ctx, camera.x + renderWidth - 250, -vOffset + 180, 20, "#ecf0f1", "#e67e22"); }
         else drawSun(ctx, camera.x + renderWidth - 150, -vOffset + 100, 40, "#f1c40f", "#f39c12");
     }
+    // Облака: плывут справа налево, начало — за правым краем экрана
+    const cloudCycleW = renderWidth + 200; // полный цикл чуть шире экрана
+    const cloudScroll1 = (gameTime * 0.4) % cloudCycleW;
+    const cloudScroll2 = (gameTime * 0.25 + cloudCycleW * 0.55) % cloudCycleW;
+    const cloud1X = camera.x + renderWidth - cloudScroll1;
+    const cloud2X = camera.x + renderWidth - cloudScroll2;
     if (currentDifficulty === 'infinity') ctx.fillStyle = "rgba(0,0,0,0.5)"; else ctx.fillStyle = "rgba(255,255,255,0.6)";
-    let cloudX1 = (camera.x * 0.9 + gameTime * 0.5) % 2000, cloudX2 = (camera.x * 0.8 + gameTime * 0.3 + 1000) % 2000;
-    ctx.fillRect(camera.x + 200 - (cloudX1 % renderWidth), -vOffset + 100, 100, 30); ctx.fillRect(camera.x + 500 - (cloudX2 % renderWidth), -vOffset + 150, 80, 25);
+    ctx.fillRect(cloud1X, -vOffset + 100, 100, 30);
+    ctx.fillRect(cloud2X, -vOffset + 150, 80, 25);
     if (currentDifficulty !== 'easy') pixies.forEach(pixie => pixie.draw(ctx));
     if (godMode) { ctx.fillStyle = "red"; ctx.font = "20px 'Press Start 2P'"; ctx.fillText("GOD MODE ON", camera.x + 20, -vOffset + 80); }
 }
@@ -1121,7 +1530,7 @@ function loop(timestamp) {
     const groundSyncOffset = (net.isOnline && !net.isHost && net.worldGroundBase > 0)
         ? (canvas.height - 100) - net.worldGroundBase
         : 0;
-    
+
     // ============================================
     // CLEAR CANVAS - Prepare for new frame
     // Очистка канваса перед новым кадром
@@ -1152,8 +1561,12 @@ function loop(timestamp) {
     // RENDER GAME
     // Отрисовка игры
     // ============================================
-    ctx.translate(-camera.x, verticalOffset + groundSyncOffset); 
-    drawBackground(verticalOffset + groundSyncOffset); // Фон
+    // FIX SEAMS: округляем камеру чтобы блоки земли всегда рисовались
+    // в целых пикселях → никаких разрывов при дробных значениях camera.x
+    const snapCamX = Math.round(camera.x);
+    const snapVOff  = Math.round(verticalOffset + groundSyncOffset);
+    ctx.translate(-snapCamX, snapVOff); 
+    drawBackground(snapVOff); // Фон
     drawWorld(); // Мир (блоки, предметы)
     if (npcCat) npcCat.draw(ctx); // NPC
     cats.forEach(c => c.draw()); // Коты
