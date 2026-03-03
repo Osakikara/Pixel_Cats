@@ -1745,7 +1745,7 @@ updatePlayerModeUI = function() {
 
 window.addEventListener('keydown', (e) => {
     if (keys.hasOwnProperty(e.code) || e.code === 'Space') keys[e.code] = true;
-    if (e.code === 'KeyG') godMode = !godMode;
+    // if (e.code === 'KeyG') godMode = !godMode; //Это только для проверки замка существует! Все рекорды должны быть честными!
     if (e.key === 'Escape') {
         if (isPlaying || isGameOver || isWin) showMenu();
         else if (bossBattleActive) showBossScreen(true);
