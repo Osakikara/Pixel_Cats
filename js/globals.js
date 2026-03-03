@@ -33,7 +33,7 @@ let _bgGrad = null, _bgGradDiff = null, _bgGradH = 0, _bgGradOff = null;
 let _sunCaches = {};
 let _rainbowCache = null, _rainbowCacheW = 0, _rainbowCacheH = 0;
 let _behelitCache = null, _behelitCacheR = 0;
-let _forestCache = null, _forestCacheH = 0;
+let _forestCache = null, _forestCacheH = 0, _forestCacheGround = 0;
 
 function toggleMobileMode() {
     forceMobile = !forceMobile;
@@ -95,7 +95,7 @@ function checkMobile() {
 
 function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; checkMobile();
     // Invalidate screen-size-dependent caches
-    _bgGrad = null; _rainbowCache = null; _forestCache = null; }
+    _bgGrad = null; _rainbowCache = null; _forestCache = null; _forestCacheGround = 0; }
 window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
 let gameTime = 0, score = 0, isGameOver = false, isPlaying = false, isWin = false;

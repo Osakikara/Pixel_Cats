@@ -153,7 +153,7 @@ const AccountSystem = (() => {
         if (!_ready) return Promise.reject('Firebase не подключён');
         var nameErr = _validateName(displayName);
         if (nameErr) return Promise.reject(nameErr);
-        if (password.length < 6) return Promise.reject('Пароль минимум 6 символов');
+        if (password.length < 6) return Promise.reject(t('accPassMin'));
 
         return _auth.createUserWithEmailAndPassword(email.trim(), password)
             .then(function(cred) {
@@ -241,7 +241,7 @@ const AccountSystem = (() => {
                 updatedAt:     Date.now()
             });
         })
-        .then(function(r) { if (r !== null) { console.log('[Accounts] leaderboard saved'); _showToast('🏆 Рекорд сохранён!'); } })
+        .then(function(r) { if (r !== null) { console.log('[Accounts] leaderboard saved'); _showToast(t('accToastScore')); } })
         .catch(function(e) { console.error('[Accounts] leaderboard error:', e); });
     }
 
@@ -264,15 +264,15 @@ const AccountSystem = (() => {
 
     // Manual sync from profile screen
     function manualSync() {
-        if (!_user) { _showToast('Войди в аккаунт!', '#e74c3c'); return; }
+        if (!_user) { _showToast(t('accToastNeedLogin'), '#e74c3c'); return; }
         var btn = document.getElementById('btn-manual-sync');
-        if (btn) { btn.disabled = true; btn.textContent = '⏳ Синхронизация...'; }
+        if (btn) { btn.disabled = true; btn.textContent = t('accSyncing'); }
         _push(_user.uid).then(function() {
-            _showToast('☁️ Прогресс сохранён в облаке!');
-            if (btn) { btn.disabled = false; btn.textContent = '☁️ СОХРАНИТЬ В ОБЛАКО'; }
+            _showToast(t('accToastCloud'));
+            if (btn) { btn.disabled = false; btn.textContent = t('accSaveCloud'); }
         }).catch(function() {
-            _showToast('Ошибка синхронизации', '#e74c3c');
-            if (btn) { btn.disabled = false; btn.textContent = '☁️ СОХРАНИТЬ В ОБЛАКО'; }
+            _showToast(t('accToastSyncErr'), '#e74c3c');
+            if (btn) { btn.disabled = false; btn.textContent = t('accSaveCloud'); }
         });
     }
 
@@ -287,28 +287,28 @@ const AccountSystem = (() => {
             el.textContent = '👤 ' + _profile.name;
             el.style.color = '#ffd700';
         } else {
-            el.textContent = '👤 ВОЙТИ';
+            el.textContent = t('accLoginBadge');
             el.style.color = '#aaa';
         }
     }
 
     function _validateName(name) {
         var n = String(name || '').trim();
-        if (n.length < 2)  return 'Имя слишком короткое (мин. 2)';
-        if (n.length > 16) return 'Имя слишком длинное (макс. 16)';
+        if (n.length < 2)  return t('accNameShort');
+        if (n.length > 16) return t('accNameLong');
         return null;
     }
 
     function _authErrMsg(code) {
         var map = {
-            'auth/email-already-in-use':   'Этот email уже занят',
-            'auth/invalid-email':          'Некорректный email',
-            'auth/weak-password':          'Пароль слишком простой (мин. 6)',
+            'auth/email-already-in-use':   t('accErrEmailUsed'),
+            'auth/invalid-email':          t('accErrInvalidEmail'),
+            'auth/weak-password':          t('accErrWeakPass'),
             'auth/user-not-found':         'Пользователь не найден',
-            'auth/wrong-password':         'Неверный пароль',
+            'auth/wrong-password':         t('accErrWrongPass'),
             'auth/too-many-requests':      'Слишком много попыток. Подожди',
             'auth/network-request-failed': 'Нет соединения с интернетом',
-            'auth/invalid-credential':     'Неверный email или пароль'
+            'auth/invalid-credential':     t('accErrInvalidCred')
         };
         return map[code] || ('Ошибка: ' + (code || 'неизвестная'));
     }
@@ -333,15 +333,15 @@ const AccountSystem = (() => {
 
     function _timeSince(ts) {
         var s = Math.floor((Date.now() - ts) / 1000);
-        if (s < 60)   return s + ' сек. назад';
-        if (s < 3600) return Math.floor(s/60) + ' мин. назад';
-        return Math.floor(s/3600) + ' ч. назад';
+        if (s < 60)   return s + ' ' + t('accSyncAgoSec');
+        if (s < 3600) return Math.floor(s/60) + ' ' + t('accSyncAgoMin');
+        return Math.floor(s/3600) + ' ' + t('accSyncAgoHour');
     }
 
     function _diffBadges() {
-        var s = '✅Лёгкий';
-        if (hardUnlocked)     s += ' ✅Сложный';
-        if (megaHardUnlocked) s += ' ✅Мега';
+        var s = '✅' + t('accDiffEasy');
+        if (hardUnlocked)     s += ' ✅' + t('accDiffHard');
+        if (megaHardUnlocked) s += ' ✅' + t('accDiffMega');
         if (infinityUnlocked) s += ' ✅∞';
         return s;
     }
@@ -387,8 +387,8 @@ const AccountSystem = (() => {
         });
         var lb = document.getElementById('btn-do-login'),
             rb = document.getElementById('btn-do-register');
-        if (lb) { lb.disabled = false; lb.textContent = '▶ ВОЙТИ'; }
-        if (rb) { rb.disabled = false; rb.textContent = '✅ СОЗДАТЬ'; }
+        if (lb) { lb.disabled = false; lb.textContent = t('accLoginBtn'); }
+        if (rb) { rb.disabled = false; rb.textContent = t('accRegisterBtn'); }
     }
 
     function switchAuthTab(tab) { _authTab = tab; _renderAuthModal(); }
@@ -403,10 +403,10 @@ const AccountSystem = (() => {
         var pass  = document.getElementById('login-pass').value;
         var errEl = document.getElementById('auth-login-err');
         var btn   = document.getElementById('btn-do-login');
-        errEl.textContent = ''; btn.disabled = true; btn.textContent = '⏳ Входим...';
+        errEl.textContent = ''; btn.disabled = true; btn.textContent = t('accLoggingIn');
         login(email, pass)
-            .then(function() { _showToast('✅ Вход выполнен! Прогресс загружен ☁️'); closeAuthModal(); })
-            .catch(function(e) { errEl.textContent = _authErrMsg(e.code || e); btn.disabled = false; btn.textContent = '▶ ВОЙТИ'; });
+            .then(function() { _showToast(t('accToastLogin')); closeAuthModal(); })
+            .catch(function(e) { errEl.textContent = _authErrMsg(e.code || e); btn.disabled = false; btn.textContent = t('accLoginBtn'); });
     }
 
     function doRegister() {
@@ -415,10 +415,10 @@ const AccountSystem = (() => {
         var pass  = document.getElementById('reg-pass').value;
         var errEl = document.getElementById('auth-reg-err');
         var btn   = document.getElementById('btn-do-register');
-        errEl.textContent = ''; btn.disabled = true; btn.textContent = '⏳ Создаём...';
+        errEl.textContent = ''; btn.disabled = true; btn.textContent = t('accCreating');
         register(email, pass, name)
-            .then(function() { _showToast('✅ Аккаунт создан! Прогресс загружен ☁️'); closeAuthModal(); })
-            .catch(function(e) { errEl.textContent = _authErrMsg(e.code || e); btn.disabled = false; btn.textContent = '✅ СОЗДАТЬ'; });
+            .then(function() { _showToast(t('accToastRegister')); closeAuthModal(); })
+            .catch(function(e) { errEl.textContent = _authErrMsg(e.code || e); btn.disabled = false; btn.textContent = t('accRegisterBtn'); });
     }
 
     // ════════════════════════════════════════════════════════════
@@ -434,18 +434,18 @@ const AccountSystem = (() => {
         if (inp && _profile && _profile.name) inp.value = _profile.name;
         document.getElementById('acc-name-error').textContent = '';
         var btn = document.getElementById('btn-save-profile');
-        if (btn) { btn.disabled = false; btn.textContent = '✅ СОХРАНИТЬ ИМЯ'; }
+        if (btn) { btn.disabled = false; btn.textContent = t('accSaveName'); }
         var stats = document.getElementById('acc-stats-block');
         if (stats) {
-            var syncAgo = _lastSyncTime ? _timeSince(_lastSyncTime) : 'никогда';
+            var syncAgo = _lastSyncTime ? _timeSince(_lastSyncTime) : t('accSyncNever');
             stats.innerHTML =
                 '<div class="acc-stat-row"><span>Email</span><span style="color:#aaa;font-size:7px;">' + _escHtml(_user.email) + '</span></div>' +
-                '<div class="acc-stat-row"><span>Лучший счёт</span><span>🏆 ' + highScore + '</span></div>' +
-                '<div class="acc-stat-row"><span>Бесконечность</span><span>∞ ' + infinityHighScore + '</span></div>' +
-                '<div class="acc-stat-row"><span>Рыбки</span><span>🟠' + fishWallet.orange + ' 💙' + fishWallet.blue + ' ⭐' + fishWallet.gold + '</span></div>' +
-                '<div class="acc-stat-row"><span>Скины</span><span>🎨 ' + unlockedSkins.length + '/' + SKINS.length + '</span></div>' +
-                '<div class="acc-stat-row"><span>Сложности</span><span style="font-size:7px;">' + _diffBadges() + '</span></div>' +
-                '<div class="acc-stat-row"><span>Синхронизация</span><span style="font-size:7px;color:#888;">' + syncAgo + '</span></div>';
+                '<div class="acc-stat-row"><span>' + t('accStatBest') + '</span><span>🏆 ' + highScore + '</span></div>' +
+                '<div class="acc-stat-row"><span>' + t('accStatInfinity') + '</span><span>∞ ' + infinityHighScore + '</span></div>' +
+                '<div class="acc-stat-row"><span>' + t('accStatFish') + '</span><span>🟠' + fishWallet.orange + ' 💙' + fishWallet.blue + ' ⭐' + fishWallet.gold + '</span></div>' +
+                '<div class="acc-stat-row"><span>' + t('accStatSkins') + '</span><span>🎨 ' + unlockedSkins.length + '/' + SKINS.length + '</span></div>' +
+                '<div class="acc-stat-row"><span>' + t('accStatDiffs') + '</span><span style="font-size:7px;">' + _diffBadges() + '</span></div>' +
+                '<div class="acc-stat-row"><span>' + t('accStatSync') + '</span><span style="font-size:7px;color:#888;">' + syncAgo + '</span></div>';
         }
     }
 
@@ -464,8 +464,8 @@ const AccountSystem = (() => {
         errEl.textContent = ''; btn.disabled = true; btn.textContent = '⏳ Сохраняем...';
         updateDisplayName(input.value)
             .then(function() { return _push(_user.uid); })
-            .then(function() { _showToast('✅ Имя и прогресс сохранены ☁️'); closeProfileModal(); })
-            .catch(function(e) { errEl.textContent = String(e); btn.disabled = false; btn.textContent = '✅ СОХРАНИТЬ ИМЯ'; });
+            .then(function() { _showToast(t('accToastSaved')); closeProfileModal(); })
+            .catch(function(e) { errEl.textContent = String(e); btn.disabled = false; btn.textContent = t('accSaveName'); });
     }
 
     // ════════════════════════════════════════════════════════════
@@ -499,12 +499,12 @@ const AccountSystem = (() => {
     function _loadAndRenderBoard() {
         var body = document.getElementById('acc-board-body');
         if (!body) return;
-        body.innerHTML = '<tr><td colspan="4" class="board-empty-cell">Загрузка...</td></tr>';
+        body.innerHTML = '<tr><td colspan="4" class="board-empty-cell">' + t('accBoardLoading') + '</td></tr>';
         if (!_ready) {
-            body.innerHTML = '<tr><td colspan="4" class="board-empty-cell" style="color:#e74c3c;">Нет соединения</td></tr>'; return;
+            body.innerHTML = '<tr><td colspan="4" class="board-empty-cell" style="color:#e74c3c;">' + t('accBoardNoConn') + '</td></tr>'; return;
         }
         fetchLeaderboard(_currentBoardMode).then(function(rows) {
-            if (!rows.length) { body.innerHTML = '<tr><td colspan="4" class="board-empty-cell">Пока нет рекордов 🎮</td></tr>'; return; }
+            if (!rows.length) { body.innerHTML = '<tr><td colspan="4" class="board-empty-cell">' + t('accBoardEmpty') + '</td></tr>'; return; }
             var field = _currentBoardMode === 'infinity' ? 'scoreInfinity' : 'scoreNormal';
             body.innerHTML = rows.map(function(r) {
                 var isMe  = _user && r.id === _user.uid;
@@ -512,12 +512,12 @@ const AccountSystem = (() => {
                 var skin  = SKINS.find(function(s) { return s.id === r.skinId; }) || SKINS[0];
                 return '<tr class="' + (isMe ? 'board-row-me' : '') + '">' +
                     '<td class="board-rank">' + medal + '</td>' +
-                    '<td class="board-name">' + _escHtml(r.name) + (isMe ? ' <span class="board-you-badge">ты</span>' : '') + '</td>' +
+                    '<td class="board-name">' + _escHtml(r.name) + (isMe ? ' <span class="board-you-badge">' + t('accBoardYou') + '</span>' : '') + '</td>' +
                     '<td class="board-skin">' + _skinEmoji(skin) + '</td>' +
                     '<td class="board-score">' + r[field] + '</td></tr>';
             }).join('');
         }).catch(function(e) {
-            body.innerHTML = '<tr><td colspan="4" class="board-empty-cell" style="color:#e74c3c;">Ошибка загрузки</td></tr>';
+            body.innerHTML = '<tr><td colspan="4" class="board-empty-cell" style="color:#e74c3c;">' + t('accBoardErr') + '</td></tr>';
             console.error('[Accounts] board error:', e);
         });
     }

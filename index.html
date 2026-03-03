@@ -9,8 +9,8 @@
     <meta name="theme-color" content="#202028">
 
     <title>Pixel Cats: Online v4.1</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="media/Pixelcats.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 
     <!-- PeerJS: пробуем несколько CDN по очереди, если один недоступен -->
@@ -141,7 +141,7 @@
                 <button class="btn acc-btn-profile" style="width:140px;padding:10px;font-size:9px;margin:0;" onclick="AccountSystem.openAuthModal()">
                     <span id="acc-profile-badge">👤 ВОЙТИ</span>
                 </button>
-                <button class="btn acc-btn-board" style="width:140px;padding:10px;font-size:9px;margin:0;" onclick="AccountSystem.openLeaderboard()">
+                <button id="btn-open-leaderboard" class="btn acc-btn-board" style="width:140px;padding:10px;font-size:9px;margin:0;" onclick="AccountSystem.openLeaderboard()">
                     🏆 РЕКОРДЫ
                 </button>
             </div>
@@ -516,45 +516,45 @@
         <div class="acc-card">
             <div class="acc-card-logo">PIXEL CATS</div>
             <div class="auth-tabs">
-                <button id="auth-tab-login"    class="auth-tab auth-tab-active" onclick="AccountSystem.switchAuthTab('login')">ВХОД</button>
+                <button id="auth-tab-login"    class="auth-tab auth-tab-active" onclick="AccountSystem.switchAuthTab('login')" id="auth-tab-login-lbl">ВХОД</button>
                 <button id="auth-tab-register" class="auth-tab"                 onclick="AccountSystem.switchAuthTab('register')">РЕГИСТРАЦИЯ</button>
             </div>
             <!-- LOGIN -->
             <div id="auth-section-login" class="auth-form">
                 <input id="login-email" type="email"    placeholder="Email"  class="acc-field" autocomplete="email">
-                <input id="login-pass"  type="password" placeholder="Пароль" class="acc-field" autocomplete="current-password"
+                <input id="login-pass"  type="password" id="login-pass-field" placeholder="Пароль" class="acc-field" autocomplete="current-password"
                        onkeydown="if(event.key==='Enter')AccountSystem.doLogin()">
                 <div id="auth-login-err" class="acc-field-err"></div>
                 <button id="btn-do-login" class="acc-action-btn acc-btn-green" onclick="AccountSystem.doLogin()">▶ ВОЙТИ</button>
             </div>
             <!-- REGISTER -->
             <div id="auth-section-register" class="auth-form" style="display:none;">
-                <input id="reg-name"  type="text"     placeholder="Имя (ник)"       class="acc-field" maxlength="16" autocomplete="username">
+                <input id="reg-name"  type="text"     id="reg-name-field" placeholder="Имя (ник)" class="acc-field" maxlength="16" autocomplete="username">
                 <input id="reg-email" type="email"    placeholder="Email"            class="acc-field" autocomplete="email">
-                <input id="reg-pass"  type="password" placeholder="Пароль (мин. 6)" class="acc-field" autocomplete="new-password"
+                <input id="reg-pass"  type="password" id="reg-pass-field" placeholder="Пароль (мин. 6)" class="acc-field" autocomplete="new-password"
                        onkeydown="if(event.key==='Enter')AccountSystem.doRegister()">
                 <div id="auth-reg-err" class="acc-field-err"></div>
                 <button id="btn-do-register" class="acc-action-btn acc-btn-green" onclick="AccountSystem.doRegister()">✅ СОЗДАТЬ</button>
             </div>
-            <button class="acc-action-btn acc-btn-dark" onclick="AccountSystem.closeAuthModal()">← НАЗАД</button>
+            <button id="btn-auth-back" class="acc-action-btn acc-btn-dark" onclick="AccountSystem.closeAuthModal()">← НАЗАД</button>
         </div>
     </div>
 
     <!-- ══ PROFILE MODAL ═══════════════════════════════════════ -->
     <div id="acc-profile-modal" class="acc-modal-wrap" style="display:none;">
         <div class="acc-card">
-            <div class="acc-card-title">👤 ПРОФИЛЬ</div>
+            <div id="acc-profile-title-el" class="acc-card-title">👤 ПРОФИЛЬ</div>
             <div class="acc-name-section">
-                <label class="acc-input-label">ИМЯ (2–16 символов)</label>
-                <input id="acc-name-input" maxlength="16" placeholder="Введи имя..." class="acc-field" autocomplete="off">
+                <label id="acc-name-label-el" class="acc-input-label">ИМЯ (2–16 символов)</label>
+                <input id="acc-name-input" maxlength="16" placeholder="Введи имя..." data-i18n-ph="accNamePlaceholder" class="acc-field" autocomplete="off">
                 <div id="acc-name-error" class="acc-field-err"></div>
             </div>
             <div id="acc-stats-block" class="acc-stats-block"></div>
             <div class="acc-profile-btns">
                 <button id="btn-save-profile" class="acc-action-btn acc-btn-green" onclick="AccountSystem.saveProfileFromUI()">✅ СОХРАНИТЬ ИМЯ</button>
                 <button id="btn-manual-sync"  class="acc-action-btn acc-btn-gold"  onclick="AccountSystem.manualSync()">☁️ В ОБЛАКО</button>
-                <button class="acc-action-btn acc-btn-dark" onclick="AccountSystem.closeProfileModal()">← НАЗАД</button>
-                <button class="acc-action-btn acc-btn-red"  onclick="AccountSystem.logout()">🚪 ВЫЙТИ</button>
+                <button id="btn-profile-back" class="acc-action-btn acc-btn-dark" onclick="AccountSystem.closeProfileModal()">← НАЗАД</button>
+                <button id="btn-profile-logout" class="acc-action-btn acc-btn-red" onclick="AccountSystem.logout()">🚪 ВЫЙТИ</button>
             </div>
         </div>
     </div>
@@ -562,7 +562,7 @@
     <!-- ══ LEADERBOARD MODAL ════════════════════════════════════ -->
     <div id="acc-leaderboard-modal" class="acc-modal-wrap" style="display:none;">
         <div class="acc-card acc-card-wide">
-            <div class="acc-card-title">🏆 ТАБЛИЦА РЕКОРДОВ</div>
+            <div id="acc-board-title-el" class="acc-card-title">🏆 ТАБЛИЦА РЕКОРДОВ</div>
             <div class="board-tabs">
                 <button id="board-tab-normal"   class="board-tab board-tab-active" onclick="AccountSystem.switchBoardMode('normal')">🗺 ОБЫЧНЫЙ</button>
                 <button id="board-tab-infinity" class="board-tab"                  onclick="AccountSystem.switchBoardMode('infinity')">∞ БЕСКОНЕЧНЫЙ</button>
@@ -571,18 +571,18 @@
                 <table class="board-table">
                     <thead>
                         <tr class="board-thead-row">
-                            <th class="board-th" style="width:36px;">#</th>
-                            <th class="board-th" style="text-align:left;">ИМЯ</th>
-                            <th class="board-th" style="width:34px;">КОТ</th>
-                            <th class="board-th" style="text-align:right;width:64px;">СЧЁТ</th>
+                            <th id="board-th-rank" class="board-th" style="width:36px;">#</th>
+                            <th id="board-th-name" class="board-th" style="text-align:left;">ИМЯ</th>
+                            <th id="board-th-cat" class="board-th" style="width:34px;">КОТ</th>
+                            <th id="board-th-score" class="board-th" style="text-align:right;width:64px;">СЧЁТ</th>
                         </tr>
                     </thead>
                     <tbody id="acc-board-body">
-                        <tr><td colspan="4" class="board-empty-cell">Загрузка...</td></tr>
+                        <tr id="board-loading-row"><td colspan="4" class="board-empty-cell">Загрузка...</td></tr>
                     </tbody>
                 </table>
             </div>
-            <button class="acc-action-btn acc-btn-dark" onclick="AccountSystem.closeLeaderboard()">← НАЗАД</button>
+            <button id="btn-board-back" class="acc-action-btn acc-btn-dark" onclick="AccountSystem.closeLeaderboard()">← НАЗАД</button>
         </div>
     </div>
 

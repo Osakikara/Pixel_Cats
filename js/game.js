@@ -760,12 +760,14 @@ function manageChunks() {
 function drawForest(ctx) {
     const CASTLE_CENTER = CASTLE_START_X + 1000, FOREST_MIN = CASTLE_CENTER - 950, FOREST_MAX = CASTLE_CENTER + 950;
     if (currentDifficulty === 'infinity') return; if (camera.x + canvas.width / zoomFactor < FOREST_MIN - 200 || camera.x > FOREST_MAX + 200) return;
-    if (!_forestCache || _forestCacheH !== canvas.height) {
+    const _forestGroundY = getWorldGround();
+    if (!_forestCache || _forestCacheH !== canvas.height || _forestCacheGround !== _forestGroundY) {
         _forestCacheH = canvas.height;
+        _forestCacheGround = _forestGroundY;
         const fW = FOREST_MAX - FOREST_MIN + 400;
-        _forestCache = document.createElement('canvas'); _forestCache.width = fW; _forestCache.height = canvas.height;
+        _forestCache = document.createElement('canvas'); _forestCache.width = fW; _forestCache.height = canvas.height + Math.abs((canvas.height - 100) - _forestGroundY) + 200;
         const fctx = _forestCache.getContext('2d');
-        const yBase = canvas.height - 100;
+        const yBase = _forestGroundY;
         for (let tx = FOREST_MIN; tx < FOREST_MAX; tx += 40) {
             if (tx > CASTLE_CENTER - 150 && tx < CASTLE_CENTER + 150) continue;
             const dtx = tx - (FOREST_MIN - 200); // offset into cache canvas

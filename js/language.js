@@ -119,7 +119,65 @@ const translations = {
         bossBattleOnline: "⚔️ БИТВА С БОССОМ (ОНЛАЙН)",
         bossHostHint: "🌐 Партнёр присоединится автоматически",
         bossGuestHint: "⏳ Ожидание хоста... (хост выбирает босса)",
-        bossGuestDesc: "Хост выберет этого босса"
+        bossGuestDesc: "Хост выберет этого босса",
+        // — Аккаунты: авторизация —
+        accLogin: "ВХОД", accRegister: "РЕГИСТРАЦИЯ",
+        accLoginBtn: "▶ ВОЙТИ", accRegisterBtn: "✅ СОЗДАТЬ",
+        accLoggingIn: "⏳ Входим...", accCreating: "⏳ Создаём...",
+        accBack: "← НАЗАД",
+        accProfileTitle: "👤 ПРОФИЛЬ",
+        accSaveName: "✅ СОХРАНИТЬ ИМЯ", accSaving: "⏳ Сохранение...",
+        accSaveCloud: "☁️ В ОБЛАКО", accSyncing: "⏳ Синхронизация...",
+        accLogout: "🚪 ВЫЙТИ",
+        accLoginBadge: "👤 ВОЙТИ",
+        accToastLogin: "✅ Вход выполнен! Прогресс загружен ☁️",
+        accToastRegister: "✅ Аккаунт создан! Прогресс загружен ☁️",
+        accToastSaved: "✅ Имя и прогресс сохранены ☁️",
+        accToastCloud: "☁️ Прогресс сохранён в облаке!",
+        accToastScore: "🏆 Рекорд сохранён!",
+        accToastNeedLogin: "Войди в аккаунт!",
+        accToastSyncErr: "Ошибка синхронизации",
+        accNameShort: "Имя слишком короткое (мин. 2)",
+        accNameLong: "Имя слишком длинное (макс. 16)",
+        accErrEmailUsed: "Этот email уже занят",
+        accErrInvalidEmail: "Некорректный email",
+        accErrWeakPass: "Пароль слишком простой (мин. 6)",
+        accErrNoUser: "Пользователь не найден",
+        accErrWrongPass: "Неверный пароль",
+        accErrInvalidCred: "Неверный email или пароль",
+        accPassMin: "Пароль минимум 6 символов",
+        // — Аккаунты: профиль / статы —
+        accStatBest: "Лучший счёт", accStatInfinity: "Бесконечность",
+        accStatFish: "Рыбки", accStatSkins: "Скины",
+        accStatDiffs: "Сложности", accStatSync: "Синхронизация",
+        accSyncAgoSec: "сек. назад", accSyncAgoMin: "мин. назад", accSyncAgoHour: "ч. назад",
+        accDiffEasy: "Лёгкий", accDiffHard: "Сложный", accDiffMega: "Мега",
+        // — Аккаунты: таблица рекордов —
+        accBoardTitle: "🏆 ТАБЛИЦА РЕКОРДОВ",
+        accBoardBtn: "🏆 РЕКОРДЫ",
+        accBoardNormal: "🗺 ОБЫЧНЫЙ", accBoardInfinity: "∞ БЕСКОНЕЧНЫЙ",
+        accBoardLoading: "Загрузка...", accBoardEmpty: "Пока нет рекордов 🎮",
+        accBoardNoConn: "Нет соединения", accBoardErr: "Ошибка загрузки",
+        accBoardYou: "ты",
+        accBoardColRank: "#", accBoardColName: "ИМЯ", accBoardColCat: "КОТ", accBoardColScore: "СЧЁТ",
+        // — Босс: уведомления во время боя —
+        bossHintLeft: "→ СЛЕВА НАПРАВО", bossHintRight: "← СПРАВА НАЛЕВО",
+        bossHintUp: "↑ СНИЗУ ВВЕРХ", bossHintDown: "↓ СВЕРХУ ВНИЗ",
+        bossHintTalent: "💬 Ты талантлив, но это ещё не всё...",
+        bossHintLastStage: "⚠️ ПОСЛЕДНЯЯ СТАДИЯ!",
+        bossHintLaser: "⚡ ЛАЗЕР! УКЛОНЯЙСЯ!",
+        bossHintLaserCross: "⚡ ЛАЗЕР КРЕСТ!",
+        bossWaitHost: "⏳ Ожидание хоста для рестарта...",
+        // — Статичный HTML модалей —
+        accProfileTitle: "👤 ПРОФИЛЬ",
+        accNameLabel: "ИМЯ (2–16 символов)",
+        accNamePlaceholder: "Введи имя...",
+        accLoginPassPlaceholder: "Пароль",
+        accRegNamePlaceholder: "Имя (ник)",
+        accRegPassPlaceholder: "Пароль (мин. 6)",
+        accBoardBack: "← НАЗАД",
+        accAuthBack: "← НАЗАД",
+        accSyncNever: "никогда"
     },
     en: {
         title: "PIXEL CATS", player1: "1 PLAYER", player2: "2 PLAYERS", mobileAuto: "MOBILE: AUTO", mobileOn: "MOBILE: ON",
@@ -236,7 +294,65 @@ const translations = {
         bossBattleOnline: "⚔️ BOSS BATTLE (ONLINE)",
         bossHostHint: "🌐 Partner will join automatically",
         bossGuestHint: "⏳ Waiting for host... (host selects boss)",
-        bossGuestDesc: "Host will select this boss"
+        bossGuestDesc: "Host will select this boss",
+        // — Accounts: auth —
+        accLogin: "LOGIN", accRegister: "REGISTER",
+        accLoginBtn: "▶ LOGIN", accRegisterBtn: "✅ CREATE",
+        accLoggingIn: "⏳ Logging in...", accCreating: "⏳ Creating...",
+        accBack: "← BACK",
+        accProfileTitle: "👤 PROFILE",
+        accSaveName: "✅ SAVE NAME", accSaving: "⏳ Saving...",
+        accSaveCloud: "☁️ SAVE TO CLOUD", accSyncing: "⏳ Syncing...",
+        accLogout: "🚪 LOG OUT",
+        accLoginBadge: "👤 LOG IN",
+        accToastLogin: "✅ Logged in! Progress loaded ☁️",
+        accToastRegister: "✅ Account created! Progress loaded ☁️",
+        accToastSaved: "✅ Name & progress saved ☁️",
+        accToastCloud: "☁️ Progress saved to cloud!",
+        accToastScore: "🏆 High score saved!",
+        accToastNeedLogin: "Please log in first!",
+        accToastSyncErr: "Sync error",
+        accNameShort: "Name too short (min. 2)",
+        accNameLong: "Name too long (max. 16)",
+        accErrEmailUsed: "This email is already in use",
+        accErrInvalidEmail: "Invalid email address",
+        accErrWeakPass: "Password too weak (min. 6 chars)",
+        accErrNoUser: "User not found",
+        accErrWrongPass: "Wrong password",
+        accErrInvalidCred: "Invalid email or password",
+        accPassMin: "Password must be at least 6 characters",
+        // — Accounts: profile / stats —
+        accStatBest: "Best score", accStatInfinity: "Infinity",
+        accStatFish: "Fish", accStatSkins: "Skins",
+        accStatDiffs: "Difficulties", accStatSync: "Last sync",
+        accSyncAgoSec: "sec. ago", accSyncAgoMin: "min. ago", accSyncAgoHour: "hr. ago",
+        accDiffEasy: "Easy", accDiffHard: "Hard", accDiffMega: "Mega",
+        // — Accounts: leaderboard —
+        accBoardTitle: "🏆 LEADERBOARD",
+        accBoardBtn: "🏆 RECORDS",
+        accBoardNormal: "🗺 NORMAL", accBoardInfinity: "∞ INFINITY",
+        accBoardLoading: "Loading...", accBoardEmpty: "No records yet 🎮",
+        accBoardNoConn: "No connection", accBoardErr: "Load error",
+        accBoardYou: "you",
+        accBoardColRank: "#", accBoardColName: "NAME", accBoardColCat: "CAT", accBoardColScore: "SCORE",
+        // — Boss: in-battle notifications —
+        bossHintLeft: "→ LEFT TO RIGHT", bossHintRight: "← RIGHT TO LEFT",
+        bossHintUp: "↑ BOTTOM TO TOP", bossHintDown: "↓ TOP TO BOTTOM",
+        bossHintTalent: "💬 You're talented, but there's more...",
+        bossHintLastStage: "⚠️ FINAL STAGE!",
+        bossHintLaser: "⚡ LASER! DODGE!",
+        bossHintLaserCross: "⚡ LASER CROSS!",
+        bossWaitHost: "⏳ Waiting for host to restart...",
+        // — Static modal HTML —
+        accProfileTitle: "👤 PROFILE",
+        accNameLabel: "NAME (2–16 chars)",
+        accNamePlaceholder: "Enter name...",
+        accLoginPassPlaceholder: "Password",
+        accRegNamePlaceholder: "Name (nickname)",
+        accRegPassPlaceholder: "Password (min. 6)",
+        accBoardBack: "← BACK",
+        accAuthBack: "← BACK",
+        accSyncNever: "never"
     }
 };
 
@@ -390,6 +506,47 @@ function updateAllTexts() {
     // Mobile prompt
     const _fp = document.getElementById('fullscreen-prompt');
     if (_fp) { const inner = _fp.querySelector('span,div') || _fp; if (_fp.childNodes.length) _fp.childNodes[0].textContent = t('mobilePrompt'); }
+    // ── Accounts UI ─────────────────────────────────────────────
+    const _s2 = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
+    const _ph = (id, txt) => { const el = document.getElementById(id); if (el) el.placeholder = txt; };
+    // Auth modal
+    _s2('auth-tab-login',    t('accLogin'));
+    _s2('auth-tab-register', t('accRegister'));
+    _s2('btn-do-login',      t('accLoginBtn'));
+    _s2('btn-do-register',   t('accRegisterBtn'));
+    _s2('btn-auth-back',     t('accAuthBack'));
+    _ph('login-pass-field',  t('accLoginPassPlaceholder'));
+    _ph('reg-name-field',    t('accRegNamePlaceholder'));
+    _ph('reg-pass-field',    t('accRegPassPlaceholder'));
+    // Profile modal
+    _s2('acc-profile-title-el', t('accProfileTitle'));
+    _s2('acc-name-label-el',    t('accNameLabel'));
+    _ph('acc-name-input',       t('accNamePlaceholder'));
+    _s2('btn-save-profile',     t('accSaveName'));
+    _s2('btn-manual-sync',      t('accSaveCloud'));
+    _s2('btn-profile-back',     t('accBack'));
+    _s2('btn-profile-logout',   t('accLogout'));
+    // Leaderboard modal
+    _s2('acc-board-title-el',  t('accBoardTitle'));
+    _s2('btn-open-leaderboard', t('accBoardBtn'));
+    _s2('board-tab-normal',    t('accBoardNormal'));
+    _s2('board-tab-infinity',  t('accBoardInfinity'));
+    _s2('btn-board-back',      t('accBoardBack'));
+    _s2('board-th-rank',       t('accBoardColRank'));
+    _s2('board-th-name',       t('accBoardColName'));
+    _s2('board-th-cat',        t('accBoardColCat'));
+    _s2('board-th-score',      t('accBoardColScore'));
+    // Leaderboard loading placeholder row
+    const _blr = document.getElementById('board-loading-row');
+    if (_blr) _blr.querySelector('td').innerText = t('accBoardLoading');
+    // Badge in main menu (only if not logged in)
+    if (typeof AccountSystem !== 'undefined' && typeof AccountSystem.isReady === 'function') {
+        const badge = document.getElementById('acc-profile-badge');
+        if (badge && !AccountSystem.isReady()) badge.textContent = t('accLoginBadge');
+    }
+    // Boss battle hint (only when battle is not running)
+    const _dh = document.getElementById('dodge-hint');
+    if (_dh && typeof bossBattleActive !== 'undefined' && !bossBattleActive) _dh.innerText = t('dodgeHint');
 }
 
 function _updateFbTexts() {

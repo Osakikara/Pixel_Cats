@@ -769,7 +769,7 @@ function updateBossEntity(timeScale, deltaTime) {
             const slot = Math.min(3, Math.floor((elapsed - 10) / 5));
             if (slot !== shadowLordLastSlot) {
                 shadowLordLastSlot = slot;
-                const slotHints = ['→ СЛЕВА НАПРАВО', '↑ СНИЗУ ВВЕРХ', '← СПРАВА НАЛЕВО', '↓ СВЕРХУ ВНИЗ'];
+                const slotHints = [t('bossHintLeft'), t('bossHintUp'), t('bossHintRight'), t('bossHintDown')];
                 const slotColors = ['#9400d3', '#9400d3', '#ff0055', '#ff0055'];
                 const hintEl = document.getElementById('dodge-hint');
                 if (hintEl) {
@@ -790,11 +790,11 @@ function updateBossEntity(timeScale, deltaTime) {
                 if (hintEl) {
                     clearTimeout(bossHintTimer);
                     hintEl.style.display = 'block';
-                    hintEl.innerText = '💬 Ты талантлив, но это ещё не всё...';
+                    hintEl.innerText = t('bossHintTalent');
                     hintEl.style.color = '#ffffff';
                     hintEl.style.fontSize = '14px';
                 }
-                _sendBossHint('💬 Ты талантлив, но это ещё не всё...', '#ffffff', 0);
+                _sendBossHint(t('bossHintTalent'), '#ffffff', 0);
             }
         }
 
@@ -808,13 +808,13 @@ function updateBossEntity(timeScale, deltaTime) {
                 const hintEl = document.getElementById('dodge-hint');
                 if (hintEl) {
                     hintEl.style.display = 'block';
-                    hintEl.innerText = '⚠️ ПОСЛЕДНЯЯ СТАДИЯ!';
+                    hintEl.innerText = t('bossHintLastStage');
                     hintEl.style.color = '#ff0000';
                     hintEl.style.fontSize = '';
                     clearTimeout(bossHintTimer);
                     bossHintTimer = setTimeout(() => { hintEl.style.display = 'none'; }, 2500);
                 }
-                _sendBossHint('⚠️ ПОСЛЕДНЯЯ СТАДИЯ!', '#ff0000', 2500);
+                _sendBossHint(t('bossHintLastStage'), '#ff0000', 2500);
             }
         }
 
@@ -2618,7 +2618,7 @@ function updateAlchemistAttacks(timeScale, deltaTime) {
                 const hintEl = document.getElementById('dodge-hint');
                 if (hintEl) {
                     hintEl.style.display = 'block';
-                    hintEl.innerText = '⚡ ЛАЗЕР! УКЛОНЯЙСЯ!';
+                    hintEl.innerText = t('bossHintLaser');
                     hintEl.style.color = '#aaffcc';
                     clearTimeout(bossHintTimer);
                     bossHintTimer = setTimeout(() => { hintEl.style.display = 'none'; }, 2200);
@@ -2633,7 +2633,7 @@ function updateAlchemistAttacks(timeScale, deltaTime) {
                 const hintEl = document.getElementById('dodge-hint');
                 if (hintEl) {
                     hintEl.style.display = 'block';
-                    hintEl.innerText = '⚡ ЛАЗЕР КРЕСТ!';
+                    hintEl.innerText = t('bossHintLaserCross');
                     hintEl.style.color = '#ff2222';
                     clearTimeout(bossHintTimer);
                     bossHintTimer = setTimeout(() => { hintEl.style.display = 'none'; }, 2500);
@@ -2953,7 +2953,7 @@ function bossLose() {
 function restartBossBattle() {
     // Гость в онлайне не может самостоятельно рестартовать — только хост
     if (net.bossOnline && !net.isHost) {
-        document.getElementById('boss-lose-msg').innerText = '⏳ Ожидание хоста для рестарта...';
+        document.getElementById('boss-lose-msg').innerText = t('bossWaitHost');
         return;
     }
     bossBattlePaused = false; // Снимаем паузу
