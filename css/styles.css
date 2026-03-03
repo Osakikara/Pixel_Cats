@@ -200,6 +200,9 @@ h1 { font-size: 16px; color: #ffd700; text-shadow: 2px 2px #000; margin: 0 0 5px
     /* mobile-controls-layer is shown/hidden ONLY via JS based on game state */
     .controls-hint { display: none; }
     #start-screen { min-width: unset; width: 90%; padding: 20px; border-width: 3px; max-height: 90vh; overflow-y: auto; }
+    .acc-modal-wrap { max-width: 94%; max-height: 94vh; }
+    .acc-card, .acc-card-wide { width: 100%; padding: 16px; }
+    .acc-profile-btns { grid-template-columns: 1fr; }
     #online-screen { min-width: unset; width: 90%; padding: 20px; max-height: 90vh; overflow-y: auto; }
     #game-over-screen, #win-screen { width: 90%; padding: 20px; }
     h1 { font-size: 14px; }
@@ -636,117 +639,244 @@ h1 { font-size: 16px; color: #ffd700; text-shadow: 2px 2px #000; margin: 0 0 5px
 }
 
 /* ============================================================
-   ACCOUNTS — Auth, Profile, Leaderboard
+   ACCOUNTS v2 — Auth · Profile · Leaderboard  (fully adaptive)
    ============================================================ */
 
-/* Menu buttons */
-.acc-btn-profile {
-    background: #1a1a3e; border-color: #7b68ee; color: #c8b8ff;
-}
-.acc-btn-profile:hover { background: #2a2a5e; }
-.acc-btn-board {
-    background: #1e2d1e; border-color: #ffd700; color: #ffd700;
-}
-.acc-btn-board:hover { background: #2a3e2a; }
+/* ── Menu trigger buttons ── */
+.acc-btn-profile { background:#1a1a3e; border-color:#7b68ee; color:#c8b8ff; }
+.acc-btn-profile:hover { background:#2a2a5e; }
+.acc-btn-board   { background:#1e2d1e; border-color:#ffd700; color:#ffd700; }
+.acc-btn-board:hover { background:#2a3e2a; }
 
-/* Modal shared */
-.acc-modal-title {
-    font-size: 16px; color: #ffd700; text-shadow: 3px 3px 0 #000; margin-bottom: 14px;
+/* ────────────────────────────────────────────────────────────
+   MODAL WRAP — same as screen-overlay: centered on canvas,
+   game world visible behind it, just like the main menu.
+   ──────────────────────────────────────────────────────────── */
+.acc-modal-wrap {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: auto;
+    text-align: center;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #aaa #333;
 }
-.acc-modal-body {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 6px; width: 100%; max-width: 300px;
-}
-.acc-modal-actions {
-    display: flex; gap: 10px; margin-top: 14px;
-    flex-wrap: wrap; justify-content: center;
-}
-.acc-input-label {
-    font-size: 8px; color: #aaa; align-self: flex-start;
-    font-family: 'Press Start 2P', monospace;
+.acc-modal-wrap::-webkit-scrollbar       { width: 7px; }
+.acc-modal-wrap::-webkit-scrollbar-track { background: #333; }
+.acc-modal-wrap::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+
+/* ── Inner card — mirrors #start-screen style ── */
+.acc-card {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(8px,1.8vh,14px);
+
+    width: clamp(280px, 86vw, 400px);
+    box-sizing: border-box;
+
+    background: rgba(0,0,0,0.6);
+    border: 4px solid #fff;
+    box-shadow: 8px 8px 0 #000;
+    backdrop-filter: blur(2px);
+    padding: clamp(20px,3.5vw,30px);
+
+    text-align: left;
 }
 
-/* Auth inputs */
-.acc-auth-input, .acc-name-input {
-    width: 100%; padding: 11px 10px;
-    font-family: 'Press Start 2P', monospace; font-size: 11px;
-    background: #0e0e1c; color: #fff;
-    border: 3px solid #7b68ee; outline: none; box-sizing: border-box;
-    caret-color: #ffd700;
-}
-.acc-auth-input:focus, .acc-name-input:focus { border-color: #ffd700; }
-
-.acc-auth-err {
-    color: #e74c3c; font-size: 8px; min-height: 13px;
-    align-self: flex-start; font-family: 'Press Start 2P', monospace;
-    max-width: 280px; word-break: break-word;
+/* Leaderboard — a bit wider */
+.acc-card-wide {
+    width: clamp(300px, 90vw, 480px);
 }
 
-/* Auth modal tabs */
+/* ── Logo / Title ── */
+.acc-card-logo {
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(13px, 2.8vw, 20px);
+    color: #ffd700; text-shadow: 3px 3px 0 #000;
+    text-align: center; letter-spacing: 2px; width: 100%;
+}
+.acc-card-title {
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(11px, 2.4vw, 16px);
+    color: #fff; text-shadow: 3px 3px 0 #000;
+    text-align: center; width: 100%;
+}
+
+/* ── Auth tabs ── */
 .auth-tabs {
-    display: flex; gap: 0; margin-bottom: 14px; border: 3px solid #444;
+    display: flex; width: 100%;
+    border: 3px solid rgba(255,255,255,0.3);
+    overflow: hidden; box-shadow: 3px 3px 0 #000;
 }
 .auth-tab {
-    padding: 8px 20px;
-    font-family: 'Press Start 2P', monospace; font-size: 9px;
-    cursor: pointer; border: none; background: #1a1a2e; color: #666;
+    flex: 1;
+    padding: clamp(10px,2vh,14px) 6px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(7px, 1.6vw, 10px);
+    cursor: pointer; border: none;
+    background: rgba(0,0,0,0.3); color: #aaa;
+    min-height: 44px; text-align: center;
     transition: background .1s;
 }
-.auth-tab:hover { background: #22223e; }
-.auth-tab-active { background: #2a2a1e; color: #ffd700; }
+.auth-tab:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.auth-tab-active { background: rgba(255,215,0,0.15); color: #ffd700; border-bottom: 3px solid #ffd700; }
 
-/* Stats block */
+/* ── Auth form ── */
+.auth-form {
+    display: flex; flex-direction: column;
+    align-items: stretch; gap: clamp(7px,1.4vh,10px);
+    width: 100%;
+}
+
+/* ── Input field ── */
+.acc-field {
+    width: 100%; box-sizing: border-box;
+    padding: clamp(11px,2vh,14px) 12px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(9px, 1.8vw, 11px);
+    background: rgba(0,0,0,0.5); color: #fff;
+    border: 3px solid rgba(255,255,255,0.35); outline: none;
+    caret-color: #ffd700; min-height: 44px;
+    box-shadow: inset 2px 2px 0 rgba(0,0,0,0.4);
+}
+.acc-field:focus        { border-color: #ffd700; background: rgba(0,0,0,0.65); }
+.acc-field::placeholder { color: rgba(255,255,255,0.25); }
+
+/* ── Error message ── */
+.acc-field-err {
+    color: #ff6b6b;
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(6px,1.4vw,8px);
+    min-height: 12px; line-height: 1.7;
+    word-break: break-word; width: 100%;
+    text-shadow: 1px 1px 0 #000;
+}
+
+/* ── Input label ── */
+.acc-input-label {
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(6px,1.3vw,8px);
+    color: #ddd; display: block;
+    margin-bottom: 4px; letter-spacing: 1px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+/* ── Profile name section ── */
+.acc-name-section {
+    display: flex; flex-direction: column; gap: 5px; width: 100%;
+}
+
+/* ── Action buttons — same style as .btn in the main menu ── */
+.acc-action-btn {
+    width: 100%; min-height: 44px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(9px,1.8vw,11px);
+    border: 4px solid #fff; cursor: pointer;
+    box-shadow: 4px 4px 0 #000; text-transform: uppercase;
+    padding: clamp(11px,2vh,15px) 8px;
+    box-sizing: border-box; line-height: 1.3; color: #fff;
+}
+.acc-action-btn:active { transform:translate(2px,2px); box-shadow:2px 2px 0 #000; }
+.acc-action-btn:hover  { filter: brightness(1.15); }
+.acc-btn-green { background:#27ae60; }
+.acc-btn-blue  { background:#2980b9; }
+.acc-btn-gold  { background:#7d6608; border-color:#ffd700; color:#ffd700; }
+.acc-btn-dark  { background:#555; border-color:#999; color:#ccc; }
+.acc-btn-red   { background:#c0392b; }
+
+/* ── Profile button grid ── */
+.acc-profile-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(7px,1.4vw,11px);
+    width: 100%;
+}
+
+/* ── Stats table ── */
 .acc-stats-block {
-    width: 100%; margin-top: 8px;
-    background: rgba(0,0,0,0.45); border: 2px solid #2a2a4a;
-    padding: 10px 12px; font-size: 8px;
+    width: 100%;
+    background: rgba(0,0,0,0.35);
+    border: 2px solid rgba(255,255,255,0.2);
+    overflow: hidden;
 }
 .acc-stat-row {
-    display: flex; justify-content: space-between; padding: 5px 0;
-    border-bottom: 1px solid #2a2a3a; color: #ccc;
-    font-family: 'Press Start 2P', monospace; gap: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: clamp(6px,1.2vh,9px) clamp(8px,1.5vw,12px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(6px,1.2vw,8px);
+    color: #ddd; gap: 10px;
+    text-shadow: 1px 1px 0 #000;
 }
 .acc-stat-row:last-child { border-bottom: none; }
-.acc-stat-row span:last-child { color: #ffd700; white-space: nowrap; }
+.acc-stat-row span:first-child { color: #bbb; flex-shrink: 0; }
+.acc-stat-row span:last-child  { color: #ffd700; text-align: right; word-break: break-all; }
 
-/* Leaderboard tabs */
-.board-tabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
+/* ── Leaderboard tabs ── */
+.board-tabs {
+    display: flex; width: 100%;
+    border: 3px solid rgba(255,255,255,0.3);
+    overflow: hidden; box-shadow: 3px 3px 0 #000;
+}
 .board-tab {
-    padding: 8px 14px; font-family: 'Press Start 2P', monospace; font-size: 8px;
-    cursor: pointer; border: 3px solid #444; background: #1a1a2e; color: #777;
-    box-shadow: 3px 3px 0 #000;
+    flex: 1;
+    padding: clamp(9px,1.8vh,13px) 4px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(7px,1.5vw,9px);
+    cursor: pointer; border: none;
+    background: rgba(0,0,0,0.3); color: #aaa;
+    min-height: 44px; text-align: center;
 }
-.board-tab:hover { background: #22223e; }
-.board-tab-active { border-color: #ffd700; color: #ffd700; background: #1e1e10; }
+.board-tab:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.board-tab-active { background: rgba(255,215,0,0.15); color: #ffd700; border-bottom: 3px solid #ffd700; }
 
-/* Leaderboard table */
+/* ── Scrollable leaderboard ── */
 .board-scroll-wrap {
-    overflow-y: auto; max-height: 52vh; width: 100%; max-width: 420px;
-    border: 2px solid #2a2a4a; background: rgba(0,0,0,0.3);
+    width: 100%; overflow-y: auto; overflow-x: hidden;
+    max-height: clamp(200px, 42vh, 380px);
+    background: rgba(0,0,0,0.3);
+    border: 2px solid rgba(255,255,255,0.15);
+    scrollbar-width: thin; scrollbar-color: #ffd700 rgba(0,0,0,0.3);
 }
-.board-scroll-wrap::-webkit-scrollbar { width: 6px; }
-.board-scroll-wrap::-webkit-scrollbar-track { background: #111; }
-.board-scroll-wrap::-webkit-scrollbar-thumb { background: #444; }
+.board-scroll-wrap::-webkit-scrollbar       { width: 5px; }
+.board-scroll-wrap::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+.board-scroll-wrap::-webkit-scrollbar-thumb { background: #ffd700; border-radius: 3px; }
 
-.board-table { width: 100%; border-collapse: collapse;
-    font-family: 'Press Start 2P', monospace; font-size: 9px; }
-.board-thead-row { border-bottom: 2px solid #444; }
-.board-th {
-    padding: 8px 6px; color: #ffd700; font-size: 8px; text-align: center;
-    background: #0e0e1e; position: sticky; top: 0; z-index: 1;
+/* ── Table ── */
+.board-table {
+    width: 100%; border-collapse: collapse;
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(7px, 1.3vw, 9px);
 }
-#acc-board-body tr { border-bottom: 1px solid #1e1e2e; }
-#acc-board-body tr:hover { background: rgba(255,255,255,0.03); }
-.board-row-me { background: rgba(255,215,0,0.07) !important; outline: 1px solid rgba(255,215,0,0.4); }
-.board-rank  { text-align: center; padding: 8px 4px; color: #aaa; }
-.board-name  { padding: 8px 6px; color: #eee; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.board-skin  { text-align: center; padding: 8px 4px; font-size: 14px; }
-.board-score { text-align: right; padding: 8px 8px 8px 4px; color: #2ecc71; }
+.board-thead-row { border-bottom: 2px solid rgba(255,255,255,0.2); }
+.board-th {
+    padding: clamp(7px,1.4vh,11px) clamp(4px,0.8vw,8px);
+    color: #ffd700; text-align: center;
+    background: rgba(0,0,0,0.45);
+    position: sticky; top: 0; z-index: 1;
+    white-space: nowrap; text-shadow: 1px 1px 0 #000;
+}
+#acc-board-body tr { border-bottom: 1px solid rgba(255,255,255,0.06); }
+#acc-board-body tr:hover { background: rgba(255,255,255,0.05); }
+.board-row-me { background: rgba(255,215,0,0.1) !important; outline: 1px solid rgba(255,215,0,0.4); }
+.board-rank  { text-align:center; padding:clamp(6px,1.2vh,9px) clamp(3px,0.6vw,6px); color:#ccc; white-space:nowrap; text-shadow:1px 1px 0 #000; }
+.board-name  { padding:clamp(6px,1.2vh,9px) clamp(4px,0.8vw,8px); color:#fff; text-shadow:1px 1px 0 #000;
+               max-width:clamp(80px,20vw,180px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.board-skin  { text-align:center; padding:clamp(6px,1.2vh,9px) clamp(3px,0.6vw,5px); font-size:clamp(13px,2.2vw,18px); }
+.board-score { text-align:right; padding:clamp(6px,1.2vh,9px) clamp(5px,1vw,10px); color:#2ecc71; white-space:nowrap; text-shadow:1px 1px 0 #000; }
 .board-you-badge {
-    display: inline-block; background: #ffd700; color: #000;
-    font-size: 6px; padding: 2px 4px; margin-left: 4px; vertical-align: middle;
+    display:inline-block; background:#ffd700; color:#000;
+    font-size:clamp(5px,1vw,7px); padding:2px 4px; margin-left:4px; vertical-align:middle;
 }
 .board-empty-cell {
-    text-align: center; color: #666; padding: 28px 10px;
-    font-family: 'Press Start 2P', monospace; font-size: 8px;
+    text-align:center; color:#ccc;
+    padding:clamp(20px,4vh,36px) 10px;
+    font-family:'Press Start 2P', cursive;
+    font-size:clamp(7px,1.3vw,9px);
+    text-shadow:1px 1px 0 #000;
 }
