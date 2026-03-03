@@ -17,6 +17,7 @@ applyLayout(loadLayout());
 
 // Обновить кошелёк в UI (функция из networking.js — теперь точно загружена)
 updateFishUI();
+AccountSystem.init();
 
 // Boot audio on first interaction
 document.addEventListener('touchstart', () => AudioEngine.boot(), { once: true, passive: true });

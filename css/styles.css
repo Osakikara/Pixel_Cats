@@ -634,3 +634,119 @@ h1 { font-size: 16px; color: #ffd700; text-shadow: 2px 2px #000; margin: 0 0 5px
 #server-modal-close {
     /* sizing handled by flex:1 in parent .srv-auto-row */
 }
+
+/* ============================================================
+   ACCOUNTS — Auth, Profile, Leaderboard
+   ============================================================ */
+
+/* Menu buttons */
+.acc-btn-profile {
+    background: #1a1a3e; border-color: #7b68ee; color: #c8b8ff;
+}
+.acc-btn-profile:hover { background: #2a2a5e; }
+.acc-btn-board {
+    background: #1e2d1e; border-color: #ffd700; color: #ffd700;
+}
+.acc-btn-board:hover { background: #2a3e2a; }
+
+/* Modal shared */
+.acc-modal-title {
+    font-size: 16px; color: #ffd700; text-shadow: 3px 3px 0 #000; margin-bottom: 14px;
+}
+.acc-modal-body {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; width: 100%; max-width: 300px;
+}
+.acc-modal-actions {
+    display: flex; gap: 10px; margin-top: 14px;
+    flex-wrap: wrap; justify-content: center;
+}
+.acc-input-label {
+    font-size: 8px; color: #aaa; align-self: flex-start;
+    font-family: 'Press Start 2P', monospace;
+}
+
+/* Auth inputs */
+.acc-auth-input, .acc-name-input {
+    width: 100%; padding: 11px 10px;
+    font-family: 'Press Start 2P', monospace; font-size: 11px;
+    background: #0e0e1c; color: #fff;
+    border: 3px solid #7b68ee; outline: none; box-sizing: border-box;
+    caret-color: #ffd700;
+}
+.acc-auth-input:focus, .acc-name-input:focus { border-color: #ffd700; }
+
+.acc-auth-err {
+    color: #e74c3c; font-size: 8px; min-height: 13px;
+    align-self: flex-start; font-family: 'Press Start 2P', monospace;
+    max-width: 280px; word-break: break-word;
+}
+
+/* Auth modal tabs */
+.auth-tabs {
+    display: flex; gap: 0; margin-bottom: 14px; border: 3px solid #444;
+}
+.auth-tab {
+    padding: 8px 20px;
+    font-family: 'Press Start 2P', monospace; font-size: 9px;
+    cursor: pointer; border: none; background: #1a1a2e; color: #666;
+    transition: background .1s;
+}
+.auth-tab:hover { background: #22223e; }
+.auth-tab-active { background: #2a2a1e; color: #ffd700; }
+
+/* Stats block */
+.acc-stats-block {
+    width: 100%; margin-top: 8px;
+    background: rgba(0,0,0,0.45); border: 2px solid #2a2a4a;
+    padding: 10px 12px; font-size: 8px;
+}
+.acc-stat-row {
+    display: flex; justify-content: space-between; padding: 5px 0;
+    border-bottom: 1px solid #2a2a3a; color: #ccc;
+    font-family: 'Press Start 2P', monospace; gap: 10px;
+}
+.acc-stat-row:last-child { border-bottom: none; }
+.acc-stat-row span:last-child { color: #ffd700; white-space: nowrap; }
+
+/* Leaderboard tabs */
+.board-tabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
+.board-tab {
+    padding: 8px 14px; font-family: 'Press Start 2P', monospace; font-size: 8px;
+    cursor: pointer; border: 3px solid #444; background: #1a1a2e; color: #777;
+    box-shadow: 3px 3px 0 #000;
+}
+.board-tab:hover { background: #22223e; }
+.board-tab-active { border-color: #ffd700; color: #ffd700; background: #1e1e10; }
+
+/* Leaderboard table */
+.board-scroll-wrap {
+    overflow-y: auto; max-height: 52vh; width: 100%; max-width: 420px;
+    border: 2px solid #2a2a4a; background: rgba(0,0,0,0.3);
+}
+.board-scroll-wrap::-webkit-scrollbar { width: 6px; }
+.board-scroll-wrap::-webkit-scrollbar-track { background: #111; }
+.board-scroll-wrap::-webkit-scrollbar-thumb { background: #444; }
+
+.board-table { width: 100%; border-collapse: collapse;
+    font-family: 'Press Start 2P', monospace; font-size: 9px; }
+.board-thead-row { border-bottom: 2px solid #444; }
+.board-th {
+    padding: 8px 6px; color: #ffd700; font-size: 8px; text-align: center;
+    background: #0e0e1e; position: sticky; top: 0; z-index: 1;
+}
+#acc-board-body tr { border-bottom: 1px solid #1e1e2e; }
+#acc-board-body tr:hover { background: rgba(255,255,255,0.03); }
+.board-row-me { background: rgba(255,215,0,0.07) !important; outline: 1px solid rgba(255,215,0,0.4); }
+.board-rank  { text-align: center; padding: 8px 4px; color: #aaa; }
+.board-name  { padding: 8px 6px; color: #eee; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board-skin  { text-align: center; padding: 8px 4px; font-size: 14px; }
+.board-score { text-align: right; padding: 8px 8px 8px 4px; color: #2ecc71; }
+.board-you-badge {
+    display: inline-block; background: #ffd700; color: #000;
+    font-size: 6px; padding: 2px 4px; margin-left: 4px; vertical-align: middle;
+}
+.board-empty-cell {
+    text-align: center; color: #666; padding: 28px 10px;
+    font-family: 'Press Start 2P', monospace; font-size: 8px;
+}

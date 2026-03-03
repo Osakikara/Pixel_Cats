@@ -1003,6 +1003,8 @@ function triggerWin() {
         highScoreEl.innerText = highScore; 
     }
     
+    if (typeof _accAutoSubmit === "function") _accAutoSubmit(score, "normal");
+
     // ============================================
     // UNLOCK NEXT DIFFICULTY
     // Открытие следующей сложности
@@ -1207,6 +1209,8 @@ function endGame() {
     // SHOW GAME OVER SCREEN
     // Показать экран проигрыша
     // ============================================
+    if (typeof _accAutoSubmit === "function") _accAutoSubmit(score, currentDifficulty === "infinity" ? "infinity" : "normal");
+
     finalScoreEl.innerText = score; 
     gameOverScreen.style.display = 'block'; 
     npcDialog.style.display = 'none'; 
