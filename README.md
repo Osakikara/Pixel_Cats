@@ -16,7 +16,10 @@ pixel-cats/
 │   ├── networking.js   ← Сеть: Firebase + PeerJS + онлайн лобби
 │   ├── game.js         ← Игровая логика, рендеринг, игровой цикл
 │   ├── boss.js         ← Боссы: данные, бой, рисование, победа/поражение
-│   └── main.js         ← Инициализация приложения (3 строки)
+│   ├── accounts.js     ← Аккаунты: Firebase Auth + синхронизация прогресса
+│   └── main.js         ← Инициализация приложения
+├── media/
+│   └── Pixelcats.ico   ← Фавикон сайта
 └── README.md
 ```
 
@@ -81,7 +84,15 @@ pixel-cats/
 - `drawBossBattle() / drawBossModelTopDown() / drawPixelCatTopDown()`
 - `bossWin() / bossLose() / restartBossBattle()` — результаты боя
 
-### `js/main.js` (3 строки)
+### `js/accounts.js` (~350 строк)
+- `AccountSystem` — IIFE-модуль, Firebase Auth + Realtime Database
+- `register() / login() / logout()` — регистрация, вход, выход
+- `submitScore() / fetchLeaderboard()` — отправка и загрузка таблицы рекордов
+- `updateDisplayName()` — смена отображаемого имени игрока
+- `_applyProgress() / _push()` — синхронизация прогресса (рыбки, скины, рекорды) между устройствами
+- `_patchSaveGameData()` — автоматический пуш прогресса при каждом `saveGameData()`
+
+### `js/main.js`
 - Инициализация: `resizeCanvas()`, `showMenu()`, `applyLayout()`
 - Подписка на первый тач/клик для старта AudioEngine
 
@@ -90,7 +101,7 @@ pixel-cats/
 ## 🔧 Порядок загрузки скриптов
 Важен! Каждый файл зависит от предыдущих:
 ```
-audio → controls → settings → language → globals → networking → game → boss → main
+audio → controls → settings → language → globals → networking → game → boss → accounts → main
 ```
 
 ## 💡 Советы по доработке
@@ -103,5 +114,7 @@ audio → controls → settings → language → globals → networking → game
 | Физику прыжка, скорость | `js/game.js` → `init()`, класс игрока |
 | Нового босса | `js/boss.js` → массив `BOSSES` |
 | Онлайн протокол | `js/networking.js` → `handlePeerData()` |
+| Аккаунты, таблицу рекордов | `js/accounts.js` → `AccountSystem` |
 | Стили кнопок, экранов | `css/styles.css` |
 | Структуру HTML | `index.html` |
+| Иконку сайта | `media/Pixelcats.ico` |
