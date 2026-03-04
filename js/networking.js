@@ -1745,7 +1745,7 @@ updatePlayerModeUI = function() {
 
 window.addEventListener('keydown', (e) => {
     if (keys.hasOwnProperty(e.code) || e.code === 'Space') keys[e.code] = true;
-    if (e.code === 'KeyG') godMode = !godMode;
+    // if (e.code === 'KeyG') godMode = !godMode; //Никаких читов в этом доме!
     if (e.key === 'Escape') {
         if (isPlaying || isGameOver || isWin) showMenu();
         else if (bossBattleActive) showBossScreen(true);
