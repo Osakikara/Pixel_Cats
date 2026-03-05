@@ -24,7 +24,7 @@ const AccountSystem = (() => {
     let _app     = null, _auth = null, _db = null;
     let _user    = null, _profile = null, _ready = false;
     let _lastSyncTime = null;
-    let _currentBoardMode = 'normal';
+    let _currentBoardMode = 'bosses';
 
     // ════════════════════════════════════════════════════════════
     // CORE
@@ -87,6 +87,8 @@ const AccountSystem = (() => {
             fishGold:          fishWallet.gold   || 0,
             p1SkinIndex:       p1SkinIndex || 0,
             p2SkinIndex:       p2SkinIndex || 1,
+            defeatedBossIds:   (typeof defeatedBosses !== 'undefined' ? defeatedBosses.slice() : []),
+            defeatedBossCount: (typeof defeatedBosses !== 'undefined' ? defeatedBosses.length : 0),
             savedAt:           Date.now()
         };
     }
@@ -113,6 +115,16 @@ const AccountSystem = (() => {
 
         if (prog.p1SkinIndex !== undefined) p1SkinIndex = prog.p1SkinIndex;
         if (prog.p2SkinIndex !== undefined) p2SkinIndex = prog.p2SkinIndex;
+
+        // Мёрджим победы над боссами — union массивов, никогда не уменьшаем
+        if (Array.isArray(prog.defeatedBossIds) && prog.defeatedBossIds.length > 0) {
+            if (typeof defeatedBosses !== 'undefined') {
+                prog.defeatedBossIds.forEach(function(id) {
+                    if (!defeatedBosses.includes(id)) defeatedBosses.push(id);
+                });
+                localStorage.setItem('pixelCatsDefeatedBosses', JSON.stringify(defeatedBosses));
+            }
+        }
 
         // Flush merged state to localStorage + refresh UI
         saveGameData();
@@ -245,8 +257,44 @@ const AccountSystem = (() => {
         .catch(function(e) { console.error('[Accounts] leaderboard error:', e); });
     }
 
+    // Записывает количество побеждённых боссов в таблицу лидеров
+    function submitBossProgress(count) {
+        if (!_ready || !_user || !_profile) return;
+        if (!(count > 0)) return;
+        var uid  = _user.uid;
+        var ref  = _db.ref(DB_BOARD + '/' + uid);
+        ref.once('value').then(function(snap) {
+            var prev      = snap.val() || {};
+            var prevCount = prev.bossCount || 0;
+            if (count <= prevCount) return; // не снижаем рекорд
+            return ref.update({
+                bossCount:  count,
+                name:       _profile.name,
+                skinId:     SKINS[p1SkinIndex] ? SKINS[p1SkinIndex].id : (_profile.skinId || 'white'),
+                updatedAt:  Date.now()
+            });
+        }).then(function() {
+            console.log('[Accounts] bossCount updated to', count);
+        }).catch(function(e) { console.warn('[Accounts] bossCount error:', e); });
+    }
+
     function fetchLeaderboard(mode) {
         if (!_ready) return Promise.reject('DB not ready');
+        if (mode === 'bosses') {
+            return _db.ref(DB_BOARD).orderByChild('bossCount').limitToLast(MAX_ROWS).once('value')
+                .then(function(snap) {
+                    var rows = [];
+                    snap.forEach(function(child) {
+                        var d = child.val();
+                        if ((d.bossCount || 0) > 0)
+                            rows.push({ id: child.key, name: d.name, skinId: d.skinId,
+                                bossCount: d.bossCount || 0,
+                                scoreNormal: d.scoreNormal || 0, scoreInfinity: d.scoreInfinity || 0 });
+                    });
+                    rows.sort(function(a, b) { return (b.bossCount || 0) - (a.bossCount || 0); });
+                    return rows.map(function(r, i) { return Object.assign({ rank: i + 1 }, r); });
+                });
+        }
         var field = mode === 'infinity' ? 'scoreInfinity' : 'scoreNormal';
         return _db.ref(DB_BOARD).orderByChild(field).limitToLast(MAX_ROWS).once('value')
             .then(function(snap) {
@@ -476,7 +524,7 @@ const AccountSystem = (() => {
         _closeAllModals();
         startScreen.style.display = 'none';
         document.getElementById('acc-leaderboard-modal').style.display = 'block';
-        _currentBoardMode = 'normal';
+        _currentBoardMode = 'bosses';
         _renderBoardTabs(); _loadAndRenderBoard();
     }
 
@@ -490,7 +538,7 @@ const AccountSystem = (() => {
     }
 
     function _renderBoardTabs() {
-        ['normal','infinity'].forEach(function(m) {
+        ['bosses','infinity'].forEach(function(m) {
             var tab = document.getElementById('board-tab-' + m);
             if (tab) tab.className = 'board-tab' + (_currentBoardMode === m ? ' board-tab-active' : '');
         });
@@ -503,18 +551,25 @@ const AccountSystem = (() => {
         if (!_ready) {
             body.innerHTML = '<tr><td colspan="4" class="board-empty-cell" style="color:#e74c3c;">' + t('accBoardNoConn') + '</td></tr>'; return;
         }
+        // Update score column header based on mode
+        var scoreHeader = document.getElementById('board-th-score');
+        if (scoreHeader) {
+            scoreHeader.textContent = _currentBoardMode === 'bosses' ? (t('accBoardColBosses') || '⚔️ БОССЫ') : t('accBoardColScore');
+        }
         fetchLeaderboard(_currentBoardMode).then(function(rows) {
             if (!rows.length) { body.innerHTML = '<tr><td colspan="4" class="board-empty-cell">' + t('accBoardEmpty') + '</td></tr>'; return; }
-            var field = _currentBoardMode === 'infinity' ? 'scoreInfinity' : 'scoreNormal';
+            var isBosses = _currentBoardMode === 'bosses';
+            var field = isBosses ? 'bossCount' : (_currentBoardMode === 'infinity' ? 'scoreInfinity' : 'scoreNormal');
             body.innerHTML = rows.map(function(r) {
                 var isMe  = _user && r.id === _user.uid;
                 var medal = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : r.rank;
                 var skin  = SKINS.find(function(s) { return s.id === r.skinId; }) || SKINS[0];
+                var scoreCell = isBosses ? ('⚔️ ' + r.bossCount + ' / 4') : r[field];
                 return '<tr class="' + (isMe ? 'board-row-me' : '') + '">' +
                     '<td class="board-rank">' + medal + '</td>' +
                     '<td class="board-name">' + _escHtml(r.name) + (isMe ? ' <span class="board-you-badge">' + t('accBoardYou') + '</span>' : '') + '</td>' +
                     '<td class="board-skin">' + _skinEmoji(skin) + '</td>' +
-                    '<td class="board-score">' + r[field] + '</td></tr>';
+                    '<td class="board-score">' + scoreCell + '</td></tr>';
             }).join('');
         }).catch(function(e) {
             body.innerHTML = '<tr><td colspan="4" class="board-empty-cell" style="color:#e74c3c;">' + t('accBoardErr') + '</td></tr>';
@@ -525,7 +580,7 @@ const AccountSystem = (() => {
     // Public API
     return {
         init, isReady, getUsername, getUserId,
-        submitScore, fetchLeaderboard, logout, manualSync,
+        submitScore, submitBossProgress, fetchLeaderboard, logout, manualSync,
         openAuthModal, closeAuthModal, switchAuthTab, doLogin, doRegister,
         openProfileModal, closeProfileModal, saveProfileFromUI,
         openLeaderboard, closeLeaderboard, switchBoardMode,

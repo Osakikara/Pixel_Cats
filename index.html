@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#202028">
 
-    <title>Pixel Cats: Online v4.1</title>
+    <title>Pixel Cats: Online v4.2</title>
     <link rel="icon" type="image/x-icon" href="media/Pixelcats.ico">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
@@ -564,7 +564,7 @@
         <div class="acc-card acc-card-wide">
             <div id="acc-board-title-el" class="acc-card-title">🏆 ТАБЛИЦА РЕКОРДОВ</div>
             <div class="board-tabs">
-                <button id="board-tab-normal"   class="board-tab board-tab-active" onclick="AccountSystem.switchBoardMode('normal')">🗺 ОБЫЧНЫЙ</button>
+                <button id="board-tab-bosses"   class="board-tab board-tab-active" onclick="AccountSystem.switchBoardMode('bosses')">⚔️ БОССЫ</button>
                 <button id="board-tab-infinity" class="board-tab"                  onclick="AccountSystem.switchBoardMode('infinity')">∞ БЕСКОНЕЧНЫЙ</button>
             </div>
             <div class="board-scroll-wrap">
@@ -586,8 +586,12 @@
         </div>
     </div>
 
+    <!-- Menu background music -->
+    <audio id="menu-music" src="media/vospominaniya-o-bylom.mp3" loop preload="auto" style="display:none"></audio>
+
     <script src="js/boss.js"></script>
     <script src="js/accounts.js"></script>
+    <script src="js/tutorial.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

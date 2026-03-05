@@ -682,12 +682,39 @@ function updateBossPlayer(timeScale) {
     const moveSpeed = 8;
     const arenaMargin = 40;
 
-    const movePlayer = (cat, left, right, up, down) => {
+    // Analog-aware boss player move: axisSlot = 'p1'|'p2'|null
+    const movePlayer = (cat, left, right, up, down, axisSlot) => {
         if (!cat || !cat.alive) return;
-        if (left)  { cat.x -= moveSpeed * timeScale; cat.facingRight = false; }
-        if (right) { cat.x += moveSpeed * timeScale; cat.facingRight = true; }
-        if (up)    cat.y -= moveSpeed * timeScale;
-        if (down)  cat.y += moveSpeed * timeScale;
+
+        // -- Analog path (joystick) -- true 360° movement with proportional speed
+        if (axisSlot && typeof joystickAxes !== 'undefined') {
+            const ax = joystickAxes[axisSlot];
+            const DEAD = 0.10;
+            if (Math.abs(ax.x) > DEAD) {
+                // Scale: 30% speed at dead edge, 100% at full deflection
+                const mag = Math.sign(ax.x) * (0.30 + 0.70 * Math.abs(ax.x));
+                cat.x += mag * moveSpeed * timeScale;
+                cat.facingRight = ax.x > 0;
+            } else {
+                // Boolean fallback for keyboard
+                if (left)  { cat.x -= moveSpeed * timeScale; cat.facingRight = false; }
+                if (right) { cat.x += moveSpeed * timeScale; cat.facingRight = true; }
+            }
+            if (Math.abs(ax.y) > DEAD) {
+                const mag = Math.sign(ax.y) * (0.30 + 0.70 * Math.abs(ax.y));
+                cat.y += mag * moveSpeed * timeScale;
+            } else {
+                if (up)   cat.y -= moveSpeed * timeScale;
+                if (down) cat.y += moveSpeed * timeScale;
+            }
+        } else {
+            // -- Boolean path (keyboard / dpad) --
+            if (left)  { cat.x -= moveSpeed * timeScale; cat.facingRight = false; }
+            if (right) { cat.x += moveSpeed * timeScale; cat.facingRight = true; }
+            if (up)    cat.y -= moveSpeed * timeScale;
+            if (down)  cat.y += moveSpeed * timeScale;
+        }
+
         if (cat.x < arenaMargin) cat.x = arenaMargin;
         if (cat.x + cat.width  > cw - arenaMargin) cat.x = cw - arenaMargin - cat.width;
         if (cat.y < arenaMargin) cat.y = arenaMargin;
@@ -702,7 +729,7 @@ function updateBossPlayer(timeScale) {
                 keys['KeyA'] || keys['ArrowLeft'],
                 keys['KeyD'] || keys['ArrowRight'],
                 keys['KeyW'] || keys['ArrowUp'],
-                keys['KeyS'] || keys['ArrowDown']);
+                keys['KeyS'] || keys['ArrowDown'], 'p1');
             // Применяем последнюю известную позицию гостя к P2
             if (bossPlayerCat2) {
                 if (net.bossRemote.x > 0) {
@@ -719,23 +746,23 @@ function updateBossPlayer(timeScale) {
                 keys['KeyA'] || keys['ArrowLeft'],
                 keys['KeyD'] || keys['ArrowRight'],
                 keys['KeyW'] || keys['ArrowUp'],
-                keys['KeyS'] || keys['ArrowDown']);
+                keys['KeyS'] || keys['ArrowDown'], 'p1');
             // P1 (кот хоста) — позиция пришла через BOSS_STATE, только invulnerable уменьшаем
             if (bossPlayerCat && bossPlayerCat.invulnerable > 0) bossPlayerCat.invulnerable -= timeScale;
         }
     } else if (bossPlayerCat2) {
         // 2P: P1=WASD, P2=arrows (split controls)
         movePlayer(bossPlayerCat,
-            keys['KeyA'], keys['KeyD'], keys['KeyW'], keys['KeyS']);
+            keys['KeyA'], keys['KeyD'], keys['KeyW'], keys['KeyS'], 'p1');
         movePlayer(bossPlayerCat2,
-            keys['ArrowLeft'], keys['ArrowRight'], keys['ArrowUp'], keys['ArrowDown']);
+            keys['ArrowLeft'], keys['ArrowRight'], keys['ArrowUp'], keys['ArrowDown'], 'p2');
     } else {
         // 1P: both WASD and arrows work
         movePlayer(bossPlayerCat,
             keys['KeyA'] || keys['ArrowLeft'],
             keys['KeyD'] || keys['ArrowRight'],
             keys['KeyW'] || keys['ArrowUp'],
-            keys['KeyS'] || keys['ArrowDown']);
+            keys['KeyS'] || keys['ArrowDown'], 'p1');
     }
 }
 
@@ -2902,6 +2929,11 @@ function bossWin() {
     if (!defeatedBosses.includes(currentBoss.id)) {
         defeatedBosses.push(currentBoss.id);
         localStorage.setItem('pixelCatsDefeatedBosses', JSON.stringify(defeatedBosses));
+    }
+    // Синхронизируем с облаком и таблицей лидеров
+    saveGameData();
+    if (typeof AccountSystem !== 'undefined' && AccountSystem.submitBossProgress) {
+        AccountSystem.submitBossProgress(defeatedBosses.length);
     }
     
     // Show win screen

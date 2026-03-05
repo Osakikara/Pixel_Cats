@@ -19,6 +19,8 @@ applyLayout(loadLayout());
 updateFishUI();
 AccountSystem.init();
 
-// Boot audio on first interaction
-document.addEventListener('touchstart', () => AudioEngine.boot(), { once: true, passive: true });
-document.addEventListener('mousedown', () => AudioEngine.boot(), { once: true });
+// Boot audio on first interaction — also start menu music
+document.addEventListener('touchstart', () => { AudioEngine.boot(); AudioEngine.startMenuMusic(); }, { once: true, passive: true });
+document.addEventListener('mousedown', () => { AudioEngine.boot(); AudioEngine.startMenuMusic(); }, { once: true });
+// Показать обучение при первом запуске
+if (TutorialSystem.shouldShow()) TutorialSystem.show();

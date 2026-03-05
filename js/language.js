@@ -33,6 +33,58 @@ const translations = {
             alchemist: { name: "АЛХИМИК", desc: "Кислотные бомбы, расщепляющиеся снаряды и лазер", locked: "Победите Ледяного Дракона" },
             shadowLord: { name: "ТЕНЕВОЙ ЛОРД", desc: "Неуловимые теневые атаки", locked: "Победите Алхимика" }
         },
+        tut: {
+            skip: 'Пропустить',
+            next: 'Далее',
+            play: 'Играть!',
+            welcome: {
+                title: '👋 Добро пожаловать в Pixel Cats!',
+                desc:  'Онлайн-игра про котиков, рыбок и боссов.<br>Давай покажем тебе, как всё работает!'
+            },
+            movement: {
+                title: '🎮 Управление',
+                desc:  '<kbd>A</kbd><kbd>D</kbd> или <kbd>←</kbd><kbd>→</kbd> — движение<br>'
+                    + '<kbd>W</kbd> или <kbd>Space</kbd> — прыжок<br>'
+                    + 'На мобиле — джойстик слева.'
+            },
+            collect: {
+                title: '🐟 Собирай рыбок',
+                desc:  'Прыгай на рыбок, чтобы собирать очки.<br>'
+                    + '<span class="or">🟠 Оранжевые</span> · <span class="bl">💙 Синие</span> · <span class="hl">⭐ Золотые</span><br>'
+                    + 'Рыбки = очки и валюта для скинов!'
+            },
+            modes: {
+                title: '⚡ Режимы игры',
+                desc:  '<span class="gr">Easy</span> → победи, чтобы открыть <span class="hl">Hard</span><br>'
+                    + '<span class="hl">Hard</span> → победи, чтобы открыть <span class="or">Mega</span><br>'
+                    + '<span class="or">Mega</span> → открывает режим <span class="hl">∞ Infinity</span>'
+            },
+            controls: {
+                title: '⭐ Настрой кнопки под себя!',
+                desc:  'Зайди в <span class="hl">⚙ Настройки → Расположение кнопок</span>.<br>'
+                    + 'Перетаскивай кнопки <span class="gr">в любое место экрана</span>.<br>'
+                    + 'Меняй их <span class="or">размер</span> кнопками − и +.<br>'
+                    + '<span class="hl">Особенно важно для мобильных игроков!</span>'
+            },
+            shop: {
+                title: '🛍️ Магазин скинов',
+                desc:  'Трать рыбок на новые скины для котиков.<br>'
+                    + 'Некоторые скины открываются за <span class="hl">рекорды</span>,<br>'
+                    + 'другие — купить в магазине.'
+            },
+            online: {
+                title: '🌐 Онлайн-игра',
+                desc:  'Нажми <span class="bl">ОНЛАЙН</span> в главном меню.<br>'
+                    + 'Создай комнату и отправь код другу.<br>'
+                    + 'Поддержка <span class="hl">P2P</span> и <span class="or">Firebase</span> соединений.'
+            },
+            ready: {
+                title: '🌟 Готов к игре!',
+                desc:  'Теперь ты знаешь всё необходимое.<br>'
+                    + 'Не забудь настроить управление в <span class="hl">⚙ Настройках</span>.<br>'
+                    + '<span class="gr">Удачи и хорошей игры!</span>'
+            },
+        },
         settings: "⚙ НАСТРОЙКИ", settingsBack: "← НАЗАД",
         musicLabel: "🎵 МУЗЫКА", sfxLabel: "🔊 ЗВУКИ",
         onOff: "Вкл/Выкл:", volume: "Громкость:", trackSelect: "ВЫБОР ТРЕКА:",
@@ -155,11 +207,11 @@ const translations = {
         // — Аккаунты: таблица рекордов —
         accBoardTitle: "🏆 ТАБЛИЦА РЕКОРДОВ",
         accBoardBtn: "🏆 РЕКОРДЫ",
-        accBoardNormal: "🗺 ОБЫЧНЫЙ", accBoardInfinity: "∞ БЕСКОНЕЧНЫЙ",
+        accBoardNormal: "🗺 ОБЫЧНЫЙ", accBoardInfinity: "∞ БЕСКОНЕЧНЫЙ", accBoardBosses: "⚔️ БОССЫ",
         accBoardLoading: "Загрузка...", accBoardEmpty: "Пока нет рекордов 🎮",
         accBoardNoConn: "Нет соединения", accBoardErr: "Ошибка загрузки",
         accBoardYou: "ты",
-        accBoardColRank: "#", accBoardColName: "ИМЯ", accBoardColCat: "КОТ", accBoardColScore: "СЧЁТ",
+        accBoardColRank: "#", accBoardColName: "ИМЯ", accBoardColCat: "КОТ", accBoardColScore: "СЧЁТ", accBoardColBosses: "⚔️ БОССЫ",
         // — Босс: уведомления во время боя —
         bossHintLeft: "→ СЛЕВА НАПРАВО", bossHintRight: "← СПРАВА НАЛЕВО",
         bossHintUp: "↑ СНИЗУ ВВЕРХ", bossHintDown: "↓ СВЕРХУ ВНИЗ",
@@ -207,6 +259,58 @@ const translations = {
             iceDragon: { name: "ICE DRAGON", desc: "Fast ice projectiles", locked: "Defeat Fire Golem" },
             alchemist: { name: "ALCHEMIST", desc: "Acid bombs, splitting projectiles & laser", locked: "Defeat Ice Dragon" },
             shadowLord: { name: "SHADOW LORD", desc: "Elusive shadow attacks", locked: "Defeat Alchemist" }
+        },
+        tut: {
+            skip: 'Skip',
+            next: 'Next',
+            play: "Let's Play!",
+            welcome: {
+                title: '👋 Welcome to Pixel Cats!',
+                desc:  'An online game about cats, fish and bosses.<br>Let us show you how everything works!'
+            },
+            movement: {
+                title: '🎮 Controls',
+                desc:  '<kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> — move<br>'
+                    + '<kbd>W</kbd> or <kbd>Space</kbd> — jump<br>'
+                    + 'On mobile — use the joystick on the left.'
+            },
+            collect: {
+                title: '🐟 Collect Fish',
+                desc:  'Jump onto fish to score points.<br>'
+                    + '<span class="or">🟠 Orange</span> · <span class="bl">💙 Blue</span> · <span class="hl">⭐ Gold</span><br>'
+                    + 'Fish = score points AND shop currency!'
+            },
+            modes: {
+                title: '⚡ Game Modes',
+                desc:  '<span class="gr">Easy</span> → win to unlock <span class="hl">Hard</span><br>'
+                    + '<span class="hl">Hard</span> → win to unlock <span class="or">Mega</span><br>'
+                    + '<span class="or">Mega</span> → unlocks <span class="hl">∞ Infinity</span> mode'
+            },
+            controls: {
+                title: '⭐ Customize Your Controls!',
+                desc:  'Go to <span class="hl">⚙ Settings → Controls Layout</span>.<br>'
+                    + 'Drag buttons <span class="gr">anywhere on the screen</span>.<br>'
+                    + 'Use − and + to <span class="or">resize</span> them freely.<br>'
+                    + '<span class="hl">Essential for mobile players!</span>'
+            },
+            shop: {
+                title: '🛍️ Skin Shop',
+                desc:  'Spend your fish on new cat skins.<br>'
+                    + 'Some skins unlock via <span class="hl">high scores</span>,<br>'
+                    + 'others are available to buy in the shop.'
+            },
+            online: {
+                title: '🌐 Online Play',
+                desc:  'Press <span class="bl">ONLINE</span> in the main menu.<br>'
+                    + 'Create a room and share the code with a friend.<br>'
+                    + 'Supports <span class="hl">P2P</span> and <span class="or">Firebase</span> connections.'
+            },
+            ready: {
+                title: '🌟 Ready to Play!',
+                desc:  "Now you know everything you need.<br>"
+                    + 'Don\'t forget to customize controls in <span class="hl">⚙ Settings</span>.<br>'
+                    + '<span class="gr">Good luck and happy fish hunting!</span>'
+            },
         },
         settings: "⚙ SETTINGS", settingsBack: "← BACK",
         musicLabel: "🎵 MUSIC", sfxLabel: "🔊 SOUND FX",
@@ -330,11 +434,11 @@ const translations = {
         // — Accounts: leaderboard —
         accBoardTitle: "🏆 LEADERBOARD",
         accBoardBtn: "🏆 RECORDS",
-        accBoardNormal: "🗺 NORMAL", accBoardInfinity: "∞ INFINITY",
+        accBoardNormal: "🗺 NORMAL", accBoardInfinity: "∞ INFINITY", accBoardBosses: "⚔️ BOSSES",
         accBoardLoading: "Loading...", accBoardEmpty: "No records yet 🎮",
         accBoardNoConn: "No connection", accBoardErr: "Load error",
         accBoardYou: "you",
-        accBoardColRank: "#", accBoardColName: "NAME", accBoardColCat: "CAT", accBoardColScore: "SCORE",
+        accBoardColRank: "#", accBoardColName: "NAME", accBoardColCat: "CAT", accBoardColScore: "SCORE", accBoardColBosses: "⚔️ BOSSES",
         // — Boss: in-battle notifications —
         bossHintLeft: "→ LEFT TO RIGHT", bossHintRight: "← RIGHT TO LEFT",
         bossHintUp: "↑ BOTTOM TO TOP", bossHintDown: "↓ TOP TO BOTTOM",
@@ -529,7 +633,7 @@ function updateAllTexts() {
     // Leaderboard modal
     _s2('acc-board-title-el',  t('accBoardTitle'));
     _s2('btn-open-leaderboard', t('accBoardBtn'));
-    _s2('board-tab-normal',    t('accBoardNormal'));
+    _s2('board-tab-bosses',   t('accBoardBosses'));
     _s2('board-tab-infinity',  t('accBoardInfinity'));
     _s2('btn-board-back',      t('accBoardBack'));
     _s2('board-th-rank',       t('accBoardColRank'));

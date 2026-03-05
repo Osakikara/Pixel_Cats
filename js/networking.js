@@ -1408,6 +1408,9 @@ function saveGameData() {
     localStorage.setItem('pixelCatsDiffScore', highScore); localStorage.setItem('pixelCatsInfinityHighScore', infinityHighScore);
     localStorage.setItem('pixelCatsHardUnlocked', hardUnlocked); localStorage.setItem('pixelCatsMegaHardUnlocked', megaHardUnlocked);
     localStorage.setItem('pixelCatsInfinityUnlocked', infinityUnlocked);
+    if (typeof defeatedBosses !== 'undefined') {
+        localStorage.setItem('pixelCatsDefeatedBosses', JSON.stringify(defeatedBosses));
+    }
 }
 
 function updateFishUI() {
@@ -1537,30 +1540,72 @@ let npcCat = null, npcDialogShown = false, npcFadeOut = false, npcOpacity = 1;
 
 const keys = { KeyW: false, KeyA: false, KeyS: false, KeyD: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, KeyG: false, Space: false };
 let godMode = false;
+// Analog joystick axes — updated by makeJoystick, used in Cat.update() for smooth movement
+const joystickAxes = { p1: { x: 0, y: 0 }, p2: { x: 0, y: 0 } };
 
 function setupMobileControls() {
-    // ======= ANALOG JOYSTICK SYSTEM =======
-    function makeJoystick(baseId, knobId, opts) {
-        // opts: { left, right, up, jump } key names, jumpThreshold (-0 to -1 normalized)
+    // ================================================================
+    // FLOATING ANALOG JOYSTICK SYSTEM
+    // ================================================================
+    // The joystick "floats" — its base snaps to wherever the player
+    // first touches inside the touch zone (wrapper). This means the
+    // player never has to aim at a fixed circle; just press and drag.
+    //
+    // axisKey  — 'p1'|'p2': which joystickAxes slot to update for
+    //            smooth proportional movement in Cat.update() / boss
+    // wrapId   — id of the large invisible touch zone wrapper
+    // ================================================================
+    function makeJoystick(baseId, knobId, opts, axisKey, wrapId) {
         const base = document.getElementById(baseId);
         const knob = document.getElementById(knobId);
+        const wrap = wrapId ? document.getElementById(wrapId) : base;
         if (!base || !knob) return;
-        const RADIUS = 55; // half of 110px base
-        const DEAD   = 0.18; // slightly smaller deadzone = faster response
-        const JUMP_T = -0.55; // normalized Y threshold for jump
-        let active = false, touchId = null;
-        let bx = 0, by = 0;
 
-        function getCenter() {
-            const r = base.getBoundingClientRect();
-            return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+        // ---- Deadzone & thresholds ----
+        const DEAD   = 0.10;   // ignore tiny drift
+        const JUMP_T = -0.42;  // pull up ≥42% to jump
+        const DOWN_T = 0.38;   // push down ≥38% for boss-down
+
+        let active = false, touchId = null;
+        let bx = 0, by = 0;   // touch origin (center of floating base)
+
+        // Base starts hidden (opacity 0) until touched
+        base.style.opacity  = '0';
+        base.style.transition = 'opacity 0.12s';
+        base.style.position = 'absolute';
+
+        // Actual rendered radius — works even when CSS-scaled by applyLayout
+        function getRadius() { return base.getBoundingClientRect().width / 2; }
+
+        // Clamp base inside wrapper so it never goes out of screen
+        function floatBaseTo(cx, cy) {
+            if (!wrap) return;
+            const wr  = wrap.getBoundingClientRect();
+            const bw  = base.offsetWidth  || 110;
+            const bh  = base.offsetHeight || 110;
+            // position relative to wrap
+            let rx = cx - wr.left - bw / 2;
+            let ry = cy - wr.top  - bh / 2;
+            rx = Math.max(0, Math.min(wr.width  - bw, rx));
+            ry = Math.max(0, Math.min(wr.height - bh, ry));
+            base.style.left = rx + 'px';
+            base.style.top  = ry + 'px';
+            base.style.right  = 'unset';
+            base.style.bottom = 'unset';
         }
 
         function applyPos(nx, ny) {
-            // nx,ny = normalized [-1..1]
-            const px = nx * RADIUS * 0.7, py = ny * RADIUS * 0.7;
+            const R  = getRadius();
+            const px = nx * R * 0.65, py = ny * R * 0.65;
             knob.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
-            // Clear all
+
+            // ── Analog axes (smooth proportional speed) ──
+            if (axisKey) {
+                joystickAxes[axisKey].x = Math.abs(nx) > DEAD ? nx : 0;
+                joystickAxes[axisKey].y = Math.abs(ny) > DEAD ? ny : 0;
+            }
+
+            // ── Boolean keys (jump, down, boss 4-dir, keyboard compat) ──
             if (opts.left)  keys[opts.left]  = false;
             if (opts.right) keys[opts.right] = false;
             if (opts.up)    keys[opts.up]    = false;
@@ -1568,6 +1613,7 @@ function setupMobileControls() {
             if (opts.jump)  keys[opts.jump]  = false;
             if (opts.down)  keys[opts.down]  = false;
             if (opts.down2) keys[opts.down2] = false;
+
             if (Math.abs(nx) > DEAD) {
                 if (nx < 0 && opts.left)  keys[opts.left]  = true;
                 if (nx > 0 && opts.right) keys[opts.right] = true;
@@ -1577,8 +1623,6 @@ function setupMobileControls() {
                 if (opts.up2)  keys[opts.up2]  = true;
                 if (opts.jump) keys[opts.jump] = true;
             }
-            // Down movement (for boss top-down mode)
-            const DOWN_T = 0.45;
             if (ny > DOWN_T) {
                 if (opts.down)  keys[opts.down]  = true;
                 if (opts.down2) keys[opts.down2] = true;
@@ -1587,8 +1631,11 @@ function setupMobileControls() {
 
         function releaseAll() {
             active = false; touchId = null;
-            knob.style.transform = 'translate(-50%, -50%)';
+            // Fade base out, reset knob
+            base.style.opacity = '0';
             base.classList.remove('active');
+            knob.style.transform = 'translate(-50%, -50%)';
+            if (axisKey) { joystickAxes[axisKey].x = 0; joystickAxes[axisKey].y = 0; }
             if (opts.left)  keys[opts.left]  = false;
             if (opts.right) keys[opts.right] = false;
             if (opts.up)    keys[opts.up]    = false;
@@ -1598,51 +1645,93 @@ function setupMobileControls() {
             if (opts.down2) keys[opts.down2] = false;
         }
 
-        base.addEventListener('touchstart', e => {
+        // ---- Touch zone: the large wrapper (or base as fallback) ----
+        const touchTarget = wrap || base;
+
+        touchTarget.addEventListener('touchstart', e => {
             e.preventDefault();
             if (active) return;
             const touch = e.changedTouches[0];
-            touchId = touch.identifier;
-            active = true;
+            touchId  = touch.identifier;
+            active   = true;
+            // Float: snap base to finger position
+            floatBaseTo(touch.clientX, touch.clientY);
+            // Small delay so layout reflow finishes before reading center
+            requestAnimationFrame(() => {
+                const r = base.getBoundingClientRect();
+                bx = r.left + r.width  / 2;
+                by = r.top  + r.height / 2;
+            });
+            bx = touch.clientX;
+            by = touch.clientY;
+            base.style.opacity = '0.85';
             base.classList.add('active');
-            const { cx, cy } = getCenter();
-            bx = cx; by = cy;
         }, { passive: false });
 
-        base.addEventListener('touchmove', e => {
+        touchTarget.addEventListener('touchmove', e => {
             e.preventDefault();
             if (!active) return;
-            // Check all touches (changedTouches may miss fast moves)
             let touch = null;
-            for (let t of e.touches) if (t.identifier === touchId) { touch = t; break; }
+            for (let t of e.touches)        if (t.identifier === touchId) { touch = t; break; }
             if (!touch) for (let t of e.changedTouches) if (t.identifier === touchId) { touch = t; break; }
             if (!touch) return;
+            const R = getRadius();
             let dx = touch.clientX - bx, dy = touch.clientY - by;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist > RADIUS) { dx = dx / dist * RADIUS; dy = dy / dist * RADIUS; }
-            applyPos(dx / RADIUS, dy / RADIUS);
+            if (dist > R) { dx = dx / dist * R; dy = dy / dist * R; }
+            applyPos(dx / R, dy / R);
         }, { passive: false });
 
-        base.addEventListener('touchend', e => {
+        touchTarget.addEventListener('touchend', e => {
             e.preventDefault();
             for (let t of e.changedTouches) if (t.identifier === touchId) { releaseAll(); return; }
         }, { passive: false });
-        base.addEventListener('touchcancel', e => { releaseAll(); }, { passive: false });
+        touchTarget.addEventListener('touchcancel', () => releaseAll(), { passive: false });
     }
 
-    // 1-player: one joystick (left+right+jump via up, down for boss)
+    // ---- Make the joystick wrapper a large comfortable touch zone ----
+    // Left half of screen bottom = P1 zone; right half = P2 zone
+    function _expandWrapperZone(wrapperId, leftPct, widthPct) {
+        const el = document.getElementById(wrapperId);
+        if (!el) return;
+        el.style.position = 'absolute';
+        el.style.left     = leftPct + '%';
+        el.style.top      = '45%';
+        el.style.width    = widthPct + '%';
+        el.style.height   = '55%';
+        el.style.pointerEvents = 'auto';
+        el.style.background    = 'transparent';
+        el.style.zIndex        = '190';
+        // The actual joystick-base is a child — override its positioning
+        const b = el.querySelector('.joystick-base');
+        if (b) {
+            b.style.position = 'absolute';
+            b.style.left     = '20px';
+            b.style.top      = '50%';
+            b.style.transform = 'translateY(-50%)';
+            b.style.right    = 'unset';
+            b.style.bottom   = 'unset';
+        }
+    }
+    _expandWrapperZone('joy1-wrapper',    0,  47);
+    _expandWrapperZone('joy1-wrapper-2p', 0,  47);
+    _expandWrapperZone('joy2-wrapper-2p', 53, 47);
+
+    // 1-player: full left zone
     makeJoystick('joy1-base', 'joy1-knob', {
         left: 'KeyA', right: 'KeyD', up: 'KeyW', up2: 'Space', jump: 'ArrowUp',
         down: 'KeyS', down2: 'ArrowDown'
-    });
+    }, 'p1', 'joy1-wrapper');
+
     // 2-player P1
     makeJoystick('joy1-base-2p', 'joy1-knob-2p', {
         left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS'
-    });
+    }, 'p1', 'joy1-wrapper-2p');
+
     // 2-player P2
     makeJoystick('joy2-base-2p', 'joy2-knob-2p', {
         left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown'
-    });
+    }, 'p2', 'joy2-wrapper-2p');
 
     // ESC / Menu button
     const menuBtn = document.getElementById('mb-menu');
@@ -1657,7 +1746,7 @@ setupMobileControls();
 // ============================================================
 // D-PAD CONTROL SYSTEM
 // ============================================================
-let ctrlType = localStorage.getItem('pcCtrlType') || 'joystick';
+let ctrlType = localStorage.getItem('pcCtrlType') || 'dpad';
 
 const DPAD_KEY_MAP = {
     up:    ['KeyW', 'ArrowUp'],
@@ -1745,7 +1834,7 @@ updatePlayerModeUI = function() {
 
 window.addEventListener('keydown', (e) => {
     if (keys.hasOwnProperty(e.code) || e.code === 'Space') keys[e.code] = true;
-    // if (e.code === 'KeyG') godMode = !godMode; //Никаких читов в этом доме!
+    if (e.code === 'KeyG') godMode = !godMode;
     if (e.key === 'Escape') {
         if (isPlaying || isGameOver || isWin) showMenu();
         else if (bossBattleActive) showBossScreen(true);
@@ -1822,7 +1911,20 @@ class Cat {
             if (up) this.y -= flySpeed * timeScale; if (down) this.y += flySpeed * timeScale;
             if (this.x < camera.x) this.x = camera.x; if (this.x + this.width > camera.x + canvas.width / zoomFactor) this.x = camera.x + canvas.width / zoomFactor - this.width; return;
         }
-        let dx = 0; if (left) { dx = -moveSpeed * timeScale; this.facingRight = false; } if (right) { dx = moveSpeed * timeScale; this.facingRight = true; }
+        // === ANALOG MOVEMENT — uses joystick axis for proportional speed ===
+        let dx = 0;
+        const _axisSlot = (!net.isOnline && !this.isPlayer1) ? 'p2' : 'p1';
+        const _jAxis = joystickAxes[_axisSlot];
+        if (Math.abs(_jAxis.x) > 0.08) {
+            // Analog path: speed scales with deflection (0..1), minimum ~30% at deadzone
+            const _analogMag = Math.sign(_jAxis.x) * (0.3 + 0.7 * Math.abs(_jAxis.x));
+            dx = _analogMag * moveSpeed * timeScale;
+            this.facingRight = _jAxis.x > 0;
+        } else {
+            // Boolean fallback: keyboard or dpad
+            if (left)  { dx = -moveSpeed * timeScale; this.facingRight = false; }
+            if (right) { dx =  moveSpeed * timeScale; this.facingRight = true;  }
+        }
         if (dx !== 0 && !this.checkWallCollision(dx)) this.x += dx; if (this.x < camera.x) this.x = camera.x;
         const visibleWidth = canvas.width / zoomFactor; if (this.x + this.width > camera.x + visibleWidth) this.x = camera.x + visibleWidth - this.width;
         // Ground detection: check left edge, center, and right edge to prevent falling into block seams

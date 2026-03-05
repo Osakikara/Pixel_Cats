@@ -1588,7 +1588,7 @@ function startGame(difficulty) {
     }
     if (animationId) cancelAnimationFrame(animationId); if (menuAnimationId) cancelAnimationFrame(menuAnimationId); init(difficulty);
     _showMobileControls();
-    AudioEngine.startMenuMusic();
+    AudioEngine.stopMusic();
     lastTime = performance.now(); fpsDisplayTime = lastTime; loop(lastTime);
 }
 function restartGame() { startGame(currentDifficulty); }

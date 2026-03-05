@@ -45,6 +45,9 @@ const AudioEngine = (() => {
         masterGain.gain.value = S.masterVol;
         musicGain.gain.value  = S.musicOn ? S.musicVol : 0;
         sfxGain.gain.value    = S.sfxOn   ? S.sfxVol   : 0;
+        // Sync HTML menu music volume (4x quieter than WebAudio music)
+        const _a = document.getElementById('menu-music');
+        if (_a) _a.volume = S.musicOn ? Math.max(0, Math.min(1, S.masterVol * S.musicVol * 0.2)) : 0;
     }
 
     function saveS() {
@@ -682,10 +685,50 @@ const AudioEngine = (() => {
         g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
         osc.start(t); osc.stop(t + 0.27);
     };
-    function startMenuMusic() { /* no menu music */ }
-    return { sfx, settings: S, stopMusic, stopAllMusic,
+    // ── HTML Audio — фоновый трек главного меню и лобби ─────────────
+    let _menuAudio = null;
+    function _getMenuAudio() {
+        if (!_menuAudio) _menuAudio = document.getElementById('menu-music');
+        return _menuAudio;
+    }
+    function startMenuMusic() {
+        if (!S.musicOn) return;
+        const a = _getMenuAudio();
+        if (!a) return;
+        a.volume = Math.max(0, Math.min(1, S.masterVol * S.musicVol * 0.2));
+        if (a.paused) a.play().catch(() => {});
+    }
+    function _stopMenuAudio() {
+        const a = _getMenuAudio();
+        if (a) a.pause();
+    }
+    function stopMusicAll()    { _stopMenuAudio(); stopMusic(); }
+    function stopAllMusicAll() { _stopMenuAudio(); stopAllMusic(); }
+
+    const _origStartBossMusic = startBossMusic;
+    function startBossMusicEx(bossId) { _stopMenuAudio(); _origStartBossMusic(bossId); }
+
+    const _origStopBossMusic = stopBossMusic;
+    function stopBossMusicEx(resume) {
+        _origStopBossMusic(resume);
+        if (resume && S.musicOn) setTimeout(() => startMenuMusic(), 250);
+    }
+
+    // setMusicOn needs to also pause/resume HTML audio
+    const _origSetMusicOn = setMusicOn;
+    function setMusicOnEx(v) {
+        _origSetMusicOn(v);
+        if (!v) _stopMenuAudio(); else startMenuMusic();
+    }
+
+    return { sfx, settings: S,
+             stopMusic: stopMusicAll,
+             stopAllMusic: stopAllMusicAll,
              startMenuMusic,
-             startBossMusic, stopBossMusic,
-             setMusicOn, setMusicVol, setSfxOn, setSfxVol, setMasterVol,
+             startBossMusic: startBossMusicEx,
+             stopBossMusic: stopBossMusicEx,
+             setMusicOn: setMusicOnEx,
+             setMusicVol, setSfxVol, setMasterVol,
+             setSfxOn,
              applyVol, boot };
 })();
