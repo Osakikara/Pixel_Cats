@@ -177,7 +177,7 @@ function switchFbServer(idx) {
     _fbDb = null;
     _updateServerSelectorUI();
     _fbSetStatus(t('fbStatusSwitched') + ' ' + FB_SERVERS[idx].name, '#e67e22');
-    setTimeout(() => _fbSetStatus('✅ ' + FB_SERVERS[idx].name + ' ' + t('fbStatusSrvReady'), '#2ecc71'), 800);
+    setTimeout(() => _fbSetStatus(IconGenerator.html('check','12px') + ' ' + FB_SERVERS[idx].name + ' ' + t('fbStatusSrvReady'), '#2ecc71'), 800);
 }
 
 // Авто-выбор наименее загруженного сервера
@@ -209,7 +209,7 @@ async function _fbAutoSelectServer() {
     _currentServerIdx = bestIdx;
     _fbDb = _fbDbs[bestIdx];
     _updateServerSelectorUI();
-    _fbSetStatus('✅ ' + FB_SERVERS[bestIdx].name + ' (' + bestCount + ')', '#2ecc71');
+    _fbSetStatus(IconGenerator.html('check','12px') + ' ' + FB_SERVERS[bestIdx].name + ' (' + bestCount + ')', '#2ecc71');
 }
 
 // Обновить визуальный селектор серверов
@@ -1294,9 +1294,11 @@ function buildOnlineBossList(containerId) {
         const item = document.createElement('div');
         item.className = 'lobby-boss-item' + (selectedOnlineBoss === index ? ' selected' : '');
         item.onclick = () => selectOnlineBoss(index, containerId);
-        item.innerHTML = '<span class="lobby-boss-icon">' + boss.icon + '</span>' +
+        const bossIconHtml = boss.iconName ? IconGenerator.html(boss.iconName, '16px') : boss.icon;
+        const checkHtml = isDefeated ? IconGenerator.html('check','14px') : '';
+        item.innerHTML = '<span class="lobby-boss-icon">' + bossIconHtml + '</span>' +
             '<span class="lobby-boss-name">' + (t('bosses.' + boss.id + '.name') || boss.id) + '</span>' +
-            '<span class="lobby-boss-check">' + (isDefeated ? '✅' : '') + '</span>';
+            '<span class="lobby-boss-check">' + checkHtml + '</span>';
         container.appendChild(item);
     });
     // Show START button when in p2p boss mode
@@ -1364,17 +1366,18 @@ function joinRoom() {
             const pc = net.conn.peerConnection;
             if (!pc) return;
             const state = pc.iceConnectionState;
+            const G = IconGenerator;
             const labels = {
-                'new': '⏳ Начало ICE...',
-                'checking': '🔍 Проверка маршрутов...',
-                'connected': '✅ Маршрут найден!',
-                'completed': '✅ ICE завершён',
-                'failed': '❌ ICE не удался',
-                'disconnected': '⚠ ICE отключился',
-                'closed': '🔴 Закрыто',
+                'new':          G.html('hourglass','12px') + ' Начало ICE...',
+                'checking':     G.html('hourglass','12px') + ' Проверка маршрутов...',
+                'connected':    G.html('check','12px') + ' Маршрут найден!',
+                'completed':    G.html('check','12px') + ' ICE завершён',
+                'failed':       G.html('cross','12px') + ' ICE не удался',
+                'disconnected': G.html('warning','12px') + ' ICE отключился',
+                'closed':       G.html('dot_red','12px') + ' Закрыто',
             };
             if (labels[state]) {
-                document.getElementById('online-status').innerText = labels[state] || state;
+                document.getElementById('online-status').innerHTML = labels[state] || state;
             }
             if (['connected','completed','failed','closed'].includes(state)) {
                 clearInterval(_iceStatusPoll);
@@ -1481,7 +1484,7 @@ function updateMenuButtons() {
         if (!unlocked) {
             if (skin.reqScore) { statusEl.innerText = t('needDist') + " " + skin.reqScore; statusEl.style.color = '#c0392b'; actionEl.style.display = 'inline-block'; actionEl.innerText = t('lockedBtn'); actionEl.classList.add('action-lock'); }
             else if (skin.reqInfinityScore) { statusEl.innerText = t('infScore') + " " + skin.reqInfinityScore; statusEl.style.color = '#c0392b'; actionEl.style.display = 'inline-block'; actionEl.innerText = t('lockedBtn'); actionEl.classList.add('action-lock'); }
-            else if (skin.cost) { actionEl.style.display = 'inline-block'; let fishClass = 'fish-orange'; if (skin.currency === 'blue') fishClass = 'fish-blue'; if (skin.currency === 'gold') fishClass = 'fish-gold'; actionEl.innerHTML = t('buy') + " " + skin.cost + ' <span class="fish-icon ' + fishClass + '" style="text-shadow: none;">🐟</span>'; let currencyVal = (skin.currency === 'blue') ? fishWallet.blue : (skin.currency === 'gold' ? fishWallet.gold : fishWallet.orange); if (currencyVal >= skin.cost) actionEl.classList.add('action-buy'); else actionEl.classList.add('action-lock'); }
+            else if (skin.cost) { actionEl.style.display = 'inline-block'; let fishName = skin.currency==='blue' ? 'fish_blue' : skin.currency==='gold' ? 'fish_gold' : 'fish_orange'; actionEl.innerHTML = t('buy') + ' ' + skin.cost + ' ' + IconGenerator.html(fishName,'13px'); let currencyVal = (skin.currency === 'blue') ? fishWallet.blue : (skin.currency === 'gold' ? fishWallet.gold : fishWallet.orange); if (currencyVal >= skin.cost) actionEl.classList.add('action-buy'); else actionEl.classList.add('action-lock'); }
             else if (skin.secret) { statusEl.innerText = "???"; statusEl.style.color = '#8e44ad'; }
         }
         return unlocked;

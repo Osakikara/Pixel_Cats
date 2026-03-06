@@ -15,9 +15,9 @@ function closeSettings() {
     if (!isPlaying && !bossBattleActive) _hideMobileControls(); // hide unless game is running
 }
 
-// ============================================
+// ============================================================
 // SKIN SHOP SYSTEM
-// ============================================
+// ============================================================
 let shopSelectedSkin = null; // id of currently selected skin in shop
 
 function openShop() {
@@ -55,18 +55,18 @@ function renderShop() {
             (isSelSel ? ' selected' : '');
         card.onclick = () => { shopSelectedSkin = skin.id; renderShop(); };
 
-        // Preview canvas
+        // Square 80×80 canvas. Body occupies y+15..y+39, centre = y+27.
+        // y=13 → body centre = 40 = canvas centre for ALL skins, no exceptions.
         const cv = document.createElement('canvas');
-        cv.width  = 80;
-        cv.height = 70;
+        cv.width        = 80;
+        cv.height       = 80;
         cv.style.width  = '72px';
-        cv.style.height = '63px';
+        cv.style.height = '72px';
         const cx = cv.getContext('2d');
-        cx.clearRect(0, 0, 80, 70);
-        // Draw cat centered — mimic drawPixelCat with static time=0
+        cx.clearRect(0, 0, 80, 80);
         const savedTime = gameTime;
-        gameTime = 20; // a frame with good pose
-        drawPixelCat(cx, 8, 22, skin, true, null, true, false);
+        gameTime = 20;
+        drawPixelCat(cx, 25, 30, skin, true, null, true, false);
         gameTime = savedTime;
         card.appendChild(cv);
 
@@ -101,8 +101,8 @@ function renderShop() {
             const wallet = skin.currency === 'blue' ? fishWallet.blue
                          : skin.currency === 'gold' ? fishWallet.gold
                          : fishWallet.orange;
-            const fishEmoji = skin.currency === 'blue' ? '💙' : skin.currency === 'gold' ? '⭐' : '🟠';
-            badge.textContent = fishEmoji + ' ' + skin.cost;
+            const fishName = skin.currency === 'blue' ? 'fish_blue' : skin.currency === 'gold' ? 'fish_gold' : 'fish_orange';
+            badge.innerHTML = IconGenerator.html(fishName,'12px') + ' ' + skin.cost;
             badge.classList.add('badge-buy');
             if (wallet < skin.cost) badge.classList.add('cant-afford');
             badge.onclick = (e) => {
@@ -110,7 +110,7 @@ function renderShop() {
                 shopBuySkin(skin.id);
             };
         } else {
-            badge.textContent = '🔒';
+            badge.innerHTML = IconGenerator.html('lock','14px');
             badge.classList.add('badge-locked-score');
         }
 
@@ -157,6 +157,7 @@ function shopEquipP2() {
     p2SkinIndex = idx;
     closeShop();
 }
+
 function _syncSettingsUI() {
     const S = AudioEngine.settings;
     document.getElementById('set-music-on').classList.toggle('active', S.musicOn);

@@ -678,9 +678,7 @@ function menuLoop() {
     if (isPlaying) return;
     p1PreviewCtx.clearRect(0, 0, 100, 80); p2PreviewCtx.clearRect(0, 0, 100, 80); onlineSkinCtx.clearRect(0, 0, 100, 80);
     gameTime += 0.5;
-    let p1Y = (SKINS[p1SkinIndex].hat) ? 35 : 20, p2Y = (SKINS[p2SkinIndex].hat) ? 35 : 20;
-    if (SKINS[p1SkinIndex].hat === 'plumbob') p1Y = 40; if (SKINS[p2SkinIndex].hat === 'plumbob') p2Y = 40;
-    if (SKINS[p1SkinIndex].hat === 'samurai') p1Y = 55; if (SKINS[p2SkinIndex].hat === 'samurai') p2Y = 55;
+    const p1Y = 30, p2Y = 30;
     drawPixelCat(p1PreviewCtx, 35, p1Y, SKINS[p1SkinIndex], true, null, true); drawPixelCat(onlineSkinCtx, 35, p1Y, SKINS[p1SkinIndex], true, null, true);
     if (numPlayers === 2) drawPixelCat(p2PreviewCtx, 35, p2Y, SKINS[p2SkinIndex], true, null, false);
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);

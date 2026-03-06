@@ -6,6 +6,7 @@ const BOSSES = [
     { 
         id: 'fireGolem', 
         icon: '🔥',
+        iconName: 'fire',
         hp: 100, 
         duration: 40, 
         projectileSpeed: 4, 
@@ -18,6 +19,7 @@ const BOSSES = [
     { 
         id: 'iceDragon', 
         icon: '❄️',
+        iconName: 'ice',
         hp: 150, 
         duration: 30, 
         projectileSpeed: 6, 
@@ -30,6 +32,7 @@ const BOSSES = [
     { 
         id: 'alchemist', 
         icon: '⚗️',
+        iconName: 'potion',
         hp: 120, 
         duration: 30, 
         projectileSpeed: 11.0, 
@@ -42,6 +45,7 @@ const BOSSES = [
     { 
         id: 'shadowLord', 
         icon: '🌑',
+        iconName: 'shadow',
         hp: 200, 
         duration: 999, 
         projectileSpeed: 8, 
@@ -508,16 +512,16 @@ function startBossBattle(bossIndex) {
     // Setup HP bar style per boss
     if (currentBoss.id === 'fireGolem') {
         document.getElementById('boss-hp-fill').style.background = 'linear-gradient(90deg,#cc2200,#ff6600,#ffcc00)';
-        document.getElementById('boss-hp-label').innerText = '🔥 ' + t('bosses.' + currentBoss.id + '.name');
+        document.getElementById('boss-hp-label').innerHTML = IconGenerator.html('fire','13px') + ' ' + t('bosses.' + currentBoss.id + '.name');
     } else if (currentBoss.id === 'iceDragon') {
         document.getElementById('boss-hp-fill').style.background = 'linear-gradient(90deg,#003399,#0088cc,#aaeeff)';
-        document.getElementById('boss-hp-label').innerText = '❄️ ' + t('bosses.' + currentBoss.id + '.name');
+        document.getElementById('boss-hp-label').innerHTML = IconGenerator.html('ice','13px') + ' ' + t('bosses.' + currentBoss.id + '.name');
     } else if (currentBoss.id === 'alchemist') {
         document.getElementById('boss-hp-fill').style.background = 'linear-gradient(90deg,#1a4d00,#00aa22,#88ff44)';
-        document.getElementById('boss-hp-label').innerText = '⚗️ ' + t('bosses.' + currentBoss.id + '.name');
+        document.getElementById('boss-hp-label').innerHTML = IconGenerator.html('potion','13px') + ' ' + t('bosses.' + currentBoss.id + '.name');
     } else {
         document.getElementById('boss-hp-fill').style.background = 'linear-gradient(90deg,#1a0033,#6600cc,#cc00ff)';
-        document.getElementById('boss-hp-label').innerText = '🌑 ' + t('bosses.' + currentBoss.id + '.name');
+        document.getElementById('boss-hp-label').innerHTML = IconGenerator.html('shadow','13px') + ' ' + t('bosses.' + currentBoss.id + '.name');
     }
     document.getElementById('dodge-hint').style.display = 'block';
     document.getElementById('dodge-hint').innerText = t('dodgeHint');

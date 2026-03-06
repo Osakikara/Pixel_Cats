@@ -570,14 +570,14 @@ const TutorialSystem = (() => {
                 cx.strokeStyle = '#ffd700'; cx.lineWidth = 2; cx.strokeRect(10, 8, 116, 22);
                 cx.font = '8px "Press Start 2P",monospace';
                 cx.fillStyle = '#ffd700'; cx.textAlign = 'left'; cx.textBaseline = 'middle';
-                cx.fillText('🐟 ' + score, 18, 19);
+                IconGenerator.drawIcon(cx, 'fish_orange', 15, 11, 14);
+                cx.fillText(' ' + score, 32, 19);
 
                 // Иконки валют внизу
-                cx.font = '6px "Press Start 2P",monospace';
                 cx.textBaseline = 'alphabetic'; cx.textAlign = 'center';
-                cx.fillStyle = '#ffa726'; cx.fillText('🟠', W/2 - 80, H - 4);
-                cx.fillStyle = '#29b6f6'; cx.fillText('💙', W/2,      H - 4);
-                cx.fillStyle = '#ffd700'; cx.fillText('⭐', W/2 + 80, H - 4);
+                IconGenerator.drawIcon(cx, 'fish_orange', W/2 - 88, H - 14, 12);
+                IconGenerator.drawIcon(cx, 'fish_blue',   W/2 - 4,  H - 14, 12);
+                IconGenerator.drawIcon(cx, 'fish_gold',   W/2 + 80, H - 14, 12);
 
                 gameTime = sgt;
             }
@@ -630,9 +630,10 @@ const TutorialSystem = (() => {
                     cx.fillStyle = m.unlocked ? '#fff' : m.tc;
                     cx.fillText(m.label, bx+BW/2, by+20);
 
-                    // Звёзды
-                    cx.font = '9px sans-serif'; cx.textBaseline = 'alphabetic';
-                    cx.fillText('⭐'.repeat(Math.min(i+1, 4)), bx+BW/2, by+36);
+                    // Звёзды (pixel-иконки)
+                    for (let si2 = 0; si2 < Math.min(i+1, 4); si2++) {
+                        IconGenerator.drawIcon(cx, 'star', bx + 12 + si2 * 10, by + 26, 10);
+                    }
 
                     // Кот в открытом режиме
                     if (m.unlocked) {
@@ -644,9 +645,7 @@ const TutorialSystem = (() => {
                     // Замок на закрытых
                     if (!m.unlocked) {
                         cx.fillStyle = 'rgba(0,0,0,.72)'; cx.fillRect(bx, by, BW, BH);
-                        cx.font = '24px sans-serif';
-                        cx.textAlign = 'center'; cx.textBaseline = 'middle';
-                        cx.fillText('🔒', bx + BW/2, by + BH/2);
+                        IconGenerator.drawIcon(cx, 'lock', bx + BW/2 - 16, by + BH/2 - 16, 32);
                     }
                 });
 
@@ -707,7 +706,8 @@ const TutorialSystem = (() => {
                     cx.beginPath(); cx.moveTo(0, 32); cx.lineTo(W, 32); cx.stroke();
                     cx.font = '7px "Press Start 2P",monospace';
                     cx.fillStyle = '#ffd700'; cx.textAlign = 'left'; cx.textBaseline = 'middle';
-                    cx.fillText('✏️  РЕДАКТОР УПРАВЛЕНИЯ', 10, 16);
+                    IconGenerator.drawIcon(cx, 'pencil', 8, 8, 14);
+                    cx.fillText('  РЕДАКТОР УПРАВЛЕНИЯ', 24, 16);
                     _btn(cx, W-64,  6, 56, 20, '#27ae60', '#2ecc71', '✓ SAVE',  5);
                     _btn(cx, W-126, 6, 56, 20, '#c0392b', '#e74c3c', '↺ RESET', 5);
                 }
@@ -733,16 +733,15 @@ const TutorialSystem = (() => {
                     cx.strokeStyle = '#d7bde2'; cx.lineWidth = 2;
                     cx.strokeRect(gx3+24, gy3+24, 36, 36);
 
-                    // .ctrl-ghost-label
                     cx.font = '6px "Press Start 2P",monospace';
                     cx.fillStyle = '#d7bde2'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
-                    cx.fillText('🕹️ P1', gx3+42, gy3+66);
+                    cx.fillText('P1', gx3+42, gy3+66);
+                    IconGenerator.drawIcon(cx, 'joystick', gx3+30, gy3+52, 14);
 
                     // Иконка руки при перетаскивании
                     if (ph < 132) {
                         cx.globalAlpha = Math.min(1, (ph - 50) / 18);
-                        cx.font = '16px sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
-                        cx.fillText('✋', gx3+42, gy3+28);
+                        IconGenerator.drawIcon(cx, 'hand', gx3+34, gy3+20, 16);
                         cx.globalAlpha = 1;
                     }
 
@@ -800,9 +799,9 @@ const TutorialSystem = (() => {
                 cx.fillStyle = 'rgba(255,255,255,.04)'; cx.fillRect(0, 0, W, 22);
                 cx.strokeStyle = '#333'; cx.lineWidth = 2; cx.strokeRect(0, 0, W, 22);
                 cx.font = '7px "Press Start 2P",monospace'; cx.textBaseline = 'middle';
-                cx.fillStyle = '#ffa726'; cx.textAlign = 'left';  cx.fillText('🐟 28', 14, 11);
-                cx.fillStyle = '#29b6f6'; cx.textAlign = 'center';cx.fillText('🐟 12', W/2, 11);
-                cx.fillStyle = '#ffd700'; cx.textAlign = 'right'; cx.fillText('🐟  5', W-14, 11);
+                IconGenerator.drawIcon(cx, 'fish_orange', 4,  4, 14); cx.fillStyle = '#ffa726'; cx.textAlign = 'left';   cx.fillText('28', 20, 11);
+                IconGenerator.drawIcon(cx, 'fish_blue',   W/2-20, 4, 14); cx.fillStyle = '#29b6f6'; cx.textAlign = 'center'; cx.fillText('12', W/2+8, 11);
+                IconGenerator.drawIcon(cx, 'fish_gold',   W-32, 4, 14); cx.fillStyle = '#ffd700'; cx.textAlign = 'right';  cx.fillText('5 ', W-4, 11);
 
                 SHOP_SI.forEach((si, i) => {
                     const skin  = SKINS[si];
@@ -843,9 +842,11 @@ const TutorialSystem = (() => {
                     if (owned) {
                         cx.fillText(isSel ? '✓ SELECTED' : '✓ OWNED', bx + BW/2, badY + 5.5);
                     } else {
-                        const em = skin.currency==='blue' ? '💙'
-                                 : skin.currency==='gold' ? '⭐' : '🟠';
-                        cx.fillText(em + ' ' + (skin.cost || '?'), bx + BW/2, badY + 5.5);
+                        // Иконка валюты в бейдже
+                        const fishName = skin.currency==='blue' ? 'fish_blue'
+                                       : skin.currency==='gold' ? 'fish_gold' : 'fish_orange';
+                        IconGenerator.drawIcon(cx, fishName, bx+3, badY+1, 9);
+                        cx.fillText(' ' + (skin.cost || '?'), bx + BW/2 + 4, badY + 5.5);
                     }
                 });
 
@@ -900,7 +901,8 @@ const TutorialSystem = (() => {
                 cx.fillText('P2 (FRIEND)', W - 110, H - 31);
 
                 // Кнопка ONLINE — .btn-blue
-                _btn(cx, W/2 - 90, 8, 180, 28, '#1a2a3e', '#3498db', '🌐 ONLINE', 7);
+                _btn(cx, W/2 - 90, 8, 180, 28, '#1a2a3e', '#3498db', 'ONLINE', 7);
+                IconGenerator.drawIcon(cx, 'globe', W/2 - 83, 15, 14);
 
                 gameTime = sgt;
             }
@@ -961,8 +963,7 @@ const TutorialSystem = (() => {
 
                 // Пульсирующая звезда
                 cx.globalAlpha = Math.sin(_tt * .08) * .22 + .75;
-                cx.font = '16px sans-serif'; cx.textBaseline = 'middle';
-                cx.fillText('🌟', W/2, 62);
+                IconGenerator.drawIcon(cx, 'star', W/2 - 8, 54, 16);
                 cx.globalAlpha = 1;
 
                 gameTime = sgt;

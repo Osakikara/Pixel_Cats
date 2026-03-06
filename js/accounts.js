@@ -332,10 +332,10 @@ const AccountSystem = (() => {
         var el = document.getElementById('acc-profile-badge');
         if (!el) return;
         if (_profile && _profile.name) {
-            el.textContent = '👤 ' + _profile.name;
+            el.innerHTML = IconGenerator.html('person','12px') + ' ' + _escHtml(_profile.name);
             el.style.color = '#ffd700';
         } else {
-            el.textContent = t('accLoginBadge');
+            el.innerHTML = IconGenerator.html('person','12px') + ' ' + (t('accLoginBadge')||'ВОЙТИ');
             el.style.color = '#aaa';
         }
     }
@@ -372,11 +372,9 @@ const AccountSystem = (() => {
     }
 
     function _skinEmoji(skin) {
-        if (!skin) return '🐱';
-        var map = { white:'⬜',orange:'🟠',black:'⬛',calico:'🟫',pink:'🩷',
-                    witch:'🧙',cyber:'🤖',froggy:'🐸',sims:'💎',newyear:'🎅',
-                    angel:'👼',samurai:'⚔️',foxcoat:'🦊' };
-        return map[skin.id] || '🐱';
+        if (!skin) return IconGenerator.html('fish_orange','20px');
+        // Canvas 120x80 → показываем 60x40 (чёткий пиксель-арт x2)
+        return '<img src="' + IconGenerator.getCatIcon(skin) + '" style="width:60px;height:40px;image-rendering:pixelated;display:block;margin:0 auto;">';
     }
 
     function _timeSince(ts) {
@@ -387,10 +385,12 @@ const AccountSystem = (() => {
     }
 
     function _diffBadges() {
-        var s = '✅' + t('accDiffEasy');
-        if (hardUnlocked)     s += ' ✅' + t('accDiffHard');
-        if (megaHardUnlocked) s += ' ✅' + t('accDiffMega');
-        if (infinityUnlocked) s += ' ✅∞';
+        var ck = IconGenerator.html('check','11px');
+        var inf = IconGenerator.html('infinity','11px');
+        var s = ck + t('accDiffEasy');
+        if (hardUnlocked)     s += ' ' + ck + t('accDiffHard');
+        if (megaHardUnlocked) s += ' ' + ck + t('accDiffMega');
+        if (infinityUnlocked) s += ' ' + ck + inf;
         return s;
     }
 
@@ -482,18 +482,23 @@ const AccountSystem = (() => {
         if (inp && _profile && _profile.name) inp.value = _profile.name;
         document.getElementById('acc-name-error').textContent = '';
         var btn = document.getElementById('btn-save-profile');
-        if (btn) { btn.disabled = false; btn.textContent = t('accSaveName'); }
+        if (btn) { btn.disabled = false; btn.innerHTML = IconGenerator.html('check','13px') + ' ' + t('accSaveNameShort'); }
         var stats = document.getElementById('acc-stats-block');
         if (stats) {
-            var syncAgo = _lastSyncTime ? _timeSince(_lastSyncTime) : t('accSyncNever');
+            var G = IconGenerator;
+            var emailLine = _user
+                ? '<div class="acc-stat-row"><span>Email</span><span style="color:#aaa;font-size:7px;">' + _escHtml(_user.email) + '</span></div>'
+                : '';
+            // FIX: was `syncAgo` (undefined variable) — now computed correctly
+            var syncAgoText = _lastSyncTime ? _timeSince(_lastSyncTime) : (t('accNoSync') || 'Никогда');
             stats.innerHTML =
-                '<div class="acc-stat-row"><span>Email</span><span style="color:#aaa;font-size:7px;">' + _escHtml(_user.email) + '</span></div>' +
-                '<div class="acc-stat-row"><span>' + t('accStatBest') + '</span><span>🏆 ' + highScore + '</span></div>' +
-                '<div class="acc-stat-row"><span>' + t('accStatInfinity') + '</span><span>∞ ' + infinityHighScore + '</span></div>' +
-                '<div class="acc-stat-row"><span>' + t('accStatFish') + '</span><span>🟠' + fishWallet.orange + ' 💙' + fishWallet.blue + ' ⭐' + fishWallet.gold + '</span></div>' +
-                '<div class="acc-stat-row"><span>' + t('accStatSkins') + '</span><span>🎨 ' + unlockedSkins.length + '/' + SKINS.length + '</span></div>' +
+                emailLine +
+                '<div class="acc-stat-row"><span>' + t('accStatBest') + '</span><span>' + G.html('trophy','13px') + ' ' + highScore + '</span></div>' +
+                '<div class="acc-stat-row"><span>' + t('accStatInfinity') + '</span><span>' + G.html('infinity','13px') + ' ' + infinityHighScore + '</span></div>' +
+                '<div class="acc-stat-row"><span>' + t('accStatFish') + '</span><span>' + G.html('fish_orange','13px') + ' ' + fishWallet.orange + ' ' + G.html('fish_blue','13px') + ' ' + fishWallet.blue + ' ' + G.html('fish_gold','13px') + ' ' + fishWallet.gold + '</span></div>' +
+                '<div class="acc-stat-row"><span>' + t('accStatSkins') + '</span><span>' + G.html('cart','13px') + ' ' + unlockedSkins.length + '/' + SKINS.length + '</span></div>' +
                 '<div class="acc-stat-row"><span>' + t('accStatDiffs') + '</span><span style="font-size:7px;">' + _diffBadges() + '</span></div>' +
-                '<div class="acc-stat-row"><span>' + t('accStatSync') + '</span><span style="font-size:7px;color:#888;">' + syncAgo + '</span></div>';
+                '<div class="acc-stat-row"><span>' + t('accStatSync') + '</span><span style="font-size:7px;color:#888;">' + syncAgoText + '</span></div>';
         }
     }
 
@@ -554,7 +559,7 @@ const AccountSystem = (() => {
         // Update score column header based on mode
         var scoreHeader = document.getElementById('board-th-score');
         if (scoreHeader) {
-            scoreHeader.textContent = _currentBoardMode === 'bosses' ? (t('accBoardColBosses') || '⚔️ БОССЫ') : t('accBoardColScore');
+            scoreHeader.innerHTML = _currentBoardMode === 'bosses' ? (IconGenerator.html('swords','12px') + ' ' + (t('accBoardColBosses') || 'БОССЫ')) : t('accBoardColScore');
         }
         fetchLeaderboard(_currentBoardMode).then(function(rows) {
             if (!rows.length) { body.innerHTML = '<tr><td colspan="4" class="board-empty-cell">' + t('accBoardEmpty') + '</td></tr>'; return; }
@@ -562,9 +567,11 @@ const AccountSystem = (() => {
             var field = isBosses ? 'bossCount' : (_currentBoardMode === 'infinity' ? 'scoreInfinity' : 'scoreNormal');
             body.innerHTML = rows.map(function(r) {
                 var isMe  = _user && r.id === _user.uid;
-                var medal = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : r.rank;
+                var medal = r.rank === 1 ? '<img src="'+IconGenerator.getIcon('medal1')+'" class="pixel-icon">' :
+                            r.rank === 2 ? '<img src="'+IconGenerator.getIcon('medal2')+'" class="pixel-icon">' :
+                            r.rank === 3 ? '<img src="'+IconGenerator.getIcon('medal3')+'" class="pixel-icon">' : ('#' + r.rank);
                 var skin  = SKINS.find(function(s) { return s.id === r.skinId; }) || SKINS[0];
-                var scoreCell = isBosses ? ('⚔️ ' + r.bossCount + ' / 4') : r[field];
+                var scoreCell = isBosses ? ('<img src="'+IconGenerator.getIcon('swords')+'" class="pixel-icon"> ' + r.bossCount + ' / 4') : r[field];
                 return '<tr class="' + (isMe ? 'board-row-me' : '') + '">' +
                     '<td class="board-rank">' + medal + '</td>' +
                     '<td class="board-name">' + _escHtml(r.name) + (isMe ? ' <span class="board-you-badge">' + t('accBoardYou') + '</span>' : '') + '</td>' +
