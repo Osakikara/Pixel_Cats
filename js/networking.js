@@ -1614,10 +1614,16 @@ function setupMobileControls() {
             const px = nx * R * 0.65, py = ny * R * 0.65;
             knob.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
 
-            // ── Analog axes (smooth proportional speed) ──
+            // ── Analog axes — single 2D dead zone for true 360° direction ──
             if (axisKey) {
-                joystickAxes[axisKey].x = Math.abs(nx) > DEAD ? nx : 0;
-                joystickAxes[axisKey].y = Math.abs(ny) > DEAD ? ny : 0;
+                const _mag = Math.sqrt(nx * nx + ny * ny);
+                if (_mag > DEAD) {
+                    joystickAxes[axisKey].x = nx;
+                    joystickAxes[axisKey].y = ny;
+                } else {
+                    joystickAxes[axisKey].x = 0;
+                    joystickAxes[axisKey].y = 0;
+                }
             }
 
             // ── Boolean keys (jump, down, boss 4-dir, keyboard compat) ──
@@ -1952,14 +1958,13 @@ class Cat {
             if (up) this.y -= flySpeed * timeScale; if (down) this.y += flySpeed * timeScale;
             if (this.x < camera.x) this.x = camera.x; if (this.x + this.width > camera.x + canvas.width / zoomFactor) this.x = camera.x + canvas.width / zoomFactor - this.width; return;
         }
-        // === ANALOG MOVEMENT — normalized axis for consistent full speed ===
+        // === ANALOG MOVEMENT — ax.x raw value (unit-clamped, no scaling) ===
         let dx = 0;
         const _axisSlot = (!net.isOnline && !this.isPlayer1) ? 'p2' : 'p1';
         const _jAxis = joystickAxes[_axisSlot];
-        const _jLen = Math.sqrt(_jAxis.x * _jAxis.x + _jAxis.y * _jAxis.y);
-        if (_jLen > 0.08) {
-            // Normalize: full speed at any deflection, true direction preserved
-            dx = (_jAxis.x / _jLen) * moveSpeed * timeScale;
+        if (Math.abs(_jAxis.x) > 0.08) {
+            // ax.x is already in [-1,1] — full speed, exact direction
+            dx = _jAxis.x * moveSpeed * timeScale;
             this.facingRight = _jAxis.x > 0;
         } else {
             // Boolean fallback: keyboard or dpad

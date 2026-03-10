@@ -690,15 +690,15 @@ function updateBossPlayer(timeScale) {
     const movePlayer = (cat, left, right, up, down, axisSlot) => {
         if (!cat || !cat.alive) return;
 
-        // -- Analog path (joystick) -- true 360° movement, full speed via vector normalization
+        // -- Analog path (joystick) -- true 360° movement at full speed
         if (axisSlot && typeof joystickAxes !== 'undefined') {
             const ax = joystickAxes[axisSlot];
             const DEAD = 0.10;
-            const len = Math.sqrt(ax.x * ax.x + ax.y * ax.y);
-            if (len > DEAD) {
-                // Normalize: preserves true direction (any angle), removes speed variation
-                cat.x += (ax.x / len) * moveSpeed * timeScale;
-                cat.y += (ax.y / len) * moveSpeed * timeScale;
+            const mag = Math.sqrt(ax.x * ax.x + ax.y * ax.y);
+            if (mag > DEAD) {
+                // ax is already a unit-clamped vector — direction is exact, speed is full
+                cat.x += ax.x * moveSpeed * timeScale;
+                cat.y += ax.y * moveSpeed * timeScale;
                 cat.facingRight = ax.x > 0;
             } else {
                 // Boolean fallback for keyboard / dpad
