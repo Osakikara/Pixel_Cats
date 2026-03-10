@@ -168,6 +168,15 @@ function _syncSettingsUI() {
     document.getElementById('sfx-vol-slider').value   = Math.round(S.sfxVol   * 100);
     document.getElementById('music-vol-val').innerText = Math.round(S.musicVol * 100) + '%';
     document.getElementById('sfx-vol-val').innerText   = Math.round(S.sfxVol   * 100) + '%';
+    // Sync joy-style row visibility and buttons
+    const _isJoy = (typeof ctrlType !== 'undefined') && ctrlType === 'joystick';
+    const _joyRow = document.getElementById('joy-style-row');
+    if (_joyRow) _joyRow.style.display = _isJoy ? '' : 'none';
+    const _js = (typeof joyStyle !== 'undefined') ? joyStyle : 'fixed';
+    const _fixedBtn = document.getElementById('joy-style-fixed');
+    const _floatBtn = document.getElementById('joy-style-float');
+    if (_fixedBtn) _fixedBtn.classList.toggle('active', _js === 'fixed');
+    if (_floatBtn) _floatBtn.classList.toggle('active', _js === 'float');
 }
 function setMusicOn(v) {
     AudioEngine.setMusicOn(v);

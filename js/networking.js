@@ -1546,6 +1546,13 @@ let godMode = false;
 // Analog joystick axes — updated by makeJoystick, used in Cat.update() for smooth movement
 const joystickAxes = { p1: { x: 0, y: 0 }, p2: { x: 0, y: 0 } };
 
+// ============================================================
+// CONTROL TYPE — must be declared BEFORE setupMobileControls()
+// because makeJoystick references joyStyle immediately on init
+// ============================================================
+let ctrlType = localStorage.getItem('pcCtrlType') || 'joystick';
+let joyStyle = localStorage.getItem('pcJoyStyle') || 'fixed'; // 'fixed' | 'float'
+
 function setupMobileControls() {
     // ================================================================
     // FLOATING ANALOG JOYSTICK SYSTEM
@@ -1572,27 +1579,32 @@ function setupMobileControls() {
         let active = false, touchId = null;
         let bx = 0, by = 0;   // touch origin (center of floating base)
 
-        // Base starts hidden (opacity 0) until touched
-        base.style.opacity  = '0';
+        // ---- Visibility helpers ----
         base.style.transition = 'opacity 0.12s';
-        base.style.position = 'absolute';
+        base.style.position   = 'absolute';
 
-        // Actual rendered radius — works even when CSS-scaled by applyLayout
+        function _setVisible(v)  { base.style.opacity = v ? '0.82' : '0'; }
+        function applyJoyVisibility() {
+            if (joyStyle === 'fixed') _setVisible(true);
+            else                      _setVisible(active);
+        }
+        base._applyJoyVisibility = applyJoyVisibility;
+        applyJoyVisibility();
+
         function getRadius() { return base.getBoundingClientRect().width / 2; }
 
-        // Clamp base inside wrapper so it never goes out of screen
+        // Float mode only — snaps base to finger
         function floatBaseTo(cx, cy) {
             if (!wrap) return;
             const wr  = wrap.getBoundingClientRect();
             const bw  = base.offsetWidth  || 110;
             const bh  = base.offsetHeight || 110;
-            // position relative to wrap
             let rx = cx - wr.left - bw / 2;
             let ry = cy - wr.top  - bh / 2;
             rx = Math.max(0, Math.min(wr.width  - bw, rx));
             ry = Math.max(0, Math.min(wr.height - bh, ry));
-            base.style.left = rx + 'px';
-            base.style.top  = ry + 'px';
+            base.style.left   = rx + 'px';
+            base.style.top    = ry + 'px';
             base.style.right  = 'unset';
             base.style.bottom = 'unset';
         }
@@ -1634,8 +1646,7 @@ function setupMobileControls() {
 
         function releaseAll() {
             active = false; touchId = null;
-            // Fade base out, reset knob
-            base.style.opacity = '0';
+            if (joyStyle !== 'fixed') _setVisible(false);
             base.classList.remove('active');
             knob.style.transform = 'translate(-50%, -50%)';
             if (axisKey) { joystickAxes[axisKey].x = 0; joystickAxes[axisKey].y = 0; }
@@ -1657,17 +1668,23 @@ function setupMobileControls() {
             const touch = e.changedTouches[0];
             touchId  = touch.identifier;
             active   = true;
-            // Float: snap base to finger position
-            floatBaseTo(touch.clientX, touch.clientY);
-            // Small delay so layout reflow finishes before reading center
-            requestAnimationFrame(() => {
+            if (joyStyle === 'float') {
+                // Float: snap base to finger, origin = finger pos
+                floatBaseTo(touch.clientX, touch.clientY);
+                requestAnimationFrame(() => {
+                    const r = base.getBoundingClientRect();
+                    bx = r.left + r.width  / 2;
+                    by = r.top  + r.height / 2;
+                });
+                bx = touch.clientX;
+                by = touch.clientY;
+                _setVisible(true);
+            } else {
+                // Fixed: base stays put, origin = base center
                 const r = base.getBoundingClientRect();
                 bx = r.left + r.width  / 2;
                 by = r.top  + r.height / 2;
-            });
-            bx = touch.clientX;
-            by = touch.clientY;
-            base.style.opacity = '0.85';
+            }
             base.classList.add('active');
         }, { passive: false });
 
@@ -1749,8 +1766,6 @@ setupMobileControls();
 // ============================================================
 // D-PAD CONTROL SYSTEM
 // ============================================================
-let ctrlType = localStorage.getItem('pcCtrlType') || 'dpad';
-
 const DPAD_KEY_MAP = {
     up:    ['KeyW', 'ArrowUp'],
     down:  ['KeyS', 'ArrowDown'],
@@ -1788,7 +1803,22 @@ function setCtrlType(type) {
     // Always show edit row — works for both joystick and dpad
     const editRow = document.getElementById('ctrl-edit-row');
     if (editRow) editRow.style.display = '';
+    // Show joy-style row only when joystick is selected
+    const joyStyleRow = document.getElementById('joy-style-row');
+    if (joyStyleRow) joyStyleRow.style.display = isJoy ? '' : 'none';
     if (isMobile) _applyCtrlType();
+}
+
+// Toggle fixed / floating joystick style
+function setJoyStyle(style) {
+    joyStyle = style;
+    localStorage.setItem('pcJoyStyle', style);
+    document.getElementById('joy-style-fixed').classList.toggle('active', style === 'fixed');
+    document.getElementById('joy-style-float').classList.toggle('active', style === 'float');
+    // Refresh all joystick bases visibility
+    document.querySelectorAll('.joystick-base').forEach(b => {
+        if (typeof b._applyJoyVisibility === 'function') b._applyJoyVisibility();
+    });
 }
 
 function _applyCtrlType() {
@@ -1815,6 +1845,14 @@ function _applyCtrlType() {
     // Always show edit row
     const editRow = document.getElementById('ctrl-edit-row');
     if (editRow) editRow.style.display = '';
+    // Joy-style row: show only if joystick selected
+    const joyStyleRow = document.getElementById('joy-style-row');
+    if (joyStyleRow) joyStyleRow.style.display = isJoy ? '' : 'none';
+    // Sync joy-style buttons
+    const fixedBtn = document.getElementById('joy-style-fixed');
+    const floatBtn = document.getElementById('joy-style-float');
+    if (fixedBtn) fixedBtn.classList.toggle('active', joyStyle === 'fixed');
+    if (floatBtn) floatBtn.classList.toggle('active', joyStyle === 'float');
 })();
 
 // Patch updatePlayerModeUI to respect ctrlType
