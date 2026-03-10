@@ -1952,13 +1952,14 @@ class Cat {
             if (up) this.y -= flySpeed * timeScale; if (down) this.y += flySpeed * timeScale;
             if (this.x < camera.x) this.x = camera.x; if (this.x + this.width > camera.x + canvas.width / zoomFactor) this.x = camera.x + canvas.width / zoomFactor - this.width; return;
         }
-        // === ANALOG MOVEMENT — uses joystick axis for proportional speed ===
+        // === ANALOG MOVEMENT — normalized axis for consistent full speed ===
         let dx = 0;
         const _axisSlot = (!net.isOnline && !this.isPlayer1) ? 'p2' : 'p1';
         const _jAxis = joystickAxes[_axisSlot];
-        if (Math.abs(_jAxis.x) > 0.08) {
-            // Full speed regardless of deflection — no slowdown
-            dx = Math.sign(_jAxis.x) * moveSpeed * timeScale;
+        const _jLen = Math.sqrt(_jAxis.x * _jAxis.x + _jAxis.y * _jAxis.y);
+        if (_jLen > 0.08) {
+            // Normalize: full speed at any deflection, true direction preserved
+            dx = (_jAxis.x / _jLen) * moveSpeed * timeScale;
             this.facingRight = _jAxis.x > 0;
         } else {
             // Boolean fallback: keyboard or dpad
