@@ -211,7 +211,7 @@ const translations = {
         accBoardLoading: "Загрузка...", accBoardEmpty: "Пока нет рекордов",
         accBoardNoConn: "Нет соединения", accBoardErr: "Ошибка загрузки",
         accBoardYou: "ты",
-        accBoardColRank: "#", accBoardColName: "ИМЯ", accBoardColCat: "КОТ", accBoardColScore: "СЧЁТ", accBoardColBosses: "БОССЫ",
+        accBoardColRank: "№", accBoardColName: "ИМЯ", accBoardColCat: "КОТ", accBoardColScore: "СЧЁТ", accBoardColBosses: "БОССЫ",
         // — Босс: уведомления во время боя —
         bossHintLeft: "→ СЛЕВА НАПРАВО", bossHintRight: "← СПРАВА НАЛЕВО",
         bossHintUp: "↑ СНИЗУ ВВЕРХ", bossHintDown: "↓ СВЕРХУ ВНИЗ",
@@ -438,7 +438,7 @@ const translations = {
         accBoardLoading: "Loading...", accBoardEmpty: "No records yet",
         accBoardNoConn: "No connection", accBoardErr: "Load error",
         accBoardYou: "you",
-        accBoardColRank: "#", accBoardColName: "NAME", accBoardColCat: "CAT", accBoardColScore: "SCORE", accBoardColBosses: "⚔️ BOSSES",
+        accBoardColRank: "№", accBoardColName: "NAME", accBoardColCat: "CAT", accBoardColScore: "SCORE", accBoardColBosses: "⚔️ BOSSES",
         // — Boss: in-battle notifications —
         bossHintLeft: "→ LEFT TO RIGHT", bossHintRight: "← RIGHT TO LEFT",
         bossHintUp: "↑ BOTTOM TO TOP", bossHintDown: "↓ TOP TO BOTTOM",

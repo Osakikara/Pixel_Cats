@@ -559,7 +559,7 @@ const AccountSystem = (() => {
         // Update score column header based on mode
         var scoreHeader = document.getElementById('board-th-score');
         if (scoreHeader) {
-            scoreHeader.innerHTML = _currentBoardMode === 'bosses' ? (IconGenerator.html('swords','12px') + ' ' + (t('accBoardColBosses') || 'БОССЫ')) : t('accBoardColScore');
+            scoreHeader.innerHTML = _currentBoardMode === 'bosses' ? ('\u2694\uFE0F ' + (t('accBoardColBosses') || 'БОССЫ')) : t('accBoardColScore');
         }
         fetchLeaderboard(_currentBoardMode).then(function(rows) {
             if (!rows.length) { body.innerHTML = '<tr><td colspan="4" class="board-empty-cell">' + t('accBoardEmpty') + '</td></tr>'; return; }
@@ -567,11 +567,12 @@ const AccountSystem = (() => {
             var field = isBosses ? 'bossCount' : (_currentBoardMode === 'infinity' ? 'scoreInfinity' : 'scoreNormal');
             body.innerHTML = rows.map(function(r) {
                 var isMe  = _user && r.id === _user.uid;
-                var medal = r.rank === 1 ? '<img src="'+IconGenerator.getIcon('medal1')+'" class="pixel-icon">' :
-                            r.rank === 2 ? '<img src="'+IconGenerator.getIcon('medal2')+'" class="pixel-icon">' :
-                            r.rank === 3 ? '<img src="'+IconGenerator.getIcon('medal3')+'" class="pixel-icon">' : ('#' + r.rank);
+                var medal = r.rank === 1 ? '<span style="color:#FFD700;font-family:\'Press Start 2P\',monospace;font-size:12px;text-shadow:1px 1px 0 #000,0 0 7px rgba(255,215,0,0.8);">1</span>' :
+                            r.rank === 2 ? '<span style="color:#C0C0C0;font-family:\'Press Start 2P\',monospace;font-size:12px;text-shadow:1px 1px 0 #000,0 0 6px rgba(192,192,192,0.7);">2</span>' :
+                            r.rank === 3 ? '<span style="color:#CD7F32;font-family:\'Press Start 2P\',monospace;font-size:12px;text-shadow:1px 1px 0 #000,0 0 6px rgba(205,127,50,0.7);">3</span>' :
+                            '<span style="color:#777;font-family:\'Press Start 2P\',monospace;font-size:10px;">' + r.rank + '</span>';
                 var skin  = SKINS.find(function(s) { return s.id === r.skinId; }) || SKINS[0];
-                var scoreCell = isBosses ? ('<img src="'+IconGenerator.getIcon('swords')+'" class="pixel-icon"> ' + r.bossCount + ' / 4') : r[field];
+                var scoreCell = isBosses ? ('\u2694\uFE0F ' + r.bossCount + ' / 4') : r[field];
                 return '<tr class="' + (isMe ? 'board-row-me' : '') + '">' +
                     '<td class="board-rank">' + medal + '</td>' +
                     '<td class="board-name">' + _escHtml(r.name) + (isMe ? ' <span class="board-you-badge">' + t('accBoardYou') + '</span>' : '') + '</td>' +

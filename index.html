@@ -89,11 +89,23 @@
         <div id="mobile-controls-layer">
             <!-- Joystick wrappers kept as invisible anchors for the controls editor layout system -->
             <div id="controls-1p" style="display:none;">
-                <div id="joy1-wrapper" style="position:absolute;pointer-events:none;"></div>
+                <div id="joy1-wrapper" style="position:absolute;pointer-events:none;">
+                    <div id="joy1-base" class="joystick-base pixel-joystick-base">
+                        <div id="joy1-knob" class="joystick-knob pixel-joystick-knob"></div>
+                    </div>
+                </div>
             </div>
             <div id="controls-2p" style="display:none;">
-                <div id="joy1-wrapper-2p" style="position:absolute;pointer-events:none;"></div>
-                <div id="joy2-wrapper-2p" style="position:absolute;pointer-events:none;"></div>
+                <div id="joy1-wrapper-2p" style="position:absolute;pointer-events:none;">
+                    <div id="joy1-base-2p" class="joystick-base pixel-joystick-base">
+                        <div id="joy1-knob-2p" class="joystick-knob pixel-joystick-knob"></div>
+                    </div>
+                </div>
+                <div id="joy2-wrapper-2p" style="position:absolute;pointer-events:none;">
+                    <div id="joy2-base-2p" class="joystick-base pixel-joystick-base">
+                        <div id="joy2-knob-2p" class="joystick-knob pixel-joystick-knob"></div>
+                    </div>
+                </div>
             </div>
             <button class="mob-menu-btn" id="mb-menu">ESC</button>
             <!-- D-PAD controls (hidden by default) — style from v3 -->
@@ -554,14 +566,14 @@
         <div class="acc-card acc-card-wide">
             <div id="acc-board-title-el" class="acc-card-title"><img id="ico-trophy-board" class="pixel-icon" style="width:16px;height:16px;"> ТАБЛИЦА РЕКОРДОВ</div>
             <div class="board-tabs">
-                <button id="board-tab-bosses"   class="board-tab board-tab-active" onclick="AccountSystem.switchBoardMode('bosses')"><img id="icon-tab-boss" class="pixel-icon" style="vertical-align:text-bottom;margin-right:4px;"> БОССЫ</button>
+                <button id="board-tab-bosses"   class="board-tab board-tab-active" onclick="AccountSystem.switchBoardMode('bosses')">⚔️ БОССЫ</button>
                 <button id="board-tab-infinity" class="board-tab"                  onclick="AccountSystem.switchBoardMode('infinity')">∞ БЕСКОНЕЧНЫЙ</button>
             </div>
             <div class="board-scroll-wrap">
                 <table class="board-table">
                     <thead>
                         <tr class="board-thead-row">
-                            <th id="board-th-rank" class="board-th" style="width:36px;">#</th>
+                            <th id="board-th-rank" class="board-th" style="width:36px;">№</th>
                             <th id="board-th-name" class="board-th" style="text-align:left;">ИМЯ</th>
                             <th id="board-th-cat" class="board-th" style="width:60px;text-align:center;">КОТ</th>
                             <th id="board-th-score" class="board-th" style="text-align:right;width:64px;">СЧЁТ</th>

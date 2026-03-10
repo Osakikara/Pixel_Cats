@@ -245,9 +245,112 @@ h1 { font-size: 16px; color: #ffd700; text-shadow: 2px 2px #000; margin: 0 0 5px
 .joystick-wrapper.right-side { right: 20px; }
 .joystick-wrapper.center-left { left: calc(25% - 55px); }
 .joystick-wrapper.center-right { right: calc(25% - 55px); }
-.joystick-base { width: 110px; height: 110px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 3px solid rgba(255,255,255,0.25); position: relative; touch-action: none; }
-.joystick-knob { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.45); border: 2px solid rgba(255,255,255,0.8); position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; transition: background 0.1s; }
-.joystick-base.active .joystick-knob { background: rgba(142,68,173,0.7); border-color: #d7bde2; }
+
+/* ── PIXEL ART JOYSTICK ─────────────────────────────────────────── */
+.joystick-base {
+    width: 110px; height: 110px;
+    border-radius: 0;
+    background: rgba(20, 18, 36, 0.55);
+    /* pixel border — 3-layer inset to mimic pixel art frame */
+    border: none;
+    box-shadow:
+        /* outer dark edge */
+        0 0 0 4px rgba(0,0,0,0.7),
+        /* mid accent */
+        0 0 0 6px rgba(142, 68, 173, 0.55),
+        /* inner highlight top-left */
+        inset 2px 2px 0 0 rgba(255,255,255,0.18),
+        /* inner shadow bottom-right */
+        inset -2px -2px 0 0 rgba(0,0,0,0.5);
+    position: relative;
+    touch-action: none;
+    image-rendering: pixelated;
+}
+/* 4-direction pixel tick marks */
+.joystick-base::before,
+.joystick-base::after {
+    content: '';
+    position: absolute;
+    background: rgba(255,255,255,0.22);
+    image-rendering: pixelated;
+}
+/* vertical tick */
+.joystick-base::before {
+    width: 4px; height: 100%;
+    left: 50%; top: 0;
+    transform: translateX(-50%);
+}
+/* horizontal tick */
+.joystick-base::after {
+    width: 100%; height: 4px;
+    top: 50%; left: 0;
+    transform: translateY(-50%);
+}
+
+/* pixel knob */
+.joystick-knob {
+    width: 40px; height: 40px;
+    border-radius: 0;
+    background: rgba(200, 180, 240, 0.6);
+    border: none;
+    box-shadow:
+        /* pixel outline */
+        0 0 0 3px rgba(0,0,0,0.8),
+        /* bevel highlight */
+        inset 2px 2px 0 0 rgba(255,255,255,0.55),
+        inset -2px -2px 0 0 rgba(0,0,0,0.45);
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+    transition: background 0.08s;
+    image-rendering: pixelated;
+}
+/* active state — purple glow */
+.joystick-base.active {
+    box-shadow:
+        0 0 0 4px rgba(0,0,0,0.8),
+        0 0 0 6px rgba(162, 98, 220, 0.85),
+        0 0 12px 4px rgba(162, 98, 220, 0.35),
+        inset 2px 2px 0 0 rgba(255,255,255,0.22),
+        inset -2px -2px 0 0 rgba(0,0,0,0.55);
+}
+.joystick-base.active .joystick-knob {
+    background: rgba(162, 98, 220, 0.9);
+    box-shadow:
+        0 0 0 3px rgba(0,0,0,0.9),
+        0 0 8px 2px rgba(192, 128, 255, 0.6),
+        inset 2px 2px 0 0 rgba(255,255,255,0.6),
+        inset -2px -2px 0 0 rgba(80,0,140,0.5);
+}
+
+/* pixel d-pad buttons */
+.touch-btn {
+    border-radius: 0 !important;
+    image-rendering: pixelated;
+    box-shadow:
+        0 0 0 3px rgba(0,0,0,0.7),
+        inset 2px 2px 0 0 rgba(255,255,255,0.2),
+        inset -2px -2px 0 0 rgba(0,0,0,0.4) !important;
+}
+.touch-btn:active {
+    box-shadow:
+        0 0 0 3px rgba(0,0,0,0.7),
+        inset 2px 2px 0 0 rgba(0,0,0,0.4),
+        inset -2px -2px 0 0 rgba(255,255,255,0.15) !important;
+    transform: translate(1px,1px);
+}
+
+/* pixel ESC / menu button */
+.mob-menu-btn {
+    border-radius: 0 !important;
+    image-rendering: pixelated;
+    box-shadow:
+        0 0 0 3px rgba(0,0,0,0.7),
+        inset 2px 2px 0 0 rgba(255,255,255,0.22),
+        inset -2px -2px 0 0 rgba(0,0,0,0.4) !important;
+}
+
 .joystick-label { text-align: center; font-size: 8px; color: rgba(255,255,255,0.4); margin-top: 4px; font-family: 'Press Start 2P', cursive; }
 .mob-menu-btn { pointer-events: auto; position: absolute; top: 10px; right: 16px; background: rgba(60,60,60,0.8); border: 2px solid #aaa; color: #aaa; font-family: 'Press Start 2P', cursive; font-size: 9px; padding: 6px 10px; border-radius: 4px; cursor: pointer; touch-action: manipulation; }
 
