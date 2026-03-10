@@ -695,9 +695,7 @@ function updateBossPlayer(timeScale) {
             const ax = joystickAxes[axisSlot];
             const DEAD = 0.10;
             if (Math.abs(ax.x) > DEAD) {
-                // Scale: 30% speed at dead edge, 100% at full deflection
-                const mag = Math.sign(ax.x) * (0.30 + 0.70 * Math.abs(ax.x));
-                cat.x += mag * moveSpeed * timeScale;
+                cat.x += Math.sign(ax.x) * moveSpeed * timeScale;
                 cat.facingRight = ax.x > 0;
             } else {
                 // Boolean fallback for keyboard
@@ -705,8 +703,7 @@ function updateBossPlayer(timeScale) {
                 if (right) { cat.x += moveSpeed * timeScale; cat.facingRight = true; }
             }
             if (Math.abs(ax.y) > DEAD) {
-                const mag = Math.sign(ax.y) * (0.30 + 0.70 * Math.abs(ax.y));
-                cat.y += mag * moveSpeed * timeScale;
+                cat.y += Math.sign(ax.y) * moveSpeed * timeScale;
             } else {
                 if (up)   cat.y -= moveSpeed * timeScale;
                 if (down) cat.y += moveSpeed * timeScale;

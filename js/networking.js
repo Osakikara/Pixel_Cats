@@ -1957,9 +1957,8 @@ class Cat {
         const _axisSlot = (!net.isOnline && !this.isPlayer1) ? 'p2' : 'p1';
         const _jAxis = joystickAxes[_axisSlot];
         if (Math.abs(_jAxis.x) > 0.08) {
-            // Analog path: speed scales with deflection (0..1), minimum ~30% at deadzone
-            const _analogMag = Math.sign(_jAxis.x) * (0.3 + 0.7 * Math.abs(_jAxis.x));
-            dx = _analogMag * moveSpeed * timeScale;
+            // Full speed regardless of deflection — no slowdown
+            dx = Math.sign(_jAxis.x) * moveSpeed * timeScale;
             this.facingRight = _jAxis.x > 0;
         } else {
             // Boolean fallback: keyboard or dpad
