@@ -56,7 +56,8 @@ const TutorialSystem = (() => {
     box-shadow:8px 8px 0 #000;
     width:min(520px,95vw);
     max-height:95vh;
-    overflow:hidden;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
     font-family:'Press Start 2P',cursive;
     animation:tut-pop .16s ease-out;
     pointer-events:auto;
@@ -94,7 +95,7 @@ const TutorialSystem = (() => {
 #tut-num {font-size:7px;color:#667;text-shadow:1px 1px 0 #000;letter-spacing:1px;}
 #tut-nm  {font-size:7px;color:#ffd700;text-shadow:2px 2px 0 #000;text-transform:uppercase;letter-spacing:1px;}
 /* ── body ── */
-#tut-body{padding:14px 18px 10px;min-height:76px;}
+#tut-body{padding:14px 18px 10px;min-height:76px;overflow-y:auto;}
 #tut-title{
     font-size:clamp(9px,2.1vw,11px);color:#ffd700;
     text-shadow:2px 2px 0 #000;margin-bottom:9px;

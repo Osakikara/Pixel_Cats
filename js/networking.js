@@ -1550,7 +1550,7 @@ const joystickAxes = { p1: { x: 0, y: 0 }, p2: { x: 0, y: 0 } };
 // CONTROL TYPE — must be declared BEFORE setupMobileControls()
 // because makeJoystick references joyStyle immediately on init
 // ============================================================
-let ctrlType = localStorage.getItem('pcCtrlType') || 'joystick';
+let ctrlType = localStorage.getItem('pcCtrlType') || 'dpad';
 let joyStyle = localStorage.getItem('pcJoyStyle') || 'fixed'; // 'fixed' | 'float'
 
 function setupMobileControls() {
