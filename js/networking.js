@@ -1618,8 +1618,9 @@ function setupMobileControls() {
             if (axisKey) {
                 const _mag = Math.sqrt(nx * nx + ny * ny);
                 if (_mag > DEAD) {
-                    joystickAxes[axisKey].x = nx;
-                    joystickAxes[axisKey].y = ny;
+                    // Normalize to unit vector — always 100% speed regardless of pull distance
+                    joystickAxes[axisKey].x = nx / _mag;
+                    joystickAxes[axisKey].y = ny / _mag;
                 } else {
                     joystickAxes[axisKey].x = 0;
                     joystickAxes[axisKey].y = 0;

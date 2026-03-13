@@ -158,6 +158,15 @@ const TutorialSystem = (() => {
 #tut-next.fin:hover{background:#2ecc71;}
 /* slide-in */
 .tut-slide{animation:tut-sl .17s ease-out;}
+/* fullscreen button */
+#tut-fs{
+    font-family:'Press Start 2P',cursive;font-size:6px;color:#ffd700;
+    background:rgba(30,20,5,0.75);border:2px solid rgba(255,215,0,0.55);box-shadow:2px 2px 0 #000;
+    padding:5px 8px;cursor:pointer;text-transform:uppercase;white-space:nowrap;
+    display:none;
+}
+#tut-fs:hover{background:rgba(60,45,5,0.9);border-color:#ffd700;}
+#tut-fs:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #000;}
 @keyframes tut-sl{
     from{opacity:0;transform:translateX(10px)}
     to  {opacity:1;transform:none}
@@ -185,6 +194,7 @@ const TutorialSystem = (() => {
             <div id="tut-foot">
               <div id="tut-dots"></div>
               <div id="tut-nav">
+                <button id="tut-fs" onclick="toggleFullscreen()">⛶ FULLSCREEN</button>
                 <button id="tut-skip" onclick="TutorialSystem.skip()"></button>
                 <button id="tut-prev" onclick="TutorialSystem.prev()">◄</button>
                 <button id="tut-next" onclick="TutorialSystem.next()"></button>
@@ -212,6 +222,13 @@ const TutorialSystem = (() => {
 
         // buttons
         document.getElementById('tut-prev').disabled = (_step === 0);
+        // Show fullscreen button only if not already in fullscreen
+        const _fsBtn = document.getElementById('tut-fs');
+        if (_fsBtn) {
+            const _inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            _fsBtn.style.display = _inFs ? 'none' : '';
+            _fsBtn.textContent = (typeof t === 'function') ? t('fullscreen') : '[ ] FULLSCREEN';
+        }
         document.getElementById('tut-skip').textContent = t('tut.skip');
         const bn = document.getElementById('tut-next');
         bn.textContent = isFin ? ('★ ' + t('tut.play')) : (t('tut.next') + ' ►');
