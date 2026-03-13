@@ -158,15 +158,31 @@ const TutorialSystem = (() => {
 #tut-next.fin:hover{background:#2ecc71;}
 /* slide-in */
 .tut-slide{animation:tut-sl .17s ease-out;}
-/* fullscreen button */
-#tut-fs{
-    font-family:'Press Start 2P',cursive;font-size:6px;color:#ffd700;
-    background:rgba(30,20,5,0.75);border:2px solid rgba(255,215,0,0.55);box-shadow:2px 2px 0 #000;
-    padding:5px 8px;cursor:pointer;text-transform:uppercase;white-space:nowrap;
-    display:none;
+/* fullscreen popup */
+#tut-fs-popup{
+    display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    z-index:10100;
+    background:rgba(5,8,28,0.96);border:4px solid #ffd700;box-shadow:6px 6px 0 #000;
+    padding:20px 24px;text-align:center;pointer-events:auto;
+    font-family:'Press Start 2P',cursive;
+    animation:tut-pop .16s ease-out;
 }
-#tut-fs:hover{background:rgba(60,45,5,0.9);border-color:#ffd700;}
-#tut-fs:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #000;}
+#tut-fs-popup.visible{display:block;}
+#tut-fs-icon{font-size:36px;display:block;margin-bottom:12px;color:#ffd700;}
+#tut-fs-msg{font-size:7px;color:#ffd700;line-height:2;text-shadow:1px 1px 0 #000;margin-bottom:14px;display:block;}
+#tut-fs-btn{
+    font-family:'Press Start 2P',cursive;font-size:8px;color:#fff;
+    background:#c0392b;border:4px solid #fff;box-shadow:4px 4px 0 #000;
+    padding:10px 18px;cursor:pointer;text-transform:uppercase;display:block;width:100%;
+}
+#tut-fs-btn:hover{background:#e74c3c;}
+#tut-fs-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000;}
+#tut-fs-skip{
+    font-family:'Press Start 2P',cursive;font-size:6px;color:#666;
+    background:none;border:none;cursor:pointer;margin-top:10px;display:block;width:100%;
+    text-transform:uppercase;
+}
+#tut-fs-skip:hover{color:#aaa;}
 @keyframes tut-sl{
     from{opacity:0;transform:translateX(10px)}
     to  {opacity:1;transform:none}
@@ -194,7 +210,6 @@ const TutorialSystem = (() => {
             <div id="tut-foot">
               <div id="tut-dots"></div>
               <div id="tut-nav">
-                <button id="tut-fs" onclick="toggleFullscreen()">⛶ FULLSCREEN</button>
                 <button id="tut-skip" onclick="TutorialSystem.skip()"></button>
                 <button id="tut-prev" onclick="TutorialSystem.prev()">◄</button>
                 <button id="tut-next" onclick="TutorialSystem.next()"></button>
@@ -202,6 +217,36 @@ const TutorialSystem = (() => {
             </div>
           </div>`;
         document.body.appendChild(_el);
+        _injectFsPopup();
+    }
+
+    function _injectFsPopup() {
+        if (document.getElementById('tut-fs-popup')) return;
+        const p = document.createElement('div');
+        p.id = 'tut-fs-popup';
+        p.innerHTML = `
+          <span id="tut-fs-icon">↺</span>
+          <span id="tut-fs-msg"></span>
+          <button id="tut-fs-btn" onclick="toggleFullscreen();document.getElementById('tut-fs-popup').classList.remove('visible');"></button>
+          <button id="tut-fs-skip" onclick="document.getElementById('tut-fs-popup').classList.remove('visible');">✕ skip</button>
+        `;
+        document.body.appendChild(p);
+        _updateFsPopup();
+        document.addEventListener('fullscreenchange', _updateFsPopup);
+        document.addEventListener('webkitfullscreenchange', _updateFsPopup);
+    }
+
+    function _updateFsPopup() {
+        const p = document.getElementById('tut-fs-popup');
+        if (!p) return;
+        const inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        if (inFs) { p.classList.remove('visible'); return; }
+        const msg = document.getElementById('tut-fs-msg');
+        const btn = document.getElementById('tut-fs-btn');
+        const lang = (typeof currentLang !== 'undefined') ? currentLang : 'ru';
+        if (msg) msg.textContent = lang === 'ru' ? 'Для лучшего опыта\nрекомендуется\nполный экран' : 'Fullscreen mode\nis recommended\nfor best experience';
+        if (btn) btn.textContent = lang === 'ru' ? '[ ] ПОЛНЫЙ ЭКРАН' : '[ ] FULLSCREEN';
+        p.classList.add('visible');
     }
 
     // ── render ─────────────────────────────────────────────
@@ -222,13 +267,8 @@ const TutorialSystem = (() => {
 
         // buttons
         document.getElementById('tut-prev').disabled = (_step === 0);
-        // Show fullscreen button only if not already in fullscreen
-        const _fsBtn = document.getElementById('tut-fs');
-        if (_fsBtn) {
-            const _inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-            _fsBtn.style.display = _inFs ? 'none' : '';
-            _fsBtn.textContent = (typeof t === 'function') ? t('fullscreen') : '[ ] FULLSCREEN';
-        }
+        // Show fullscreen popup if not in fullscreen
+        _updateFsPopup();
         document.getElementById('tut-skip').textContent = t('tut.skip');
         const bn = document.getElementById('tut-next');
         bn.textContent = isFin ? ('★ ' + t('tut.play')) : (t('tut.next') + ' ►');
@@ -1000,6 +1040,10 @@ const TutorialSystem = (() => {
         if (_el)     { _el.remove(); _el = null; }
         const s = document.getElementById('tut-css');
         if (s) s.remove();
+        const p = document.getElementById('tut-fs-popup');
+        if (p) p.remove();
+        document.removeEventListener('fullscreenchange', _updateFsPopup);
+        document.removeEventListener('webkitfullscreenchange', _updateFsPopup);
     }
 
     return { show, skip, next, prev, goTo, shouldShow };
