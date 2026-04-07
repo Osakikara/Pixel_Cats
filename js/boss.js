@@ -2955,6 +2955,9 @@ function bossWin() {
         unlockMsg = t('bossUnlocked') + ': ' + t('bosses.shadowLord.name');
     }
     document.getElementById('boss-unlock-msg').innerText = unlockMsg;
+
+    // Межстраничная реклама после победы над боссом (только одиночная игра)
+    if (!net.bossOnline) setTimeout(() => YandexSDK.showFullscreenAd(null), 600);
 }
 
 // ============================================
@@ -2977,6 +2980,10 @@ function bossLose() {
     document.getElementById('boss-lose-screen').style.display = 'block';
     document.getElementById('boss-lose-title').innerText = t('bossLose');
     document.getElementById('boss-lose-msg').innerText = t('bossLost');
+
+    // Кнопка «Смотреть рекламу и продолжить» — только в одиночной игре
+    const _reviveBtn = document.getElementById('btn-boss-revive');
+    if (_reviveBtn) _reviveBtn.style.display = (!net.bossOnline && YandexSDK.ready) ? 'block' : 'none';
 }
 
 // ============================================

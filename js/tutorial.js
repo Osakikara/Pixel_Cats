@@ -222,19 +222,7 @@ const TutorialSystem = (() => {
     }
 
     function _injectFsPopup() {
-        if (document.getElementById('tut-fs-popup')) return;
-        const p = document.createElement('div');
-        p.id = 'tut-fs-popup';
-        p.innerHTML = `
-          <span id="tut-fs-icon">↺</span>
-          <span id="tut-fs-msg"></span>
-          <button id="tut-fs-btn" onclick="toggleFullscreen();document.getElementById('tut-fs-popup').classList.remove('visible');"></button>
-          <button id="tut-fs-skip" onclick="document.getElementById('tut-fs-popup').classList.remove('visible');">✕ skip</button>
-        `;
-        document.body.appendChild(p);
-        _updateFsPopup();
-        document.addEventListener('fullscreenchange', _updateFsPopup);
-        document.addEventListener('webkitfullscreenchange', _updateFsPopup);
+        // Fullscreen popup removed — no longer shown to users
     }
 
     function _updateFsPopup() {

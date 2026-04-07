@@ -146,6 +146,8 @@ h1 { font-size: 16px; color: #ffd700; text-shadow: 2px 2px #000; margin: 0 0 5px
 .projectile-dark { background: radial-gradient(circle, #9400d3, #4b0082); box-shadow: 0 0 10px #9400d3; }
 #boss-win-screen { display: none; background: rgba(0,0,0,0.9); padding: 40px; border: 4px solid #27ae60; box-shadow: 10px 10px 0 #000; }
 #boss-lose-screen { display: none; background: rgba(0,0,0,0.9); padding: 40px; border: 4px solid #ff4757; box-shadow: 10px 10px 0 #000; }
+#boss-win-screen p, #boss-lose-screen p { color: #ffffff; font-size: 16px; text-shadow: 2px 2px 0 #000; margin-bottom: 20px; }
+#boss-win-screen p[style*="color"], #boss-lose-screen p[style*="color"] { text-shadow: 2px 2px 0 #000; }
 /* ===== SKIN SHOP SCREEN ===== */
 #shop-screen {
     display: none; background: rgba(0,0,0,0.97); padding: 24px 20px;

@@ -809,19 +809,174 @@ function drawWorld() {
 }
 
 function drawCastle(ctx, x, y) {
-    const s = 4, cMain = "#b0dfff", cLight = "#d0efff", cShadow = "#8ab0d4", cRoof = "#ff5e5e", cRoofDark = "#c43c3c", cFlag = "#ff3333", cDoor = "#5a7ca6", cDoorDark = "#3a506b", cTree = "#76c442", cTreeDark = "#5da130";
-    const rect = (dx, dy, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x + dx * s, y - (dy + h) * s, w * s, h * s); };
-    const drawRoof = (dx, dy, width) => { let rw = width, rh = 0; while (rw > 0) { rect(dx + (width - rw) / 2, dy + rh, rw, 1, cRoof); rect(dx + (width - rw) / 2, dy + rh, 1, 1, cRoofDark); rw -= 2; rh += 1; } };
-    const drawFlag = (dx, dy) => { rect(dx, dy, 1, 6, "#555"); let wave = Math.sin(gameTime * 0.2 + dx) > 0 ? 1 : 0; rect(dx + 1, dy + 4 + wave, 5, 3, cFlag); };
-    const drawCrenellations = (dx, dy, w) => { rect(dx - 1, dy, w + 2, 3, cMain); rect(dx - 1, dy, 1, 3, cShadow); for (let i = 0; i < w; i += 4) rect(dx + i, dy + 3, 2, 2, cMain); };
-    const drawTree = (tx) => { rect(tx, 0, 2, 4, "#8d6e63"); rect(tx - 3, 4, 8, 8, cTree); rect(tx - 2, 5, 2, 2, cTreeDark); rect(tx + 2, 9, 2, 2, cTreeDark); };
-    drawTree(-45); drawTree(45); rect(-30, 0, 60, 30, cMain); rect(-30, 0, 4, 30, cShadow); rect(26, 0, 4, 30, cShadow); rect(-10, 0, 20, 15, cDoor); rect(-10, 15, 20, 2, cDoor); rect(-8, 17, 16, 1, cDoor); rect(-8, 0, 1, 15, cDoorDark); rect(0, 0, 1, 15, cDoorDark); rect(-20, 10, 3, 2, cShadow); rect(15, 20, 3, 2, cShadow); rect(10, 5, 2, 2, cLight); rect(-15, 25, 2, 2, cLight);
-    rect(-12, 30, 24, 35, cMain); rect(-12, 30, 3, 35, cShadow); rect(-4, 45, 8, 10, cDoorDark); drawCrenellations(-14, 65, 28); drawRoof(-14, 70, 28); drawFlag(-1, 84);
-    rect(-35, 20, 14, 25, cMain); rect(-35, 20, 2, 25, cShadow); drawCrenellations(-37, 45, 18); drawRoof(-37, 50, 18); drawFlag(-29, 59);
-    rect(20, 20, 14, 35, cMain); rect(20, 20, 2, 35, cShadow); rect(24, 40, 6, 6, cDoorDark); drawCrenellations(18, 55, 18); drawRoof(18, 60, 18); drawFlag(26, 69);
-    rect(-55, 0, 12, 40, cMain); rect(-55, 0, 2, 40, cShadow); rect(-52, 20, 2, 6, cDoorDark); drawCrenellations(-57, 40, 16); drawRoof(-57, 45, 16); drawFlag(-49, 53);
-    rect(45, 0, 12, 35, cMain); rect(45, 0, 2, 35, cShadow); rect(48, 15, 2, 6, cDoorDark); drawCrenellations(43, 35, 16); drawRoof(43, 40, 16); drawFlag(51, 48);
-}
+            const s = 4;
+            // Старые цвета
+            const cMain = "#b0dfff", cLight = "#d0efff", cShadow = "#8ab0d4";
+            const cRoof = "#ff5e5e", cRoofDark = "#c43c3c", cFlag = "#ff3333";
+            const cTree = "#76c442", cTreeDark = "#5da130";
+            
+            // Новые цвета для логичных деталей
+            const cHole = "#1a2433";        // Проем ворот/окон
+            const cWindowLit = "#fef08a";   // Свет из окон
+            const cIron = "#4a5568";        // Металл решетки
+            const cIronDark = "#2d3748";    // Тень на металле
+            const cStoneFrame = "#94a3b8";  // Каменная арка
+            const cWood = "#78350f";        // Дерево моста
+            
+            // Базовая функция отрисовки (1 единица = s пикселей)
+            const rect = (dx, dy, w, h, col) => { 
+                ctx.fillStyle = col; 
+                ctx.fillRect(x + dx * s, y - (dy + h) * s, w * s, h * s); 
+            };
+
+            // Упрощенная арка (скругление в 1 пиксель)
+            const drawArch = (dx, dy, w, h, col) => {
+                rect(dx, dy, w, h - 2, col);
+                rect(dx + 1, dy + h - 2, w - 2, 1, col);
+                rect(dx + 2, dy + h - 1, w - 4, 1, col);
+            };
+
+            // Окно с рамой и подоконником
+            const drawWindow = (dx, dy, w, h, isLit) => {
+                drawArch(dx, dy, w, h, isLit ? cWindowLit : cHole);
+                rect(dx - 1, dy - 1, w + 2, 1, cShadow); // подоконник
+                if (isLit) {
+                    // Переплет окна (крест)
+                    if (w % 2 === 1) {
+                        rect(dx + Math.floor(w/2), dy, 1, h - 1, "#8c6e53");
+                    } else {
+                        rect(dx + w/2 - 1, dy, 2, h - 1, "#8c6e53");
+                    }
+                    rect(dx, dy + Math.floor(h/2), w, 1, "#8c6e53");
+                }
+            };
+
+            const drawRoof = (dx, dy, width) => { 
+                let rw = width, rh = 0; 
+                while (rw > 0) { 
+                    rect(dx + (width - rw) / 2, dy + rh, rw, 1, cRoof); 
+                    rect(dx + (width - rw) / 2, dy + rh, 1, 1, cRoofDark);
+                    rect(dx + (width + rw) / 2 - 1, dy + rh, 1, 1, "#fca5a5"); // блик справа
+                    rw -= 2; rh += 1; 
+                } 
+            };
+
+            const drawFlag = (dx, dy) => { 
+                rect(dx, dy, 1, 9, "#64748b"); // древко
+                rect(dx, dy + 9, 1, 1, "#eab308"); // золотое навершие
+                let wave = Math.sin(gameTime * 0.15 + dx) > 0 ? 1 : 0; 
+                let wave2 = Math.cos(gameTime * 0.15 + dx) > 0 ? 1 : 0;
+                rect(dx + 1, dy + 6 + wave, 6, 3, cFlag); 
+                rect(dx + 7, dy + 6 + wave + wave2, 2, 2, cFlag);
+            };
+
+            // Симметричные зубцы (улучшенные)
+            const drawCrenellations = (dx, dy, w) => { 
+                rect(dx - 1, dy, w + 2, 3, cMain); 
+                rect(dx - 1, dy, 1, 3, cShadow); 
+                for (let i = 0; i <= w - 2; i += 4) {
+                    rect(dx + i, dy + 3, 2, 2, cMain);
+                    rect(dx + i, dy + 3, 1, 2, cLight);
+                }
+            };
+
+            // Детализация каменной кладки
+            const drawBricks = (dx, dy, w, h, count) => {
+                for(let i = 0; i < count; i++) {
+                    let bx = dx + 1 + (Math.abs(Math.sin(i * 12.34)) * (w - 4)) | 0;
+                    let by = dy + 1 + (Math.abs(Math.cos(i * 45.67)) * (h - 2)) | 0;
+                    rect(bx, by, 3, 1, cShadow);
+                    rect(bx, by + 1, 3, 1, cLight);
+                }
+            };
+
+            // Главная Центральная Башня (Keep)
+            rect(-17, 30, 34, 45, cMain); 
+            rect(-17, 30, 3, 45, cShadow); 
+            drawBricks(-17, 30, 34, 45, 20);
+            drawWindow(-3, 48, 6, 14, true); // Центральное высокое окно
+            drawCrenellations(-19, 75, 38); 
+            drawRoof(-19, 80, 38); 
+            drawFlag(0, 99);
+
+            // Левая Внутренняя Башня
+            rect(-39, 20, 18, 35, cMain); 
+            rect(-39, 20, 2, 35, cShadow); 
+            drawBricks(-39, 20, 18, 35, 12);
+            drawWindow(-33, 35, 6, 10, true); 
+            drawCrenellations(-41, 55, 22); 
+            drawRoof(-41, 60, 22); 
+            drawFlag(-30, 71);
+
+            // Правая Внутренняя Башня
+            rect(21, 20, 18, 35, cMain); 
+            rect(21, 20, 2, 35, cShadow); 
+            drawBricks(21, 20, 18, 35, 12);
+            drawWindow(27, 35, 6, 10, true); 
+            drawCrenellations(19, 55, 22); 
+            drawRoof(19, 60, 22); 
+            drawFlag(30, 71);
+
+            // Главная стена (Main Wall)
+            rect(-35, 0, 70, 30, cMain); 
+            rect(-35, 0, 4, 30, cShadow); 
+            rect(31, 0, 4, 30, cShadow); 
+            drawBricks(-35, 0, 70, 30, 30);
+            drawCrenellations(-35, 30, 70); 
+
+            // Внешняя Левая Башня
+            rect(-59, 0, 18, 45, cMain); 
+            rect(-59, 0, 3, 45, cShadow); 
+            drawBricks(-59, 0, 18, 45, 15);
+            drawWindow(-53, 22, 6, 12, false);
+            drawCrenellations(-61, 45, 22); 
+            drawRoof(-61, 50, 22); 
+            drawFlag(-50, 61);
+
+            // Внешняя Правая Башня
+            rect(41, 0, 18, 45, cMain); 
+            rect(41, 0, 3, 45, cShadow); 
+            drawBricks(41, 0, 18, 45, 15);
+            drawWindow(47, 22, 6, 12, false);
+            drawCrenellations(39, 45, 22); 
+            drawRoof(39, 50, 22); 
+            drawFlag(50, 61);
+
+            // --- НОВЫЕ ВОРОТА И РЕШЕТКА (Portcullis) ---
+            
+            // Каменное обрамление (арка)
+            drawArch(-14, 0, 28, 22, cStoneFrame);
+            // Темный проход внутрь
+            drawArch(-12, 0, 24, 20, cHole);
+
+            let portcullisY = 4; // Решетка слегка приподнята
+            let gridHeight = 22;
+
+            // Вертикальные прутья с остриями
+            for(let gx = -9; gx <= 9; gx += 3) {
+                rect(gx, portcullisY, 1, gridHeight - portcullisY, cIron);
+                rect(gx, portcullisY - 1, 1, 1, cIronDark); // Острие
+            }
+            // Горизонтальные прутья
+            for(let gy = portcullisY + 2; gy < 19; gy += 4) {
+                rect(-11, gy, 22, 1, cIron);
+                rect(-11, gy - 1, 22, 1, cIronDark);
+            }
+
+            // Цепи подъемного механизма
+            rect(-11, 18, 2, 4, cIronDark);
+            rect(9, 18, 2, 4, cIronDark);
+
+            // --- ОТКИДНОЙ МОСТ ЧЕРЕЗ РОВ ---
+            rect(-15, -4, 30, 4, "#5c4033"); // Толщина
+            rect(-15, -1, 30, 2, cWood);     // Доски
+            
+            // Цепи моста, идущие по диагонали к стене
+            for(let i = 0; i < 12; i++) {
+                rect(-15 + i, i - 1, 1, 1, cIron);
+                rect(14 - i, i - 1, 1, 1, cIron);
+            }
+        }
 
 // ============================================
 // INIT GAME - Initialize game state for selected difficulty
@@ -1044,6 +1199,9 @@ function triggerWin() {
     if (_lobbyWin) _lobbyWin.style.display = net.isOnline ? 'block' : 'none';
     // Уведомить партнёра о победе
     if (net.isOnline && net.conn && net.conn.open) net.conn.send({ type: 'WIN', score: score, _t: Date.now() });
+
+    // Межстраничная реклама после победы (только одиночная игра)
+    if (!net.isOnline) setTimeout(() => YandexSDK.showFullscreenAd(null), 500);
 }
 
 // ============================================
@@ -1221,6 +1379,15 @@ function endGame() {
     // Гость не может самостоятельно перезапустить — только хост
     const _tryAgain = document.getElementById('btn-try-again');
     if (_tryAgain) _tryAgain.style.display = (net.isOnline && !net.isHost) ? 'none' : '';
+
+    // Кнопка «рыбки за рекламу» — только в одиночной игре, если SDK доступен
+    const _adFishBtn = document.getElementById('btn-game-ad-fish');
+    const _adRewardMsg = document.getElementById('game-ad-reward-msg');
+    if (_adFishBtn) _adFishBtn.style.display = (!net.isOnline && YandexSDK.ready) ? 'block' : 'none';
+    if (_adRewardMsg) _adRewardMsg.style.display = 'none';
+
+    // Межстраничная реклама — с задержкой, чтобы игрок успел увидеть счёт
+    if (!net.isOnline) setTimeout(() => YandexSDK.showFullscreenAd(null), 400);
 }
 
 function showMenu() {

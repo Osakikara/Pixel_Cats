@@ -298,7 +298,7 @@ async function _fbCheckServerLoad() {
 
 function _fbSetStatus(msg, color) {
     const el = document.getElementById('fb-status');
-    if (el) { el.innerText = msg; el.style.color = color || '#2ecc71'; }
+    if (el) { el.innerHTML = msg; el.style.color = color || '#2ecc71'; }
 }
 
 function fbCopyRoomId() {

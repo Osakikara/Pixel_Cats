@@ -13,7 +13,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 
-    <!-- PeerJS: пробуем несколько CDN по очереди, если один недоступен -->
+    <script src="/sdk.js"></script>
+
+    <script src="js/yandex.js"></script>
+
     <script>
     (function() {
         const CDNS = [
@@ -354,6 +357,9 @@
             <p><span id="distance-label">ДИСТАНЦИЯ:</span> <span id="final-score">0</span></p>
             <p style="font-size: 10px; color: #aaa;" id="try-again-hint">НАЖМИТЕ ENTER ИЛИ ПОПРОБУЙТЕ СНОВА</p>
             <button class="btn btn-blue" onclick="onlineSafeRestart()" id="btn-try-again">ПОПРОБОВАТЬ СНОВА</button>
+            <!-- Вознаграждаемая реклама: рыбки за просмотр -->
+            <button id="btn-game-ad-fish" class="btn" style="display:none;background:#7d6608;border-color:#ffd700;color:#ffd700;font-size:9px;" onclick="getFishFromAd()">📺 СМОТРЕТЬ РЕКЛАМУ → +5🟠 +3🔵 +1🟡</button>
+            <div id="game-ad-reward-msg" style="display:none;font-size:9px;color:#ffd700;margin:6px 0;text-shadow:1px 1px 0 #000;">+5🟠 +3🔵 +1🟡 ПОЛУЧЕНО!</div>
             <button id="btn-lobby-go" class="btn btn-orange" style="display:none;" onclick="showOnlineLobby()"><img id="ico-return-1" class="pixel-icon" style="width:12px;height:12px;"> ОНЛАЙН ЛОББИ</button>
             <button class="btn" style="background: #555;" onclick="showMenu()" id="btn-menu-go">МЕНЮ</button>
         </div>
@@ -396,7 +402,9 @@
         <div id="boss-lose-screen" class="screen-overlay">
             <h2 style="color: #ff4757; margin-bottom: 20px; text-shadow: 2px 2px 0 #000;" id="boss-lose-title">ПОРАЖЕНИЕ</h2>
             <p id="boss-lose-msg">Босс вас победил!</p>
-            <p style="font-size: 9px; color: #aaa;" id="boss-enter-hint">НАЖМИТЕ ENTER ЧТОБЫ ПОПРОБОВАТЬ СНОВА</p>
+            <p style="font-size: 9px; color: #ddd; text-shadow: 1px 1px 0 #000;" id="boss-enter-hint">НАЖМИТЕ ENTER ЧТОБЫ ПОПРОБОВАТЬ СНОВА</p>
+            <!-- Вознаграждаемая реклама: возрождение после поражения от босса -->
+            <button id="btn-boss-revive" class="btn btn-orange" style="display:none;font-size:9px;" onclick="reviveWithAd()">📺 СМОТРЕТЬ РЕКЛАМУ И ПРОДОЛЖИТЬ</button>
             <button class="btn btn-blue" onclick="restartBossBattle()" id="btn-boss-retry">ПОПРОБОВАТЬ СНОВА</button>
             <button class="btn" style="background: #555;" onclick="showBossScreen()" id="btn-boss-lose-back">ВЫБРАТЬ ДРУГОГО БОССА</button>
         </div>
