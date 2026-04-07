@@ -96,5 +96,115 @@
             }
         }
     }
-    tryStartTutorial();
+    // ── Окно выбора языка при первом запуске ─────────────────────────────────
+    function showLanguagePicker() {
+        const isMobileDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 900);
+
+        const ov = document.createElement('div');
+        ov.id = 'lang-pick-ov';
+        ov.style.cssText = [
+            'position:fixed;inset:0;z-index:10100',
+            'display:flex;align-items:center;justify-content:center',
+            'background:rgba(0,0,0,.82)',
+            'backdrop-filter:blur(3px)',
+            'touch-action:manipulation',
+        ].join(';');
+
+        const box = document.createElement('div');
+        box.style.cssText = [
+            'position:relative',
+            'background:rgba(5,8,28,0.92)',
+            'border:4px solid #fff',
+            'box-shadow:8px 8px 0 #000',
+            'width:min(380px,92vw)',
+            'padding:32px 28px 28px',
+            'font-family:"Press Start 2P",cursive',
+            'text-align:center',
+            'box-sizing:border-box',
+        ].join(';');
+
+
+        const title = document.createElement('div');
+
+        const subtitle = document.createElement('div');
+        subtitle.style.cssText = 'color:#aab;font-size:clamp(14px,1.8vw,8px);margin-bottom:24px;line-height:1.8';
+        subtitle.innerHTML = 'Choose your language<br><span style="color:#667;font-size:14px">Выберите язык</span>';
+
+        function makeBtn(label, lang) {
+            const btn = document.createElement('button');
+            btn.textContent = label;
+            btn.style.cssText = [
+                'display:block;width:100%;margin-bottom:12px',
+                'padding:14px 0',
+                'background:rgba(255,255,255,0.07)',
+                'border:3px solid #fff',
+                'box-shadow:4px 4px 0 #000',
+                'color:#fff',
+                'font-family:"Press Start 2P",cursive',
+                'font-size:clamp(9px,2.4vw,12px)',
+                'cursor:pointer',
+                'letter-spacing:2px',
+                'transition:background .15s,transform .1s',
+            ].join(';');
+            btn.onmouseover = () => { btn.style.background = 'rgba(255,215,0,0.18)'; btn.style.color = '#ffd700'; btn.style.borderColor = '#ffd700'; };
+            btn.onmouseout  = () => { btn.style.background = 'rgba(255,255,255,0.07)'; btn.style.color = '#fff'; btn.style.borderColor = '#fff'; };
+            btn.addEventListener('click', () => {
+                currentLang = lang;
+                localStorage.setItem('pixelCatsLang', lang);
+                document.getElementById('btn-lang').innerText = lang.toUpperCase();
+                updateAllTexts();
+                ov.remove();
+                tryStartTutorial();
+            });
+            return btn;
+        }
+
+        const btnRu = makeBtn('🇷🇺  РУССКИЙ', 'ru');
+        const btnEn = makeBtn('🇬🇧  ENGLISH', 'en');
+
+        box.appendChild(title);
+        box.appendChild(subtitle);
+        box.appendChild(btnRu);
+        box.appendChild(btnEn);
+
+        // Кнопка полноэкранного режима — только на мобильных
+        if (isMobileDevice) {
+            const fsBtn = document.createElement('button');
+            fsBtn.style.cssText = [
+                'display:block;width:100%;margin-top:8px',
+                'padding:10px 0',
+                'background:rgba(255,200,0,0.13)',
+                'border:2px solid #ffd700',
+                'box-shadow:3px 3px 0 #000',
+                'color:#ffd700',
+                'font-family:"Press Start 2P",cursive',
+                'font-size:clamp(6px,1.8vw,8px)',
+                'cursor:pointer',
+                'letter-spacing:1px',
+            ].join(';');
+            fsBtn.textContent = '⛶  FULLSCREEN / ПОЛНОЭКРАНЫЙ';
+            fsBtn.onmouseover = () => { fsBtn.style.background = 'rgba(255,215,0,0.28)'; };
+            fsBtn.onmouseout  = () => { fsBtn.style.background = 'rgba(255,200,0,0.13)'; };
+            fsBtn.addEventListener('click', () => {
+                if (typeof toggleFullscreen === 'function') toggleFullscreen();
+                else {
+                    const el = document.documentElement;
+                    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+                    if (req) req.call(el).catch(() => {});
+                }
+            });
+            box.appendChild(fsBtn);
+        }
+
+        ov.appendChild(box);
+        document.body.appendChild(ov);
+    }
+    
+
+    // Показываем выбор языка только если он ещё не был выбран
+    if (!localStorage.getItem('pixelCatsLang')) {
+        showLanguagePicker();
+    } else {
+        tryStartTutorial();
+    }
 })();
