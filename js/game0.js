@@ -1354,29 +1354,14 @@ function updateSandFills(timeScale) {
                 }
             }
         }
-        // Animate falling block + particles
+        // Animate falling particles
         if (item.falling && item.particles) {
-            // Init falling block position on first frame after trigger
-            if (item.blockVY === undefined) {
-                item.blockVY = 0;
-                let _lY = item.y, _rY = item.y;
-                for (let _ti = 0; _ti < terrain.length; _ti++) {
-                    const _tb = terrain[_ti];
-                    if (_tb.x + _tb.w <= item.x && _tb.x + _tb.w >= item.x - blockSize - 4) _lY = _tb.y;
-                    if (_tb.x >= item.x + item.w && _tb.x <= item.x + item.w + blockSize + 4) { _rY = _tb.y; break; }
-                }
-                item.blockY = Math.max(_lY, _rY);
-            }
-            // Apply gravity to the falling block (same feel as player fall)
-            item.blockVY += 0.55 * timeScale;
-            item.blockY  += item.blockVY * timeScale;
-            // Scatter particles around the falling block
             item.particles.forEach(p => {
                 p.vy += 0.4 * timeScale;
                 p.y += p.vy * timeScale;
                 p.x += p.vx * timeScale;
             });
-            item.particles = item.particles.filter(p => p.y < item.y + 500);
+            item.particles = item.particles.filter(p => p.y < item.y + 400);
         }
     });
 }
@@ -1450,6 +1435,9 @@ function drawWorld() {
             }
             else if (item.type === 'alien_fly') { drawFlyingAlien(ctx, item.x, item.y); }
             else if (item.type === 'sand_fill') {
+                // Draw sand surface over the gap (decorative).
+                // Surface Y = the LOWER of the two adjacent blocks (max Y in screen coords)
+                // so the trap always sits flush with the lowest surrounding ground.
                 if (!item.triggered) {
                     // Find Y of terrain block to the left and to the right of the gap
                     let leftY = item.y, rightY = item.y;
@@ -1458,23 +1446,13 @@ function drawWorld() {
                         if (tb.x + tb.w <= item.x && tb.x + tb.w >= item.x - blockSize - 4) leftY = tb.y;
                         if (tb.x >= item.x + item.w && tb.x <= item.x + item.w + blockSize + 4) { rightY = tb.y; break; }
                     }
+                    // Use the lower (larger Y) neighbour so surface is flush with lowest ground
                     const surfY = Math.max(leftY, rightY);
-                    // Plain solid sand fill from surfY downward (no pattern, no gaps)
-                    ctx.fillStyle = '#c2a050';
-                    ctx.fillRect(item.x, surfY, item.w, 2000);
-                    // Sand cap on top (matches ground surface style)
                     ctx.fillStyle = '#e8c060'; ctx.fillRect(item.x, surfY, item.w, GP * 2);
                     ctx.fillStyle = '#d4a848'; ctx.fillRect(item.x, surfY + GP * 2, item.w, GP);
                     ctx.fillStyle = '#c49030'; ctx.fillRect(item.x, surfY + GP * 3, item.w, GP);
-                } else if (item.blockY !== undefined && item.blockY < item.y + 600) {
-                    // Draw the whole sand block falling as a unit (moves with player)
-                    const _by = item.blockY;
-                    ctx.fillStyle = '#e8c060'; ctx.fillRect(item.x, _by, item.w, GP * 2);
-                    ctx.fillStyle = '#d4a848'; ctx.fillRect(item.x, _by + GP * 2, item.w, GP);
-                    ctx.fillStyle = '#c49030'; ctx.fillRect(item.x, _by + GP * 3, item.w, GP);
-                    ctx.fillStyle = '#b07828'; ctx.fillRect(item.x, _by + GP * 4, item.w, GP);
                 }
-                // Draw scattering sand particles on top
+                // Draw falling sand particles
                 if (item.particles) {
                     item.particles.forEach(p => {
                         ctx.fillStyle = p.col;
@@ -2098,13 +2076,8 @@ function drawBackground(vOffset) {
             ctx.restore(); // back to world (camera-translated) space
         }
     }
-    else if (currentDifficulty === 'hard') {
-        drawRainbow(ctx, camera.x, vOffset);
-        drawSun(ctx, camera.x + renderWidth - 150, -vOffset + 100, 40, "#f1c40f", "#f39c12");
-        drawSun(ctx, camera.x + renderWidth - 250, -vOffset + 180, 20, "#ecf0f1", "#e67e22");
-    }
     else {
-        if (currentDifficulty !== 'easy') { drawRainbow(ctx, camera.x, vOffset); drawSun(ctx, camera.x + renderWidth - 150, -vOffset + 100, 40, "#f1c40f", "#f39c12"); }
+        if (currentDifficulty !== 'easy') { drawRainbow(ctx, camera.x, vOffset); drawSun(ctx, camera.x + renderWidth - 150, -vOffset + 100, 40, "#f1c40f", "#f39c12"); if (currentDifficulty === 'hard') drawSun(ctx, camera.x + renderWidth - 250, -vOffset + 180, 20, "#ecf0f1", "#e67e22"); }
         else drawSun(ctx, camera.x + renderWidth - 150, -vOffset + 100, 40, "#f1c40f", "#f39c12");
     }
     // Облака: плывут справа налево, начало — за правым краем экрана

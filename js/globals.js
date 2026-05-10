@@ -100,7 +100,10 @@ window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
 let gameTime = 0, score = 0, isGameOver = false, isPlaying = false, isWin = false;
 let animationId, menuAnimationId, currentDifficulty = 'easy', lastTime = 0, fpsDisplayTime = 0, fpsFrames = 0, numPlayers = 1, frameCount = 0;
-const camera = { x: 0, y: 0 }, gravity = 0.6, jumpStrength = -14, moveSpeed = 6, blockSize = 50;
+const camera = { x: 0, y: 0 }, moveSpeed = 6, blockSize = 50;
+// gravity и jumpStrength объявлены как let, чтобы init() мог переключать
+// лунную физику (megahard) и земную (остальные уровни) без отдельного множителя
+let gravity = 0.6, jumpStrength = -14;
 const CASTLE_SCORE = 250, CASTLE_START_X = CASTLE_SCORE * blockSize;
 let castleGenerated = false, inCastle = false;
 let highScore = parseInt(localStorage.getItem('pixelCatsDiffScore')) || 0;
