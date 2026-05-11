@@ -1002,115 +1002,112 @@ h1 { font-size: 16px; color: #ffd700; text-shadow: 2px 2px #000; margin: 0 0 5px
     max-height: var(--ico-size, 32px);
 }
 
+
 /* ══════════════════════════════════════════════════════════════════
-   MOBILE LANDSCAPE OPTIMIZATIONS
-   Игра требует альбомной ориентации, поэтому все мобильные стили
-   нацелены на landscape: ширина ~480-900px, высота ~320-500px
+   МОБИЛЬНЫЙ АДАПТИВ — landscape, touch-устройства
+   Игра работает только в альбомной ориентации.
+   Целевые размеры: ширина 480–900px, высота 300–500px.
 ══════════════════════════════════════════════════════════════════ */
 
-/* ── Базовые мобильные стили (touch-устройства) ─────────────────── */
 @media (hover: none) and (pointer: coarse) {
 
-    /* ── TOP-BAR: компактный, всегда виден ─────────────── */
+    /* ═══════════════════════════════════════════════════════
+       1. TOP-BAR — СЧЁТ И РЫБКИ ВСЕГДА ВИДНЫ
+    ═══════════════════════════════════════════════════════ */
     .top-bar {
-        padding: 6px 10px;
-        align-items: flex-start;
-        flex-wrap: nowrap;
-        gap: 4px;
+        padding: 5px 8px !important;
+        align-items: flex-start !important;
+        flex-wrap: nowrap !important;
+        gap: 0 !important;
     }
+    /* Левая часть: заголовок + подсказки */
+    .top-bar > div:first-child h1 {
+        font-size: 10px !important;
+        margin-bottom: 1px !important;
+    }
+    .controls-hint { display: none !important; }
 
-    h1 { font-size: 11px !important; margin-bottom: 2px !important; }
-
-    /* Счёт и рыбки — уменьшаем, но делаем видимыми */
+    /* Правая часть: счёт + рыбки — уменьшаем но оставляем читаемыми */
     .stats-box {
-        font-size: 9px;
-        text-align: right;
-        flex-shrink: 0;
-        max-width: 45%;
+        flex-shrink: 0 !important;
+        max-width: 42% !important;
+        text-align: right !important;
     }
     .score-board,
     .infinity-score-board {
-        font-size: 13px !important;
-        margin-bottom: 2px !important;
+        font-size: 12px !important;
+        margin-bottom: 1px !important;
+        text-shadow: 1px 1px #000 !important;
     }
     .high-score,
     .infinity-high-score {
-        font-size: 9px !important;
-        margin-top: 2px !important;
+        font-size: 8px !important;
+        margin-top: 1px !important;
+        text-shadow: 1px 1px #000 !important;
     }
     .fish-wallet {
         font-size: 8px !important;
-        margin-top: 3px !important;
+        margin-top: 2px !important;
         gap: 1px !important;
-        line-height: 1.5;
+        text-shadow: 1px 1px #000 !important;
     }
     .fish-wallet .pixel-icon {
-        width: 12px !important;
-        height: 12px !important;
+        width: 11px !important;
+        height: 11px !important;
     }
 
-    /* ── Главное меню (start-screen) ──────────────────────── */
+    /* ═══════════════════════════════════════════════════════
+       2. ГЛАВНОЕ МЕНЮ — КНОПКИ ЧИТАЕМЫЕ, НЕ СЛИШКОМ МАЛЕНЬКИЕ
+    ═══════════════════════════════════════════════════════ */
     #start-screen {
         min-width: unset !important;
-        width: 88% !important;
-        max-width: 480px !important;
-        padding: 12px 14px !important;
+        width: 86% !important;
+        max-width: 500px !important;
+        padding: 14px 16px !important;
         border-width: 3px !important;
-        max-height: 92vh !important;
+        /* уменьшаем тень окна */
+        box-shadow: 4px 4px 0 #000 !important;
+        max-height: 94vh !important;
         overflow-y: auto !important;
     }
-
-    #start-screen h1 {
-        font-size: 20px !important;
-        margin-bottom: 4px !important;
+    #start-screen > h1 {
+        font-size: 22px !important;
+        margin-bottom: 6px !important;
     }
-
     .menu-currencies {
-        margin-bottom: 8px !important;
-        gap: 10px !important;
+        margin-bottom: 10px !important;
+        gap: 12px !important;
         font-size: 10px !important;
     }
 
-    /* Все кнопки в меню — меньше и компактнее */
+    /* Базовая кнопка: нормальный размер, не слишком маленький */
     .btn {
-        width: 220px !important;
-        margin: 6px auto !important;
-        padding: 9px 10px !important;
-        font-size: 10px !important;
+        width: 240px !important;
+        margin: 7px auto !important;
+        padding: 11px 12px !important;
+        font-size: 12px !important;
         border-width: 3px !important;
-        box-shadow: 3px 3px 0 #000 !important;
+        box-shadow: 4px 4px 0 #000 !important;
+    }
+    .btn:active:not(.btn-disabled) {
+        box-shadow: 2px 2px 0 #000 !important;
     }
 
-    /* Двухколоночный ряд кнопок (1 игрок / онлайн) */
-    #start-screen > div[style*="display: flex"] .btn,
-    #start-screen > div[style*="display:flex"] .btn {
-        width: 130px !important;
+    /* Ряд из двух кнопок (1 ИГРОК / ОНЛАЙН и ВОЙТИ / РЕКОРДЫ) */
+    #start-screen > div > .btn {
+        width: 138px !important;
         font-size: 9px !important;
-        padding: 8px 6px !important;
+        padding: 9px 6px !important;
+        margin: 0 !important;
     }
 
-    /* Кнопки аккаунта */
-    .acc-btn-profile,
-    #btn-open-leaderboard {
-        width: 130px !important;
-        padding: 8px 6px !important;
-        font-size: 8px !important;
-    }
-
-    /* Кнопки сложности (лёгкий/сложный/мега/беск/босс) */
-    #btn-easy, #btn-hard, #btn-mega, #btn-infinity, #btn-boss {
-        width: 200px !important;
-        margin: 4px auto !important;
-        padding: 8px 8px !important;
-        font-size: 9px !important;
-    }
-
-    /* Полный экран / настройки / магазин */
+    /* Кнопки режимов игры и утилит */
+    #btn-easy, #btn-hard, #btn-mega, #btn-infinity, #btn-boss,
     #btn-fullscreen, #btn-settings, #btn-shop {
-        width: 200px !important;
-        margin: 4px auto !important;
-        padding: 8px 8px !important;
-        font-size: 9px !important;
+        width: 220px !important;
+        margin: 5px auto !important;
+        padding: 10px 10px !important;
+        font-size: 10px !important;
     }
 
     /* Fullscreen prompt */
@@ -1120,174 +1117,414 @@ h1 { font-size: 16px; color: #ffd700; text-shadow: 2px 2px #000; margin: 0 0 5px
         margin-top: 4px !important;
     }
 
-    /* ── Превью скинов ──────────────────────────────────────── */
+    /* Скин-превью */
     .skin-selector {
-        gap: 10px !important;
+        gap: 12px !important;
         margin: 8px 0 !important;
     }
-    .skin-col { width: 110px !important; }
+    .skin-col { width: 115px !important; }
     .skin-preview-canvas {
-        width: 70px !important;
-        height: 56px !important;
-        margin: 5px 0 !important;
+        width: 72px !important;
+        height: 58px !important;
+        margin: 6px 0 !important;
     }
-    .skin-name { font-size: 8px !important; width: 60px !important; }
-    .arrow-btn { font-size: 8px !important; padding: 4px 6px !important; }
-    .action-btn { font-size: 6px !important; padding: 3px 5px !important; }
+    .skin-name  { font-size: 8px !important; width: 65px !important; }
+    .arrow-btn  { font-size: 8px !important; padding: 4px 7px !important; }
+    .action-btn { font-size: 7px !important; padding: 3px 6px !important; }
 
-    /* ── Game over / win screens ──────────────────────────── */
-    #game-over-screen, #win-screen {
-        width: 88% !important;
-        padding: 16px !important;
+    /* ═══════════════════════════════════════════════════════
+       3. ЭКРАН ПОБЕДЫ / ПОРАЖЕНИЯ
+    ═══════════════════════════════════════════════════════ */
+    #win-screen, #game-over-screen {
+        min-width: unset !important;
+        width: 80% !important;
+        max-width: 420px !important;
+        padding: 20px 18px !important;
         border-width: 3px !important;
+        box-shadow: 5px 5px 0 #000 !important;
     }
-    #game-over-screen p, #win-screen p {
-        font-size: 12px !important;
-        margin-bottom: 10px !important;
+    #win-screen h2 {
+        font-size: 20px !important;
+        margin-bottom: 12px !important;
+        text-shadow: 2px 2px 0 #000 !important;
     }
-    #game-over-screen h2, #win-screen h2 {
+    #game-over-screen h2 {
         font-size: 18px !important;
         margin-bottom: 12px !important;
+        text-shadow: 2px 2px 0 #000 !important;
+    }
+    #win-screen p, #game-over-screen p {
+        font-size: 12px !important;
+        margin-bottom: 10px !important;
+        text-shadow: 1px 1px 0 #000 !important;
+    }
+    /* Кнопки внутри win/gameover */
+    #win-screen .btn, #game-over-screen .btn {
+        width: 210px !important;
+        font-size: 10px !important;
+        padding: 10px 10px !important;
+        margin: 6px auto !important;
     }
 
-    /* ── Boss screens ──────────────────────────────────────── */
+    /* ═══════════════════════════════════════════════════════
+       4. БИТВА С БОССАМИ — ВЫБОР БОССА
+    ═══════════════════════════════════════════════════════ */
     #boss-screen {
-        width: 88% !important;
-        padding: 14px !important;
         min-width: unset !important;
+        width: 84% !important;
+        max-width: 440px !important;
+        padding: 16px 14px !important;
         border-width: 3px !important;
+        box-shadow: 4px 4px 0 #000 !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
     }
-    #boss-screen h2 { font-size: 16px !important; margin-bottom: 10px !important; }
-    .boss-item { padding: 8px 10px !important; }
-    .boss-name { font-size: 11px !important; }
+    #boss-screen h2 {
+        font-size: 16px !important;
+        margin-bottom: 10px !important;
+    }
+    #boss-screen p {
+        font-size: 9px !important;
+        margin-bottom: 10px !important;
+    }
+    .boss-list { gap: 8px !important; margin: 10px 0 !important; }
+    .boss-item {
+        padding: 8px 10px !important;
+        border-width: 2px !important;
+        border-radius: 5px !important;
+        gap: 8px !important;
+    }
+    .boss-icon {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 22px !important;
+        border-radius: 5px !important;
+    }
+    .boss-name { font-size: 11px !important; margin-bottom: 3px !important; }
     .boss-desc { font-size: 8px !important; }
-    .boss-icon { width: 44px !important; height: 44px !important; font-size: 22px !important; }
+    .boss-status { font-size: 9px !important; }
+    #boss-screen .btn {
+        width: 160px !important;
+        font-size: 10px !important;
+        padding: 9px 10px !important;
+        margin: 12px auto 0 !important;
+    }
 
-    /* Boss HP bar in-game */
-    .boss-hp-bar { width: 180px !important; height: 16px !important; top: 6px !important; }
-    .boss-timer  { top: 30px !important; font-size: 12px !important; }
-    .dodge-hint  { font-size: 9px !important; bottom: 155px !important; }
-
-    /* ── Settings screen ──────────────────────────────────── */
-    #settings-screen {
-        width: 88% !important;
+    /* Победа/поражение над боссом */
+    #boss-win-screen, #boss-lose-screen {
         min-width: unset !important;
-        padding: 14px !important;
+        width: 80% !important;
+        max-width: 420px !important;
+        padding: 20px 16px !important;
         border-width: 3px !important;
+        box-shadow: 5px 5px 0 #000 !important;
+    }
+    #boss-win-screen h2, #boss-lose-screen h2 {
+        font-size: 18px !important;
+        margin-bottom: 12px !important;
+        text-shadow: 2px 2px 0 #000 !important;
+    }
+    #boss-win-screen p, #boss-lose-screen p {
+        font-size: 11px !important;
+        margin-bottom: 8px !important;
+    }
+    #boss-win-screen .btn, #boss-lose-screen .btn {
+        width: 210px !important;
+        font-size: 10px !important;
+        padding: 10px 10px !important;
+        margin: 6px auto !important;
+    }
+
+    /* HP-бар и таймер во время боя с боссом */
+    .boss-hp-bar {
+        width: 200px !important;
+        height: 18px !important;
+        top: 7px !important;
+        box-shadow: 3px 3px 0 #000 !important;
+        border-width: 2px !important;
+    }
+    .boss-hp-label { font-size: 7px !important; }
+    .boss-timer { top: 34px !important; font-size: 13px !important; text-shadow: 1px 1px 0 #000 !important; }
+    .dodge-hint { font-size: 9px !important; bottom: 155px !important; }
+
+    /* ═══════════════════════════════════════════════════════
+       5. НАСТРОЙКИ
+    ═══════════════════════════════════════════════════════ */
+    #settings-screen {
+        min-width: unset !important;
+        width: 84% !important;
+        max-width: 460px !important;
+        padding: 16px 14px !important;
+        border-width: 3px !important;
+        box-shadow: 4px 4px 0 #000 !important;
         max-height: 92vh !important;
         overflow-y: auto !important;
     }
-    #settings-screen h2 { font-size: 14px !important; margin-bottom: 10px !important; }
-    .settings-section { margin: 8px 0 !important; padding: 10px !important; }
-    .settings-label { font-size: 8px !important; }
-    .settings-row label { font-size: 7px !important; min-width: 50px !important; }
-    .toggle-btn { font-size: 7px !important; padding: 4px 8px !important; }
-    .vol-slider { width: 110px !important; }
-    .track-btn { font-size: 7px !important; padding: 6px 8px !important; }
-
-    /* ── Shop screen ──────────────────────────────────────── */
-    #shop-screen {
-        width: 92% !important;
-        min-width: unset !important;
-        padding: 12px 10px !important;
-        max-height: 92vh !important;
-        border-width: 3px !important;
+    #settings-screen h2 {
+        font-size: 15px !important;
+        margin-bottom: 12px !important;
+        text-shadow: 2px 2px 0 #000 !important;
     }
-    #shop-screen h2 { font-size: 14px !important; margin-bottom: 6px !important; }
-    .shop-wallet { font-size: 9px !important; padding: 6px 8px !important; margin-bottom: 10px !important; }
+    .settings-section {
+        margin: 8px 0 !important;
+        padding: 10px 12px !important;
+        border-width: 2px !important;
+    }
+    .settings-label  { font-size: 8px !important; margin-bottom: 6px !important; }
+    .settings-row    { gap: 8px !important; margin-top: 5px !important; flex-wrap: wrap !important; }
+    .settings-row label { font-size: 7px !important; min-width: 55px !important; }
+    .vol-slider  { width: 120px !important; height: 5px !important; }
+    .vol-val     { font-size: 7px !important; }
+    .toggle-group { gap: 5px !important; }
+    .toggle-btn  {
+        font-size: 7px !important;
+        padding: 5px 9px !important;
+        min-height: 30px !important;
+    }
+    .track-btn   { font-size: 7px !important; padding: 7px 9px !important; }
+    #settings-screen .btn {
+        width: 180px !important;
+        font-size: 9px !important;
+        padding: 9px 10px !important;
+        margin-top: 8px !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       6. МАГАЗИН СКИНОВ
+    ═══════════════════════════════════════════════════════ */
+    #shop-screen {
+        min-width: unset !important;
+        width: 88% !important;
+        max-width: 500px !important;
+        padding: 14px 12px !important;
+        border-width: 3px !important;
+        box-shadow: 4px 4px 0 #000 !important;
+        max-height: 92vh !important;
+    }
+    #shop-screen h2 {
+        font-size: 15px !important;
+        margin-bottom: 8px !important;
+        text-shadow: 2px 2px 0 #000 !important;
+    }
+    .shop-wallet {
+        font-size: 9px !important;
+        padding: 6px 10px !important;
+        margin-bottom: 10px !important;
+        gap: 12px !important;
+        border-width: 2px !important;
+    }
     .shop-grid {
         grid-template-columns: repeat(3, 1fr) !important;
-        gap: 7px !important;
+        gap: 8px !important;
+        margin: 10px 0 !important;
     }
-    .shop-card { padding: 7px 5px !important; gap: 2px !important; }
-    .shop-card-name { font-size: 6px !important; }
+    .shop-card {
+        padding: 8px 6px !important;
+        gap: 3px !important;
+        border-width: 2px !important;
+    }
+    .shop-card-name  { font-size: 6px !important; }
     .shop-card-badge { font-size: 5px !important; }
-    .shop-equip-row { gap: 6px !important; margin-top: 7px !important; }
-    .shop-equip-row .btn {
-        width: 140px !important;
-        font-size: 8px !important;
-        padding: 7px 5px !important;
+    .shop-equip-row  { gap: 8px !important; margin-top: 8px !important; flex-wrap: wrap !important; justify-content: center !important; }
+    #btn-shop-equip-p1, #btn-shop-equip-p2 {
+        width: 170px !important;
+        font-size: 9px !important;
+        padding: 9px 8px !important;
+        margin: 0 !important;
+        box-shadow: 3px 3px 0 #000 !important;
     }
     #btn-shop-back {
-        width: 130px !important;
-        margin-top: 7px !important;
-        font-size: 8px !important;
+        width: 150px !important;
+        font-size: 9px !important;
+        padding: 9px 8px !important;
+        margin-top: 8px !important;
+        box-shadow: 3px 3px 0 #000 !important;
     }
 
-    /* ── Account modals ───────────────────────────────────── */
+    /* ═══════════════════════════════════════════════════════
+       7. МОДАЛЬНЫЕ ОКНА АККАУНТА (вход / профиль / рекорды)
+    ═══════════════════════════════════════════════════════ */
     .acc-modal-wrap {
-        max-width: 94% !important;
+        max-width: 92% !important;
         max-height: 94vh !important;
     }
     .acc-card {
-        width: clamp(260px, 88vw, 360px) !important;
-        padding: 14px !important;
-        gap: 8px !important;
+        width: clamp(270px, 88vw, 380px) !important;
+        padding: 16px 14px !important;
+        gap: 10px !important;
         border-width: 3px !important;
+        box-shadow: 4px 4px 0 #000 !important;
     }
     .acc-card-wide {
-        width: clamp(270px, 92vw, 400px) !important;
+        width: clamp(280px, 90vw, 430px) !important;
     }
-    .acc-card-logo { font-size: clamp(12px, 3vw, 18px) !important; }
-    .acc-card-title { font-size: clamp(10px, 2.5vw, 14px) !important; }
-    .auth-tab { font-size: clamp(7px, 1.8vw, 9px) !important; padding: 9px 4px !important; }
-    .acc-field { padding: 9px 10px !important; font-size: clamp(8px, 1.8vw, 10px) !important; }
-    .acc-action-btn {
-        font-size: clamp(8px, 1.8vw, 10px) !important;
-        padding: 9px 6px !important;
+    .acc-card-logo  { font-size: clamp(13px, 3.5vw, 20px) !important; }
+    .acc-card-title { font-size: clamp(11px, 3vw, 15px) !important; }
+
+    /* Auth tabs */
+    .auth-tabs { border-width: 2px !important; }
+    .auth-tab  {
+        font-size: clamp(8px, 2vw, 10px) !important;
+        padding: 10px 6px !important;
         min-height: 38px !important;
+    }
+
+    /* Поля ввода */
+    .acc-field {
+        padding: 10px 12px !important;
+        font-size: clamp(9px, 2vw, 11px) !important;
+        border-width: 2px !important;
+        min-height: 40px !important;
+    }
+    .acc-field-err  { font-size: clamp(6px, 1.5vw, 8px) !important; }
+    .acc-input-label { font-size: clamp(6px, 1.5vw, 8px) !important; }
+
+    /* Кнопки действий */
+    .acc-action-btn {
+        font-size: clamp(9px, 2vw, 11px) !important;
+        padding: 10px 8px !important;
+        min-height: 40px !important;
+        border-width: 3px !important;
+        box-shadow: 3px 3px 0 #000 !important;
+    }
+    .acc-profile-btns { gap: 7px !important; }
+    .acc-stats-block  { border-width: 1px !important; }
+    .acc-stat-row {
+        padding: 5px 10px !important;
+        font-size: clamp(6px, 1.4vw, 8px) !important;
+    }
+
+    /* Таблица рекордов */
+    .board-tabs { border-width: 2px !important; }
+    .board-tab  {
+        font-size: clamp(7px, 1.8vw, 10px) !important;
+        padding: 9px 5px !important;
+        min-height: 38px !important;
+    }
+    .board-th {
+        font-size: clamp(6px, 1.4vw, 8px) !important;
+        padding: 7px 5px !important;
+    }
+    .board-rank, .board-name, .board-score {
+        font-size: clamp(6px, 1.4vw, 8px) !important;
+        padding: 6px 5px !important;
+    }
+    .board-scroll-wrap {
+        max-height: clamp(170px, 38vh, 300px) !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       8. ОНЛАЙН-ЛОББИ (дополнительные подстройки)
+    ═══════════════════════════════════════════════════════ */
+    #online-screen {
+        box-shadow: 4px 4px 0 #000 !important;
+    }
+    .pixel-btn {
+        font-size: clamp(8px, 1.3vw, 11px) !important;
+        padding: clamp(7px, 1.2vh, 11px) clamp(5px, 0.9vw, 10px) !important;
+        box-shadow: 3px 3px 0 #000 !important;
+        border-width: 2px !important;
+    }
+    .pixel-btn:active:not(:disabled) {
+        box-shadow: 1px 1px 0 #000 !important;
+    }
+    #server-modal {
+        box-shadow: 5px 5px 0 #000 !important;
         border-width: 3px !important;
     }
-    .acc-profile-btns { gap: 6px !important; }
-    .acc-stat-row { padding: 5px 8px !important; font-size: clamp(6px, 1.2vw, 7px) !important; }
-
-    /* Leaderboard */
-    .board-tab { font-size: clamp(7px, 1.6vw, 9px) !important; padding: 8px 4px !important; }
-    .board-th  { font-size: clamp(6px, 1.2vw, 8px) !important; padding: 6px 4px !important; }
-    .board-rank, .board-name, .board-score { font-size: clamp(6px, 1.2vw, 8px) !important; padding: 5px 4px !important; }
-    .board-scroll-wrap { max-height: clamp(160px, 36vh, 280px) !important; }
 }
 
-/* ── Дополнительно для очень маленьких экранов (≤ 400px высота) ─── */
-@media (hover: none) and (pointer: coarse) and (max-height: 400px) {
+/* ═══════════════════════════════════════════════════════════════
+   ОЧЕНЬ МАЛЕНЬКИЕ ЭКРАНЫ (высота ≤ 420px — iPhone SE, старые Android)
+═══════════════════════════════════════════════════════════════ */
+@media (hover: none) and (pointer: coarse) and (max-height: 420px) {
 
-    .top-bar { padding: 4px 8px !important; }
-    .score-board, .infinity-score-board { font-size: 11px !important; }
-    .high-score, .infinity-high-score { font-size: 8px !important; }
-    .fish-wallet { font-size: 7px !important; gap: 0px !important; }
+    /* Счёт и рыбки */
+    .top-bar { padding: 3px 6px !important; }
+    .score-board, .infinity-score-board { font-size: 10px !important; }
+    .high-score, .infinity-high-score   { font-size: 7px !important; }
+    .fish-wallet { font-size: 7px !important; margin-top: 1px !important; }
+    .fish-wallet .pixel-icon { width: 9px !important; height: 9px !important; }
 
+    /* Главное меню */
     #start-screen {
-        padding: 8px 10px !important;
-        max-height: 90vh !important;
+        padding: 10px 12px !important;
+        box-shadow: 3px 3px 0 #000 !important;
     }
-    #start-screen h1 { font-size: 16px !important; margin-bottom: 3px !important; }
-    .menu-currencies { margin-bottom: 5px !important; font-size: 9px !important; }
+    #start-screen > h1 { font-size: 17px !important; margin-bottom: 4px !important; }
+    .menu-currencies   { margin-bottom: 6px !important; font-size: 9px !important; gap: 10px !important; }
 
     .btn {
-        width: 190px !important;
-        margin: 3px auto !important;
-        padding: 7px 8px !important;
-        font-size: 9px !important;
+        width: 210px !important;
+        margin: 5px auto !important;
+        padding: 9px 10px !important;
+        font-size: 10px !important;
+        box-shadow: 3px 3px 0 #000 !important;
+    }
+    #start-screen > div > .btn {
+        width: 120px !important;
+        font-size: 8px !important;
+        padding: 7px 5px !important;
     }
     #btn-easy, #btn-hard, #btn-mega, #btn-infinity, #btn-boss,
     #btn-fullscreen, #btn-settings, #btn-shop {
-        width: 175px !important;
-        padding: 6px 8px !important;
-        font-size: 8px !important;
-        margin: 3px auto !important;
+        width: 195px !important;
+        padding: 8px 8px !important;
+        font-size: 9px !important;
+        margin: 4px auto !important;
+    }
+    .skin-preview-canvas { width: 58px !important; height: 46px !important; }
+    .skin-col   { width: 95px !important; }
+    .skin-selector { margin: 5px 0 !important; gap: 8px !important; }
+
+    /* Победа / поражение */
+    #win-screen, #game-over-screen { padding: 14px 14px !important; }
+    #win-screen h2   { font-size: 17px !important; margin-bottom: 8px !important; }
+    #game-over-screen h2 { font-size: 15px !important; margin-bottom: 8px !important; }
+    #win-screen p, #game-over-screen p { font-size: 10px !important; margin-bottom: 7px !important; }
+    #win-screen .btn, #game-over-screen .btn {
+        width: 190px !important; font-size: 9px !important; padding: 8px 8px !important; margin: 5px auto !important;
     }
 
-    .skin-preview-canvas {
-        width: 55px !important;
-        height: 44px !important;
+    /* Боссы */
+    #boss-screen { padding: 12px 12px !important; }
+    #boss-screen h2 { font-size: 14px !important; margin-bottom: 7px !important; }
+    .boss-item  { padding: 6px 8px !important; }
+    .boss-icon  { width: 38px !important; height: 38px !important; font-size: 18px !important; }
+    .boss-name  { font-size: 9px !important; }
+    .boss-desc  { font-size: 7px !important; }
+    #boss-win-screen, #boss-lose-screen { padding: 14px 14px !important; }
+    #boss-win-screen h2, #boss-lose-screen h2 { font-size: 15px !important; }
+    #boss-win-screen p, #boss-lose-screen p { font-size: 9px !important; }
+    #boss-win-screen .btn, #boss-lose-screen .btn {
+        width: 190px !important; font-size: 9px !important; padding: 8px 8px !important; margin: 5px auto !important;
     }
-    .skin-col { width: 90px !important; }
-    .skin-selector { margin: 4px 0 !important; gap: 8px !important; }
 
-    #boss-screen h2 { font-size: 13px !important; margin-bottom: 7px !important; }
-    .boss-item { padding: 6px 8px !important; }
-    .boss-icon { width: 36px !important; height: 36px !important; font-size: 18px !important; }
+    /* HP-бар босса в игре */
+    .boss-hp-bar { width: 170px !important; height: 15px !important; top: 5px !important; }
+    .boss-timer  { top: 27px !important; font-size: 11px !important; }
 
-    #game-over-screen h2, #win-screen h2 { font-size: 15px !important; }
-    #game-over-screen p, #win-screen p   { font-size: 10px !important; }
+    /* Настройки */
+    #settings-screen { padding: 12px 12px !important; }
+    #settings-screen h2 { font-size: 13px !important; margin-bottom: 9px !important; }
+    .settings-section { margin: 6px 0 !important; padding: 8px 10px !important; }
+
+    /* Магазин */
+    #shop-screen { padding: 10px 10px !important; }
+    #shop-screen h2 { font-size: 13px !important; margin-bottom: 6px !important; }
+    .shop-grid { gap: 6px !important; }
+    .shop-card { padding: 6px 4px !important; }
+    #btn-shop-equip-p1, #btn-shop-equip-p2 {
+        width: 148px !important; font-size: 8px !important; padding: 8px 6px !important;
+    }
+    #btn-shop-back { width: 135px !important; font-size: 8px !important; }
+
+    /* Аккаунт-модалки */
+    .acc-card { padding: 12px 12px !important; gap: 7px !important; }
+    .acc-action-btn {
+        font-size: clamp(8px, 2vw, 10px) !important;
+        padding: 9px 6px !important;
+        min-height: 36px !important;
+    }
+    .acc-field { padding: 8px 10px !important; min-height: 36px !important; }
 }
