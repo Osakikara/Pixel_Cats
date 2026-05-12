@@ -2000,7 +2000,7 @@ function drawBackground(vOffset) {
         _bgGradDiff = currentDifficulty; _bgGradH = renderHeight; _bgGradOff = vOffset;
         _bgGrad = ctx.createLinearGradient(0, -vOffset, 0, renderHeight - vOffset);
         if (currentDifficulty === 'infinity') { _bgGrad.addColorStop(0, "#000000"); _bgGrad.addColorStop(0.5, "#4a0404"); _bgGrad.addColorStop(1, "#800000"); }
-        else if (currentDifficulty === 'hard') { _bgGrad.addColorStop(0, "#f8c291"); _bgGrad.addColorStop(0.5, "#f6e58d"); _bgGrad.addColorStop(1, "#badc58"); }
+        else if (currentDifficulty === 'hard') { _bgGrad.addColorStop(0, "#f8c291"); _bgGrad.addColorStop(0.5, "#f6e58d"); _bgGrad.addColorStop(1, "#f6e58d"); }
         else if (currentDifficulty === 'megahard') { _bgGrad.addColorStop(0, "#000008"); _bgGrad.addColorStop(0.5, "#050520"); _bgGrad.addColorStop(1, "#0a0a30"); }
         else { _bgGrad.addColorStop(0, "#87CEEB"); _bgGrad.addColorStop(1, "#E0F7FA"); }
     }
