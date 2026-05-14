@@ -1839,8 +1839,7 @@ function checkCollisions() {
 // Обработка победы (достижение замка)
 // ============================================
 function triggerWin() {
-    isWin = true; 
-    isPlaying = false;
+    // isWin и isPlaying устанавливаются в setTimeout ниже, после показа UI
     AudioEngine.stopMusic();
     AudioEngine.sfx.victory(); 
     
@@ -1883,20 +1882,28 @@ function triggerWin() {
     // SAVE PROGRESS AND SHOW WIN SCREEN
     // Сохранение прогресса и показ экрана победы
     // ============================================
-    saveGameData(); 
+    // 1. Сначала показываем UI — до любых опасных операций
     unlockMsg.innerText = msg; 
-    if (nextBtnVisible) btnNextLevel.style.display = 'block'; 
-    else btnNextLevel.style.display = 'none';
+    const _btnNext = btnNextLevel || document.getElementById('btn-next-level') || document.getElementById('btn-next');
+    if (_btnNext) _btnNext.style.display = nextBtnVisible ? 'block' : 'none';
     winScreen.style.display = 'block'; 
-    cancelAnimationFrame(animationId);
-    // В онлайн режиме — показать кнопку возврата в лобби
     const _lobbyWin = document.getElementById('btn-lobby-win');
     if (_lobbyWin) _lobbyWin.style.display = net.isOnline ? 'block' : 'none';
-    // Уведомить партнёра о победе
     if (net.isOnline && net.conn && net.conn.open) net.conn.send({ type: 'WIN', score: score, _t: Date.now() });
 
-    // Межстраничная реклама после победы (только одиночная игра)
-    if (!net.isOnline) setTimeout(() => YandexSDK.showFullscreenAd(null), 500);
+    // 2. Через 10мс — сохраняем и останавливаем цикл (чтобы не зависнуть при ошибке)
+    setTimeout(() => {
+        try {
+            saveGameData();
+        } catch(e) {
+            console.error('[triggerWin] Ошибка сохранения:', e);
+        }
+        isWin = true;
+        isPlaying = false;
+        cancelAnimationFrame(animationId);
+    }, 10);
+
+
 }
 
 // ============================================
@@ -2180,8 +2187,7 @@ function endGame() {
     if (_adFishBtn) _adFishBtn.style.display = (!net.isOnline && YandexSDK.ready) ? 'block' : 'none';
     if (_adRewardMsg) _adRewardMsg.style.display = 'none';
 
-    // Межстраничная реклама — с задержкой, чтобы игрок успел увидеть счёт
-    if (!net.isOnline) setTimeout(() => YandexSDK.showFullscreenAd(null), 400);
+
 }
 
 function showMenu() {

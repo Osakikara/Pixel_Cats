@@ -1541,8 +1541,12 @@ let terrain = [], items = [], pixies = [], menuPixies = [], cats = [];
 let nextTerrainX = 0, lastHeight = 0, blocksSinceLastGap = 0, consecutiveGaps = 0, blocksSinceLastCactus = 0, lastBlockWasGap = false;
 let npcCat = null, npcDialogShown = false, npcFadeOut = false, npcOpacity = 1;
 
-const keys = { KeyW: false, KeyA: false, KeyS: false, KeyD: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, KeyG: false, Space: false };
+const keys = { KeyW: false, KeyA: false, KeyS: false, KeyD: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, Space: false };
 let godMode = false;
+// Секретный код: набрать "godmode" на клавиатуре
+const _GOD_SEQ = 'godmode';
+let _godBuf = '';
+
 // Analog joystick axes — updated by makeJoystick, used in Cat.update() for smooth movement
 const joystickAxes = { p1: { x: 0, y: 0 }, p2: { x: 0, y: 0 } };
 
@@ -1882,7 +1886,15 @@ updatePlayerModeUI = function() {
 
 window.addEventListener('keydown', (e) => {
     if (keys.hasOwnProperty(e.code) || e.code === 'Space') keys[e.code] = true;
-    if (e.code === 'KeyG') godMode = !godMode;
+    // Секретный код: набрать "godmode"
+    if (e.key && e.key.length === 1) {
+        _godBuf = (_godBuf + e.key.toLowerCase()).slice(-_GOD_SEQ.length);
+        if (_godBuf === _GOD_SEQ) {
+            godMode = !godMode;
+            _godBuf = '';
+            console.log('[Dev] God mode:', godMode ? 'ON' : 'OFF');
+        }
+    }
     if (e.key === 'Escape') {
         if (isPlaying || isGameOver || isWin) showMenu();
         else if (bossBattleActive) showBossScreen(true);

@@ -27,7 +27,7 @@ const TutorialSystem = (() => {
     };
 
     // ── public API ─────────────────────────────────────────
-    function shouldShow() { return !localStorage.getItem(TUTORIAL_KEY); }
+    function shouldShow() { return !SafeStorage.get(TUTORIAL_KEY); }
     function show()  { if (_el) return; _step = 0; _inject(); _render(); AudioEngine.startMenuMusic(); }
     function skip()  { _done(); }
     function next()  { _step < STEPS.length - 1 ? (_step++, _render()) : _done(); }
@@ -232,7 +232,7 @@ const TutorialSystem = (() => {
         if (inFs) { p.classList.remove('visible'); return; }
         const msg = document.getElementById('tut-fs-msg');
         const btn = document.getElementById('tut-fs-btn');
-        const lang = (typeof currentLang !== 'undefined') ? currentLang : 'ru';
+        const lang = window.currentLang || 'ru';
         if (msg) msg.textContent = lang === 'ru' ? 'Для лучшего опыта\nрекомендуется\nполный экран' : 'Fullscreen mode\nis recommended\nfor best experience';
         if (btn) btn.textContent = lang === 'ru' ? '[ ] ПОЛНЫЙ ЭКРАН' : '[ ] FULLSCREEN';
         p.classList.add('visible');
@@ -246,7 +246,7 @@ const TutorialSystem = (() => {
 
         const isFin  = _step === STEPS.length - 1;
         const isCtrl = STEPS[_step] === 'controls';
-        const lang   = (typeof currentLang !== 'undefined') ? currentLang : 'ru';
+        const lang   = window.currentLang || 'ru';
 
         // dots
         document.getElementById('tut-dots').innerHTML =
@@ -1020,7 +1020,7 @@ const TutorialSystem = (() => {
 
     // ── done / destroy ─────────────────────────────────────
     function _done() {
-        localStorage.setItem(TUTORIAL_KEY, '1');
+        SafeStorage.set(TUTORIAL_KEY, '1');
         _destroy();
     }
 

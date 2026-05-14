@@ -460,13 +460,14 @@ const translations = {
     }
 };
 
-let currentLang = localStorage.getItem('pixelCatsLang') || 'ru';
+// currentLang задаётся как свойство window — доступно без TDZ из любого скрипта
+window.currentLang = window.currentLang || SafeStorage.get('pixelCatsLang') || 'ru';
 let langClickCount = 0, lastLangClickTime = 0;
-let samuraiUnlocked = localStorage.getItem('pixelCatsSamuraiUnlocked') === 'true';
+let samuraiUnlocked = SafeStorage.getBool('pixelCatsSamuraiUnlocked');
 
 function t(key) {
     const keys = key.split('.');
-    let value = translations[currentLang];
+    let value = translations[window.currentLang];
     for (const k of keys) { if (value && value[k] !== undefined) value = value[k]; else return key; }
     return value;
 }
@@ -477,15 +478,15 @@ function toggleLanguage() {
     lastLangClickTime = now;
     langClickCount++;
     if (langClickCount >= 3 && !samuraiUnlocked) unlockSamuraiSkin();
-    currentLang = currentLang === 'ru' ? 'en' : 'ru';
-    localStorage.setItem('pixelCatsLang', currentLang);
-    document.getElementById('btn-lang').innerText = currentLang.toUpperCase();
+    window.currentLang = window.currentLang === 'ru' ? 'en' : 'ru';
+    SafeStorage.set('pixelCatsLang', window.currentLang);
+    document.getElementById('btn-lang').innerText = window.currentLang.toUpperCase();
     updateAllTexts();
 }
 
 function unlockSamuraiSkin() {
     samuraiUnlocked = true;
-    localStorage.setItem('pixelCatsSamuraiUnlocked', 'true');
+    SafeStorage.set('pixelCatsSamuraiUnlocked', 'true');
     if (!unlockedSkins.includes('samurai')) { unlockedSkins.push('samurai'); saveGameData(); }
     const btnLang = document.getElementById('btn-lang');
     btnLang.classList.add('secret-unlock');
@@ -494,74 +495,84 @@ function unlockSamuraiSkin() {
     setTimeout(() => btnLang.classList.remove('secret-unlock'), 1000);
 }
 
+function safeSetText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = text;
+}
+function safeSetHTML(id, html) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+}
+
 function updateAllTexts() {
-    document.getElementById('btn-mode').innerText = numPlayers === 1 ? t('player1') : t('player2');
+    safeSetText('btn-mode', numPlayers === 1 ? t('player1') : t('player2'));
     const mobileBtn = document.getElementById('btn-mobile-toggle');
-    mobileBtn.innerText = forceMobile ? t('mobileOn') : t('mobileAuto');
-    document.getElementById('btn-online-menu').innerText = t('online');
-    document.getElementById('btn-fullscreen').innerText = t('fullscreen');
-    document.getElementById('p1-label').innerText = t('player1Label');
-    document.getElementById('p2-label').innerText = t('player2Label');
-    document.getElementById('btn-easy').innerText = t('easyMode');
+    if (mobileBtn) mobileBtn.innerText = forceMobile ? t('mobileOn') : t('mobileAuto');
+    safeSetText('btn-online-menu', t('online'));
+    safeSetText('btn-fullscreen', t('fullscreen'));
+    safeSetText('p1-label', t('player1Label'));
+    safeSetText('p2-label', t('player2Label'));
+    safeSetText('btn-easy', t('easyMode'));
     updateDifficultyButtons();
-    document.getElementById('online-title').innerText = t('onlineTitle');
-    document.getElementById('your-skin-label').innerText = t('yourSkin');
-    document.getElementById('your-id-label').innerText = t('yourId');
-    document.getElementById('wait-friend-label').innerText = t('waitFriend');
-    document.getElementById('join-friend-label').innerText = t('joinFriend');
-    document.getElementById('remote-id-input').placeholder = t('pasteId');
-    document.getElementById('btn-join').innerText = t('joinGame');
-    document.getElementById('btn-back').innerText = t('back');
-    document.getElementById('score-label').innerText = t('score');
-    document.getElementById('inf-score-label').innerText = t('infinityScore');
-    document.getElementById('best-label').innerText = t('best');
-    document.getElementById('inf-best-label').innerText = t('best');
-    document.getElementById('menu-hint').innerText = t('menu');
+    safeSetText('online-title', t('onlineTitle'));
+    safeSetText('your-skin-label', t('yourSkin'));
+    safeSetText('your-id-label', t('yourId'));
+    safeSetText('wait-friend-label', t('waitFriend'));
+    safeSetText('join-friend-label', t('joinFriend'));
+    const remoteInput = document.getElementById('remote-id-input');
+    if (remoteInput) remoteInput.placeholder = t('pasteId');
+    safeSetText('btn-join', t('joinGame'));
+    safeSetText('btn-back', t('back'));
+    safeSetText('score-label', t('score'));
+    safeSetText('inf-score-label', t('infinityScore'));
+    safeSetText('best-label', t('best'));
+    safeSetText('inf-best-label', t('best'));
+    safeSetText('menu-hint', t('menu'));
     const p1Text = numPlayers === 1 ? `${t('p1Controls')} <span class="key-badge">WASD</span> / <span class="key-badge">ARROWS</span>` :
         `${t('p1Controls')} <span class="key-badge">W</span> ${t('jump')} <span class="key-badge">A</span><span class="key-badge">D</span> ${t('move')}`;
-    document.getElementById('hint-p1').innerHTML = p1Text;
-    document.getElementById('hint-p2').innerHTML = `${t('p2Controls')} <span class="key-badge">▲</span> ${t('jump')} <span class="key-badge">◄</span><span class="key-badge">►</span> ${t('move')}`;
-    document.getElementById('game-over-title').innerText = t('gameOver');
-    document.getElementById('distance-label').innerText = t('distance');
-    document.getElementById('try-again-hint').innerText = t('tryAgainHint');
-    document.getElementById('btn-try-again').innerText = t('tryAgain');
-    document.getElementById('btn-menu-go').innerText = t('menuBtn');
-    document.getElementById('win-title').innerText = t('victory');
-    document.getElementById('win-message').innerText = t('reachedCastle');
-    document.getElementById('highscore-saved').innerText = t('highScoreSaved');
-    document.getElementById('btn-next-level').innerText = t('nextLevel');
-    document.getElementById('btn-menu-win').innerText = t('menuBtn');
-    document.getElementById('npc-text').innerText = t('npcMessage');
-    document.getElementById('rotate-text').innerText = t('rotate');
-    document.getElementById('rotate-hint').innerText = t('landscapeRequired');
+    safeSetHTML('hint-p1', p1Text);
+    safeSetHTML('hint-p2', `${t('p2Controls')} <span class="key-badge">▲</span> ${t('jump')} <span class="key-badge">◄</span><span class="key-badge">►</span> ${t('move')}`);
+    safeSetText('game-over-title', t('gameOver'));
+    safeSetText('distance-label', t('distance'));
+    safeSetText('try-again-hint', t('tryAgainHint'));
+    safeSetText('btn-try-again', t('tryAgain'));
+    safeSetText('btn-menu-go', t('menuBtn'));
+    safeSetText('win-title', t('victory'));
+    safeSetText('win-message', t('reachedCastle'));
+    safeSetText('highscore-saved', t('highScoreSaved'));
+    safeSetText('btn-next-level', t('nextLevel'));
+    safeSetText('btn-menu-win', t('menuBtn'));
+    safeSetText('npc-text', t('npcMessage'));
+    safeSetText('rotate-text', t('rotate'));
+    safeSetText('rotate-hint', t('landscapeRequired'));
     // Boss screen translations
-    document.getElementById('boss-title').innerText = t('bossBattle');
-    document.getElementById('boss-select-hint').innerText = t('bossSelectHint');
-    document.getElementById('btn-boss-back').innerText = t('bossBack');
-    document.getElementById('btn-boss').innerText = '⚔️ ' + t('bossBattle');
-    document.getElementById('boss-win-title').innerText = t('bossWin');
-    document.getElementById('boss-win-msg').innerText = t('bossDefeated');
-    document.getElementById('btn-boss-continue').innerText = t('bossContinue');
-    document.getElementById('btn-boss-win-menu').innerText = t('menuBtn');
-    document.getElementById('boss-lose-title').innerText = t('bossLose');
-    document.getElementById('boss-lose-msg').innerText = t('bossLost');
-    document.getElementById('btn-boss-retry').innerText = t('bossRetry');
-    document.getElementById('btn-boss-lose-back').innerText = t('bossSelectOther');
-    document.getElementById('dodge-hint').innerText = t('dodgeHint');
+    safeSetText('boss-title', t('bossBattle'));
+    safeSetText('boss-select-hint', t('bossSelectHint'));
+    safeSetText('btn-boss-back', t('bossBack'));
+    safeSetText('btn-boss', '⚔️ ' + t('bossBattle'));
+    safeSetText('boss-win-title', t('bossWin'));
+    safeSetText('boss-win-msg', t('bossDefeated'));
+    safeSetText('btn-boss-continue', t('bossContinue'));
+    safeSetText('btn-boss-win-menu', t('menuBtn'));
+    safeSetText('boss-lose-title', t('bossLose'));
+    safeSetText('boss-lose-msg', t('bossLost'));
+    safeSetText('btn-boss-retry', t('bossRetry'));
+    safeSetText('btn-boss-lose-back', t('bossSelectOther'));
+    safeSetText('dodge-hint', t('dodgeHint'));
     updateMenuButtons();
     renderBossList();
     // Settings screen
-    document.getElementById('settings-title').innerText = t('settings');
-    document.getElementById('btn-settings-back').innerText = t('settingsBack');
-    document.getElementById('btn-settings').innerText = t('settings');
-    document.getElementById('set-music-label').innerText = t('musicLabel');
-    document.getElementById('set-sfx-label').innerText = t('sfxLabel');
-
-    document.getElementById('set-music-on-label').innerText = t('onOff');
-    document.getElementById('set-sfx-on-label').innerText = t('onOff');
-    document.getElementById('set-music-vol-label').innerText = t('volume');
-    document.getElementById('set-sfx-vol-label').innerText = t('volume');
-    if (document.getElementById('joy1-label')) document.getElementById('joy1-label').innerText = isMobile ? 'MOVE/JUMP↑' : '';
+    safeSetText('settings-title', t('settings'));
+    safeSetText('btn-settings-back', t('settingsBack'));
+    safeSetText('btn-settings', t('settings'));
+    safeSetText('set-music-label', t('musicLabel'));
+    safeSetText('set-sfx-label', t('sfxLabel'));
+    safeSetText('set-music-on-label', t('onOff'));
+    safeSetText('set-sfx-on-label', t('onOff'));
+    safeSetText('set-music-vol-label', t('volume'));
+    safeSetText('set-sfx-vol-label', t('volume'));
+    const joy1Label = document.getElementById('joy1-label');
+    if (joy1Label) joy1Label.innerText = isMobile ? 'MOVE/JUMP↑' : '';
     // Firebase server/room UI
     _updateFbTexts();
     // Server modal

@@ -11,12 +11,12 @@ const AudioEngine = (() => {
     let musicTimerId = null;
 
     const S = {
-        masterVol: parseFloat(localStorage.getItem('pcMasterVol') ?? '0.7'),
-        musicVol:  parseFloat(localStorage.getItem('pcMusicVol')  ?? '0.4'),
-        sfxVol:    parseFloat(localStorage.getItem('pcSfxVol')    ?? '0.8'),
-        musicOn:   localStorage.getItem('pcMusicOn')  !== 'false',
-        sfxOn:     localStorage.getItem('pcSfxOn')    !== 'false',
-        trackId:   parseInt(localStorage.getItem('pcTrackId') ?? '0'),
+        masterVol: SafeStorage.getFloat('pcMasterVol', 0.7),
+        musicVol:  SafeStorage.getFloat('pcMusicVol',  0.4),
+        sfxVol:    SafeStorage.getFloat('pcSfxVol',    0.8),
+        musicOn:   SafeStorage.get('pcMusicOn') !== 'false',
+        sfxOn:     SafeStorage.get('pcSfxOn')   !== 'false',
+        trackId:   SafeStorage.getInt('pcTrackId', 0),
     };
 
     function boot() {
@@ -51,11 +51,11 @@ const AudioEngine = (() => {
     }
 
     function saveS() {
-        localStorage.setItem('pcMasterVol', S.masterVol);
-        localStorage.setItem('pcMusicVol',  S.musicVol);
-        localStorage.setItem('pcSfxVol',    S.sfxVol);
-        localStorage.setItem('pcMusicOn',   S.musicOn);
-        localStorage.setItem('pcSfxOn',     S.sfxOn);
+        SafeStorage.set('pcMasterVol', S.masterVol);
+        SafeStorage.set('pcMusicVol',  S.musicVol);
+        SafeStorage.set('pcSfxVol',    S.sfxVol);
+        SafeStorage.set('pcMusicOn',   S.musicOn);
+        SafeStorage.set('pcSfxOn',     S.sfxOn);
     }
 
     // ── утилита: одна нота через sfxGain ──
@@ -183,7 +183,7 @@ const AudioEngine = (() => {
         musicFadeGain.gain.linearRampToValueAtTime(0, actx.currentTime + 0.4);
     }
 
-    function setTrack(id) { S.trackId = id; localStorage.setItem('pcTrackId', id); }
+    function setTrack(id) { S.trackId = id; SafeStorage.set('pcTrackId', id); }
 
     function setMusicOn(v) { S.musicOn = v; applyVol(); saveS(); if (!v) stopBossMusic(false); }
     function setMusicVol(v) { S.musicVol = v/100; applyVol(); saveS(); }

@@ -2,6 +2,11 @@
 // GLOBALS — Canvas, global game state variables, SKINS list, utility functions
 // ============================================================
 
+// ── ГЛОБАЛЬНЫЙ ФИК БЛОКИРОВКИ ПАМЯТИ (Яндекс iframe) ────────────────────────
+// SafeStorage (safestorage.js) уже обрабатывает недоступный localStorage —
+// дополнительная подмена через defineProperty не нужна и ломает Яндекс-среду.
+// ─────────────────────────────────────────────────────────────────────────────
+
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: false });
 const scoreEl = document.getElementById('score'), infinityScoreEl = document.getElementById('infinity-score');
 const normalScoreBox = document.getElementById('normal-score-box'), infinityScoreBox = document.getElementById('infinity-score-box');
@@ -106,13 +111,13 @@ const camera = { x: 0, y: 0 }, moveSpeed = 6, blockSize = 50;
 let gravity = 0.6, jumpStrength = -14;
 const CASTLE_SCORE = 250, CASTLE_START_X = CASTLE_SCORE * blockSize;
 let castleGenerated = false, inCastle = false;
-let highScore = parseInt(localStorage.getItem('pixelCatsDiffScore')) || 0;
-let infinityHighScore = parseInt(localStorage.getItem('pixelCatsInfinityHighScore')) || 0;
-let hardUnlocked = localStorage.getItem('pixelCatsHardUnlocked') === 'true';
-let megaHardUnlocked = localStorage.getItem('pixelCatsMegaHardUnlocked') === 'true';
-let infinityUnlocked = localStorage.getItem('pixelCatsInfinityUnlocked') === 'true';
-let unlockedSkins = JSON.parse(localStorage.getItem('pixelCatsUnlockedSkins')) || ['white', 'orange', 'black', 'calico'];
-let fishWallet = { orange: parseInt(localStorage.getItem('pixelCatsOrange')) || 0, blue: parseInt(localStorage.getItem('pixelCatsBlueFish')) || 0, gold: parseInt(localStorage.getItem('pixelCatsGold')) || 0 };
+let highScore = SafeStorage.getInt('pixelCatsDiffScore');
+let infinityHighScore = SafeStorage.getInt('pixelCatsInfinityHighScore');
+let hardUnlocked = SafeStorage.getBool('pixelCatsHardUnlocked');
+let megaHardUnlocked = SafeStorage.getBool('pixelCatsMegaHardUnlocked');
+let infinityUnlocked = SafeStorage.getBool('pixelCatsInfinityUnlocked');
+let unlockedSkins = SafeStorage.getJSON('pixelCatsUnlockedSkins') || ['white', 'orange', 'black', 'calico'];
+let fishWallet = { orange: SafeStorage.getInt('pixelCatsOrange'), blue: SafeStorage.getInt('pixelCatsBlueFish'), gold: SafeStorage.getInt('pixelCatsGold') };
 const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
 
 // Возвращает Y-координату поверхности земли в мировых координатах.
@@ -157,6 +162,8 @@ const net = {
     bossOnline: false,
     bossRemote: { x: 0, y: 0, dir: true, alive: true, inv: 0 },
     bossLastStateSent: 0,
+    forceRelay: false,
+    selectedBossIndex: undefined,
 };
 function toggleFullscreen() {
     let elem = document.documentElement;
@@ -196,20 +203,22 @@ let _guestOwnSkin = null;
 
 let connMode = 'p2p';
 
-// ============================================
-// PIXEL ICON GENERATOR — все эмодзи заменены пиксельным артом
-// ============================================
 const IconGenerator = (() => {
     const cache = {};
 
     function create(name, scale, drawFn) {
-        const c = document.createElement('canvas');
-        c.width = 16 * scale; c.height = 16 * scale;
-        const ctx = c.getContext('2d');
-        ctx.imageSmoothingEnabled = false;
-        ctx.scale(scale, scale);
-        drawFn(ctx);
-        return c.toDataURL();
+        try {
+            const c = document.createElement('canvas');
+            c.width = 16 * scale; c.height = 16 * scale;
+            const ctx = c.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            ctx.scale(scale, scale);
+            drawFn(ctx);
+            return c.toDataURL();
+        } catch (e) {
+            console.warn('IconGenerator.create error for', name, e);
+            return ''; // возвращаем пустую строку, чтобы не ломало остальное
+        }
     }
     function rects(ctx, rList, color) {
         ctx.fillStyle = color;

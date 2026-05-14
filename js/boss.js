@@ -60,7 +60,7 @@ const BOSSES = [
 // ============================================
 // BOSS BATTLE STATE VARIABLES
 // ============================================
-let defeatedBosses = JSON.parse(localStorage.getItem('pixelCatsDefeatedBosses')) || [];
+let defeatedBosses = SafeStorage.getJSON('pixelCatsDefeatedBosses') || [];
 
 // Виртуальное пространство координат арены босса — 4× увеличено,
 // одинаковое на всех устройствах, масштабируется под экран.
@@ -2928,7 +2928,7 @@ function bossWin() {
     // Сохраняем победу (оба — хост и гость получают прогресс)
     if (!defeatedBosses.includes(currentBoss.id)) {
         defeatedBosses.push(currentBoss.id);
-        localStorage.setItem('pixelCatsDefeatedBosses', JSON.stringify(defeatedBosses));
+        SafeStorage.set('pixelCatsDefeatedBosses', JSON.stringify(defeatedBosses));
     }
     // Синхронизируем с облаком и таблицей лидеров
     saveGameData();

@@ -24,7 +24,7 @@ const DEFAULT_LAYOUT = {
 
 function loadLayout() {
     try {
-        const saved = JSON.parse(localStorage.getItem(CTRL_STORAGE_KEY));
+        const saved = SafeStorage.getJSON(CTRL_STORAGE_KEY);
         if (!saved) return JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
         // Merge with defaults so old saves without 'scale' still work
         const merged = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
@@ -88,7 +88,7 @@ function closeControlsEditor() {
 }
 
 function saveControlsLayout() {
-    localStorage.setItem(CTRL_STORAGE_KEY, JSON.stringify(_editorLayout));
+    SafeStorage.set(CTRL_STORAGE_KEY, JSON.stringify(_editorLayout));
     applyLayout(_editorLayout);
     closeControlsEditor();
     openSettings();

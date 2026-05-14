@@ -8,40 +8,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#202028">
 
-    <title>Pixel Cats: Online v5.0</title>
+    <title>Pixel Cats: Online v5.1</title>
     <link rel="icon" type="image/x-icon" href="media/Pixelcats.ico">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 
-    <script src="/sdk.js"></script>
+    <script src="https://yandex.ru/games/sdk/v2"></script>
 
     <script src="js/yandex.js"></script>
 
-    <script>
-    (function() {
-        const CDNS = [
-            'https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js',
-            'https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js',
-        ];
-        let idx = 0;
-        function tryLoad() {
-            if (idx >= CDNS.length) {
-                window._peerJsLoadFailed = true;
-                return;
-            }
-            const s = document.createElement('script');
-            s.src = CDNS[idx++];
-            s.onerror = tryLoad;
-            document.head.appendChild(s);
-        }
-        tryLoad();
-    })();
-    </script>
-    <!-- Firebase SDK (compat) — резервный канал сигналинга WebRTC -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <!-- PeerJS и Firebase отключены — онлайн временно недоступен в Яндекс.Играх -->
 </head>
 <body>
 <body>
@@ -139,10 +114,12 @@
             </div>
             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <button id="btn-mode" class="btn btn-blue" style="width: 140px; padding: 10px; font-size: 10px; margin-bottom: 0;" onclick="togglePlayerMode()">1 ИГРОК</button>
-                <button id="btn-online-menu" class="btn btn-orange" style="width: 140px; padding: 10px; font-size: 10px; margin-bottom: 0;" onclick="openOnlineMenu()">ОНЛАЙН (бета)</button>
+                <button id="btn-replay-tutorial" class="btn" style="background:#7d6608;border-color:#ffd700;color:#ffd700;width:140px;padding:10px;font-size:10px;margin-bottom:0;" onclick="SafeStorage.remove('pixelCatsTutorialDone_v4'); TutorialSystem.show();">ОБУЧЕНИЕ</button>
+                <button id="btn-online-menu" class="btn btn-orange" style="width: 140px; padding: 10px; font-size: 10px; margin-bottom: 0;" onclick="handleOnlineClick()">ОНЛАЙН (бета)</button>
             </div>
-            <!-- ACCOUNTS ROW -->
-            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;">
+
+            <!-- ACCOUNTS ROW (скрыт до подключения Firebase) -->
+            <div id="acc-online-row" style="display:none;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;">
                 <button class="btn acc-btn-profile" style="width:140px;padding:10px;font-size:9px;margin:0;" onclick="AccountSystem.openAuthModal()">
                     <span id="acc-profile-badge"><img id="ico-person" class="pixel-icon" style="width:12px;height:12px;"> ВОЙТИ</span>
                 </button>
@@ -191,7 +168,7 @@
 
             <!-- ═══ ШАПКА ═══ -->
             <div class="lobby-header">
-                <div class="lobby-header-title" id="online-title"><img id="ico-online-title" class="pixel-icon" style="width:14px;height:14px;"> ОНЛАЙН ЛОББИ</div>
+                <div class="lobby-header-title" id="online-title"><img id="ico-online-title" class="pixel-icon" style="width:14px;height:14px;">ОНЛАЙН ЛОББИ</div>
                 <div class="lobby-header-tabs">
                     <button id="tab-p2p"      onclick="switchConnMode('p2p')"      class="lobby-tab lobby-tab-active"><img id="ico-antenna" class="pixel-icon" style="width:12px;height:12px;"> P2P</button>
                     <button id="tab-firebase" onclick="switchConnMode('firebase')" class="lobby-tab lobby-tab-inactive"><img id="ico-fire-fb" class="pixel-icon" style="width:12px;height:12px;"> FIREBASE</button>
@@ -358,7 +335,7 @@
             <p style="font-size: 10px; color: #aaa;" id="try-again-hint">НАЖМИТЕ ENTER ИЛИ ПОПРОБУЙТЕ СНОВА</p>
             <button class="btn btn-blue" onclick="onlineSafeRestart()" id="btn-try-again">ПОПРОБОВАТЬ СНОВА</button>
             <!-- Вознаграждаемая реклама: рыбки за просмотр -->
-            <button id="btn-game-ad-fish" class="btn" style="display:none;background:#7d6608;border-color:#ffd700;color:#ffd700;font-size:9px;" onclick="getFishFromAd()">📺 СМОТРЕТЬ РЕКЛАМУ → +5🟠 +3🔵 +1🟡</button>
+            <button id="btn-game-ad-fish" class="btn" style="display:none;background:#7d6608;border-color:#ffd700;color:#ffd700;font-size:9px;" onclick="getFishFromAd()">ПОСМОТРЕТЬ РЕКЛАМУ → +5🟠 +3🔵 +1🟡</button>
             <div id="game-ad-reward-msg" style="display:none;font-size:9px;color:#ffd700;margin:6px 0;text-shadow:1px 1px 0 #000;">+5🟠 +3🔵 +1🟡 ПОЛУЧЕНО!</div>
             <button id="btn-lobby-go" class="btn btn-orange" style="display:none;" onclick="showOnlineLobby()"><img id="ico-return-1" class="pixel-icon" style="width:12px;height:12px;"> ОНЛАЙН ЛОББИ</button>
             <button class="btn" style="background: #555;" onclick="showMenu()" id="btn-menu-go">МЕНЮ</button>
@@ -368,7 +345,7 @@
             <p id="win-message">Вы достигли Замка!</p>
             <p style="font-size: 12px; color: #8e44ad;" id="highscore-saved">РЕКОРД СОХРАНЁН!</p>
             <p id="unlock-msg" style="font-size: 12px; color: #e67e22;"></p>
-            <button id="btn-next-level" class="btn btn-purple" onclick="playNextLevel()" id="btn-next">СЛЕДУЮЩИЙ УРОВЕНЬ</button>
+            <button id="btn-next-level" class="btn btn-purple" onclick="playNextLevel()">СЛЕДУЮЩИЙ УРОВЕНЬ</button>
             <button id="btn-lobby-win" class="btn btn-orange" style="display:none;" onclick="showOnlineLobby()">↩ ОНЛАЙН ЛОББИ</button>
             <button class="btn" style="background: #555;" onclick="showMenu()" id="btn-menu-win">МЕНЮ</button>
         </div>
@@ -404,7 +381,7 @@
             <p id="boss-lose-msg">Босс вас победил!</p>
             <p style="font-size: 9px; color: #ddd; text-shadow: 1px 1px 0 #000;" id="boss-enter-hint">НАЖМИТЕ ENTER ЧТОБЫ ПОПРОБОВАТЬ СНОВА</p>
             <!-- Вознаграждаемая реклама: возрождение после поражения от босса -->
-            <button id="btn-boss-revive" class="btn btn-orange" style="display:none;font-size:9px;" onclick="reviveWithAd()">📺 СМОТРЕТЬ РЕКЛАМУ И ПРОДОЛЖИТЬ</button>
+            <button id="btn-boss-revive" class="btn btn-orange" style="display:none;font-size:9px;" onclick="reviveWithAd()">СМОТРЕТЬ РЕКЛАМУ И ПРОДОЛЖИТЬ (необязательно)</button>
             <button class="btn btn-blue" onclick="restartBossBattle()" id="btn-boss-retry">ПОПРОБОВАТЬ СНОВА</button>
             <button class="btn" style="background: #555;" onclick="showBossScreen()" id="btn-boss-lose-back">ВЫБРАТЬ ДРУГОГО БОССА</button>
         </div>
@@ -520,6 +497,7 @@
     <!-- ============================================================ -->
     <!-- JS MODULES — load order matters (dependencies first)         -->
     <!-- ============================================================ -->
+    <script src="js/safestorage.js"></script>   <!-- ПЕРВЫМ: все скрипты ниже используют SafeStorage -->
     <script src="js/audio.js"></script>
     <script src="js/controls.js"></script>
     <script src="js/settings.js"></script>

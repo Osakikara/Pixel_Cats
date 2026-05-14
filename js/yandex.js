@@ -6,10 +6,7 @@
 const YandexSDK = (() => {
     let _ysdk = null;
     let _ready = false;
-    let _lastFullscreenTime = 0;
 
-    // Минимальный интервал между межстраничными объявлениями (60 сек)
-    const FULLSCREEN_COOLDOWN_MS = 60_000;
 
     // Промис, который резолвится когда SDK готов (или если SDK недоступен)
     let _resolveReady;
@@ -26,6 +23,25 @@ const YandexSDK = (() => {
             _ysdk = await YaGames.init();
             _ready = true;
             console.log('[YandexSDK] SDK успешно инициализирован ✓');
+
+            // ── Требование 2.14: автоопределение языка ────────────────────────
+            // Читаем язык из среды Яндекса — это делает индикатор 文 зелёным
+            try {
+                const lang = _ysdk.environment.i18n.lang;
+                console.log('[YandexSDK] Язык платформы:', lang);
+                // Устанавливаем язык только если игрок ещё не выбирал его вручную
+                if (!SafeStorage.get('pixelCatsLang')) {
+                    if (lang === 'ru' || lang === 'en') {
+                        window.currentLang = lang;
+                        SafeStorage.set('pixelCatsLang', lang);
+                        console.log('[YandexSDK] Язык автоматически выставлен:', lang);
+                    }
+                }
+            } catch (langErr) {
+                console.warn('[YandexSDK] Не удалось прочитать язык платформы:', langErr);
+            }
+            // ─────────────────────────────────────────────────────────────────
+
         } catch (e) {
             console.warn('[YandexSDK] Ошибка инициализации SDK:', e);
         }
@@ -46,32 +62,6 @@ const YandexSDK = (() => {
         } catch (e) {}
     }
 
-    // ─── Межстраничная реклама ────────────────────────────────────────────────
-    // Показывается между игровыми сессиями (конец игры, победа над боссом)
-    // onClose(wasShown) — вызывается после закрытия рекламы
-    function showFullscreenAd(onClose) {
-        if (!_ysdk) {
-            if (onClose) onClose(false);
-            return;
-        }
-
-        const now = Date.now();
-        if (now - _lastFullscreenTime < FULLSCREEN_COOLDOWN_MS) {
-            console.log('[YandexSDK] Межстраничная реклама на кулдауне, пропускаем');
-            if (onClose) onClose(false);
-            return;
-        }
-        _lastFullscreenTime = now;
-
-        _ysdk.adv.showFullscreenAdv({
-            callbacks: {
-                onOpen:    ()          => { _muteGame(); },
-                onClose:   (wasShown)  => { if (onClose) onClose(wasShown); },
-                onError:   (err)       => { console.warn('[YandexSDK] Ошибка межстраничной рекламы:', err); if (onClose) onClose(false); },
-                onOffline: ()          => { console.warn('[YandexSDK] Нет интернета — реклама недоступна'); if (onClose) onClose(false); },
-            }
-        });
-    }
 
     // ─── Вознаграждаемая реклама ──────────────────────────────────────────────
     // Игрок добровольно смотрит рекламу в обмен на награду
@@ -94,10 +84,20 @@ const YandexSDK = (() => {
         });
     }
 
+    // Возвращает язык платформы (ru/en) после успешной инициализации SDK
+    function getLang() {
+        try {
+            if (_ysdk && _ysdk.environment && _ysdk.environment.i18n) {
+                return _ysdk.environment.i18n.lang || null;
+            }
+        } catch (e) {}
+        return null;
+    }
+
     return {
         init,
         waitReady,
-        showFullscreenAd,
+        getLang,
         showRewardedAd,
         get ready() { return _ready; },
     };

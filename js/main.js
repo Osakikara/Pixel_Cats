@@ -2,28 +2,50 @@
 // MAIN — App initialization, boot audio, apply layout
 // ============================================================
 
+
+ctx.fillStyle = "#202028";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+ctx.fillStyle = '#aaa';
+ctx.font = '14px "Press Start 2P", monospace';
+ctx.textAlign = 'center';
+ctx.fillText('Загрузка...', canvas.width/2, canvas.height/2);
+
 (async () => {
-    // ── 1. Инициализация Яндекс SDK (до старта игры) ──────────────────────────
-    // Если SDK недоступен (локальная разработка) — resolve сразу, игра стартует без задержки
-    await YandexSDK.init();
-    await YandexSDK.waitReady();
+    // ── 1. СРАЗУ задаём язык через window, чтобы не было TDZ-ошибки ──────────
+    window.currentLang = window.currentLang || SafeStorage.get('pixelCatsLang') || 'ru';
 
-    // ── 2. Инициализация игры ──────────────────────────────────────────────────
-    resizeCanvas();
-    ctx.fillStyle = "#202028";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // ── 2. СРАЗУ инициализируем UI — кнопки живут с первой миллисекунды ───────
+    try {
+        resizeCanvas();
+        ctx.fillStyle = '#202028';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    document.getElementById('btn-lang').innerText = currentLang.toUpperCase();
-    updateAllTexts();
-    updatePlayerModeUI();
-    showMenu();
+        const langBtn = document.getElementById('btn-lang');
+        if (langBtn) langBtn.innerText = window.currentLang.toUpperCase();
+
+        updateAllTexts();
+        updatePlayerModeUI();
+        showMenu();
+    } catch (e) {
+        console.error('[Main] Ошибка инициализации UI:', e);
+    }
+
+    // ── 3. Ждём SDK (макс. 3 сек) ДО решения о языке/туториале ─────────────
+    // Это гарантирует, что язык Яндекса будет применён ПЕРЕД показом туториала
+    try {
+        await Promise.race([
+            YandexSDK.init(),
+            new Promise(res => setTimeout(res, 3000)),
+        ]);
+    } catch (e) {
+        console.warn('[Main] SDK timeout or fail:', e);
+    }
 
     // Восстановить сохранённое расположение мобильных кнопок
-    applyLayout(loadLayout());
+    try { applyLayout(loadLayout()); } catch (e) {}
 
     // Обновить кошелёк в UI
-    updateFishUI();
-    AccountSystem.init();
+    try { updateFishUI(); } catch (e) {}
 
     // Пиксельные иконки в UI
     const _bossTabIcon = document.getElementById('icon-tab-boss');
@@ -149,8 +171,8 @@
             btn.onmouseover = () => { btn.style.background = 'rgba(255,215,0,0.18)'; btn.style.color = '#ffd700'; btn.style.borderColor = '#ffd700'; };
             btn.onmouseout  = () => { btn.style.background = 'rgba(255,255,255,0.07)'; btn.style.color = '#fff'; btn.style.borderColor = '#fff'; };
             btn.addEventListener('click', () => {
-                currentLang = lang;
-                localStorage.setItem('pixelCatsLang', lang);
+                window.currentLang = lang;
+                SafeStorage.set('pixelCatsLang', lang);
                 document.getElementById('btn-lang').innerText = lang.toUpperCase();
                 updateAllTexts();
                 ov.remove();
@@ -201,10 +223,31 @@
     }
     
 
-    // Показываем выбор языка только если он ещё не был выбран
-    if (!localStorage.getItem('pixelCatsLang')) {
+    // ── Применяем язык от Яндекса (если SDK его вернул и язык ещё не сохранён)
+    try {
+        const yLang = YandexSDK.getLang ? YandexSDK.getLang() : null;
+        if (yLang && !SafeStorage.get('pixelCatsLang')) {
+            window.currentLang = (yLang === 'ru' || yLang === 'en') ? yLang : 'en';
+            SafeStorage.set('pixelCatsLang', window.currentLang);
+            const langBtn = document.getElementById('btn-lang');
+            if (langBtn) langBtn.innerText = window.currentLang.toUpperCase();
+            updateAllTexts();
+        }
+    } catch (e) {}
+
+    // Показываем выбор языка только если он ещё не определён (ни Яндексом, ни сохранённым)
+    if (!SafeStorage.get('pixelCatsLang')) {
         showLanguagePicker();
     } else {
         tryStartTutorial();
     }
+
+    // ── Инициализация аккаунтов — в фоне через 500мс, не блокирует UI ──────────
+    setTimeout(() => {
+        try {
+            if (typeof AccountSystem !== 'undefined') AccountSystem.init();
+        } catch (e) {
+            console.warn('[Main] AccountSystem заблокирован (Firebase/CSP):', e);
+        }
+    }, 500);
 })();
