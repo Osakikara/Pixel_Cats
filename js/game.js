@@ -1667,8 +1667,9 @@ function init(difficulty) {
     // SET DIFFICULTY
     // Установка сложности
     // ============================================
-    currentDifficulty = difficulty; 
-    diffLabel.innerText = t('diffLabelPrefix') + difficulty.toUpperCase();
+    currentDifficulty = difficulty;
+    const _dn = t('diffName.' + difficulty);
+    diffLabel.innerText = t('diffLabelPrefix') + (_dn.indexOf('diffName.') === 0 ? difficulty.toUpperCase() : _dn);
     // Moon physics: на луне низкая гравитация и высокий прыжок.
     // Переключаем глобальные gravity / jumpStrength, которые Cat.update() использует напрямую.
     if (difficulty === 'megahard') {

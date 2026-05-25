@@ -1501,7 +1501,7 @@ function updateMenuButtons() {
 
 function updatePlayerModeUI() {
     btnMode.innerText = (numPlayers === 1) ? t('player1') : t('player2');
-    if (numPlayers === 1) { p2Area.classList.add('hidden'); hintP1.innerHTML = t('p1Controls') + ' <span class="key-badge">WASD</span> / <span class="key-badge">ARROWS</span>'; hintP2.classList.add('hidden'); }
+    if (numPlayers === 1) { p2Area.classList.add('hidden'); hintP1.innerHTML = t('p1Controls') + ' <span class="key-badge">WASD</span> / <span class="key-badge">' + t('arrows') + '</span>'; hintP2.classList.add('hidden'); }
     else { p2Area.classList.remove('hidden'); hintP1.innerHTML = t('p1Controls') + ' <span class="key-badge">W</span> ' + t('jump') + ' <span class="key-badge">A</span><span class="key-badge">D</span> ' + t('move'); hintP2.classList.remove('hidden'); }
     updateMenuButtons();
     const c1p = document.getElementById('controls-1p'), c2p = document.getElementById('controls-2p');

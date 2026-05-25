@@ -581,8 +581,8 @@
         </div>
     </div>
 
-    <!-- Menu background music -->
-    <audio id="menu-music" src="media/vospominaniya-o-bylom.mp3" loop preload="auto" style="display:none"></audio>
+    <!-- Фоновый трек меню воспроизводится через Web Audio API (js/audio.js),
+         без HTML <audio> тега — чтобы браузер не показывал системный медиаплеер. -->
 
     <script src="js/boss.js"></script>
     <script src="js/accounts.js"></script>

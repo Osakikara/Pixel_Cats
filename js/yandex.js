@@ -53,6 +53,24 @@ const YandexSDK = (() => {
         return _readyPromise;
     }
 
+    // ─── Game Ready API ───────────────────────────────────────────────────────
+    // Сообщает платформе, что игра загрузилась и готова к взаимодействию.
+    // Вызывать ПОСЛЕ загрузки ассетов и рендера первого кадра.
+    // https://yandex.ru/dev/games/doc/ru/sdk/sdk-game-events#gameready
+    let _gameReadyCalled = false;
+    function gameReady() {
+        if (_gameReadyCalled) return;
+        try {
+            if (_ysdk && _ysdk.features && _ysdk.features.LoadingAPI) {
+                _ysdk.features.LoadingAPI.ready();
+                _gameReadyCalled = true;
+                console.log('[YandexSDK] LoadingAPI.ready() вызван ✓');
+            }
+        } catch (e) {
+            console.warn('[YandexSDK] Ошибка вызова LoadingAPI.ready():', e);
+        }
+    }
+
     // ─── Утилиты аудио ────────────────────────────────────────────────────────
     function _muteGame() {
         try {
@@ -97,6 +115,7 @@ const YandexSDK = (() => {
     return {
         init,
         waitReady,
+        gameReady,
         getLang,
         showRewardedAd,
         get ready() { return _ready; },

@@ -4,7 +4,7 @@
 
 const AudioEngine = (() => {
     let actx = null;
-    let masterGain, musicGain, musicFadeGain, sfxGain;
+    let masterGain, musicGain, musicFadeGain, sfxGain, menuGain;
     // musicFadeGain — отдельный узел ТОЛЬКО для музыки.
     // При остановке он мгновенно глушится → все живые ноты замолкают.
     let musicGen = 0; // счётчик поколений — старые таймеры видят устаревший gen и умирают
@@ -30,24 +30,28 @@ const AudioEngine = (() => {
         musicFadeGain = actx.createGain();
         musicGain     = actx.createGain();
         sfxGain       = actx.createGain();
+        menuGain      = actx.createGain();
         musicGain.connect(musicFadeGain);
         musicFadeGain.connect(masterGain);
         sfxGain.connect(masterGain);
+        menuGain.connect(masterGain);
         masterGain.connect(actx.destination);
         musicFadeGain.gain.value = 1;
-        // Reset boss music gain reference since context was recreated
+        // Reset boss/menu nodes since context was recreated
         bossMusicGain = null;
+        menuSource = null;
         applyVol();
     }
 
     function applyVol() {
+        // HTML-аудио фолбэк (file://) — громкость, даже если actx ещё не создан
+        if (_menuAudioEl) _menuAudioEl.volume = S.musicOn ? _menuAudioVol() : 0;
         if (!actx) return;
         masterGain.gain.value = S.masterVol;
         musicGain.gain.value  = S.musicOn ? S.musicVol : 0;
         sfxGain.gain.value    = S.sfxOn   ? S.sfxVol   : 0;
-        // Sync HTML menu music volume (4x quieter than WebAudio music)
-        const _a = document.getElementById('menu-music');
-        if (_a) _a.volume = S.musicOn ? Math.max(0, Math.min(1, S.masterVol * S.musicVol * 0.2)) : 0;
+        // Фоновый трек меню — в 5x тише обычной музыки (как было у HTML-аудио)
+        if (menuGain) menuGain.gain.value = S.musicOn ? S.musicVol * 0.2 : 0;
     }
 
     function saveS() {
@@ -685,23 +689,75 @@ const AudioEngine = (() => {
         g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
         osc.start(t); osc.stop(t + 0.27);
     };
-    // ── HTML Audio — фоновый трек главного меню и лобби ─────────────
-    let _menuAudio = null;
-    function _getMenuAudio() {
-        if (!_menuAudio) _menuAudio = document.getElementById('menu-music');
-        return _menuAudio;
+    // ── Фоновый трек главного меню и лобби ──────────────────────────
+    // По HTTP/HTTPS (Яндекс, прод) — Web Audio API: трек грузится в буфер
+    // (fetch + decodeAudioData) и играет через AudioBufferSourceNode, без HTML
+    // <audio> тега → браузер не создаёт системный медиаплеер (модерация 1.6.x).
+    // По file:// (локальное открытие index.html напрямую) fetch блокируется
+    // браузером, поэтому используется обычный <audio> элемент — на проде этот
+    // путь не задействуется, так что медиаплеер модерации не помешает.
+    const MENU_TRACK_URL = 'media/vospominaniya-o-bylom.mp3';
+    const _menuUseHtmlAudio = (location.protocol === 'file:');
+    let menuBuffer = null;       // декодированный буфер (грузится один раз)
+    let menuLoading = null;      // промис активной загрузки
+    let menuSource = null;       // активный source-node (Web Audio путь)
+    let menuShouldPlay = false;  // флаг намерения играть (защита от гонок при async-загрузке)
+    let _menuAudioEl = null;     // HTML <audio> (только file:// фолбэк)
+
+    function _menuAudioVol() {
+        return Math.max(0, Math.min(1, S.masterVol * S.musicVol * 0.2));
     }
+
+    function _startMenuHtmlAudio() {
+        if (!_menuAudioEl) {
+            _menuAudioEl = new Audio(MENU_TRACK_URL);
+            _menuAudioEl.loop = true;
+        }
+        _menuAudioEl.volume = _menuAudioVol();
+        if (_menuAudioEl.paused) _menuAudioEl.play().catch(() => {});
+    }
+
+    function _loadMenuBuffer() {
+        if (menuBuffer) return Promise.resolve(menuBuffer);
+        if (menuLoading) return menuLoading;
+        menuLoading = fetch(MENU_TRACK_URL)
+            .then(r => r.arrayBuffer())
+            .then(data => new Promise((res, rej) => actx.decodeAudioData(data, res, rej)))
+            .then(buf => { menuBuffer = buf; return buf; })
+            .catch(err => { menuLoading = null; throw err; });
+        return menuLoading;
+    }
+
     function startMenuMusic() {
         if (!S.musicOn) return;
-        const a = _getMenuAudio();
-        if (!a) return;
-        a.volume = Math.max(0, Math.min(1, S.masterVol * S.musicVol * 0.2));
-        if (a.paused) a.play().catch(() => {});
+        if (_menuUseHtmlAudio) { _startMenuHtmlAudio(); return; }
+        boot();
+        if (!actx) return;
+        if (actx.state === 'suspended') actx.resume().catch(() => {});
+        if (menuSource) return; // уже играет
+        menuShouldPlay = true;
+        _loadMenuBuffer().then(buf => {
+            // За время async-загрузки музыку могли выключить или запустить босса
+            if (!menuShouldPlay || menuSource || !actx) return;
+            const src = actx.createBufferSource();
+            src.buffer = buf;
+            src.loop = true;
+            src.connect(menuGain);
+            src.start();
+            menuSource = src;
+        }).catch(() => {});
     }
+
     function _stopMenuAudio() {
-        const a = _getMenuAudio();
-        if (a) a.pause();
+        menuShouldPlay = false;
+        if (menuSource) {
+            try { menuSource.stop(); } catch (e) {}
+            try { menuSource.disconnect(); } catch (e) {}
+            menuSource = null;
+        }
+        if (_menuAudioEl) _menuAudioEl.pause();
     }
+
     function stopMusicAll()    { _stopMenuAudio(); stopMusic(); }
     function stopAllMusicAll() { _stopMenuAudio(); stopAllMusic(); }
 
@@ -714,12 +770,26 @@ const AudioEngine = (() => {
         if (resume && S.musicOn) setTimeout(() => startMenuMusic(), 250);
     }
 
-    // setMusicOn needs to also pause/resume HTML audio
+    // setMusicOn должен также останавливать/запускать фоновый трек
     const _origSetMusicOn = setMusicOn;
     function setMusicOnEx(v) {
         _origSetMusicOn(v);
         if (!v) _stopMenuAudio(); else startMenuMusic();
     }
+
+    // ── Требование модерации 1.3: глушим звук при сворачивании вкладки ──
+    // Web Audio (меню по HTTP, босс, SFX) ставится на паузу через suspend().
+    // HTML-аудио фолбэк (file://) не подчиняется AudioContext — паузим отдельно.
+    let _menuElWasPlaying = false;
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (actx && actx.state === 'running') actx.suspend().catch(() => {});
+            if (_menuAudioEl && !_menuAudioEl.paused) { _menuElWasPlaying = true; _menuAudioEl.pause(); }
+        } else {
+            if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+            if (_menuElWasPlaying && S.musicOn) { _menuElWasPlaying = false; _startMenuHtmlAudio(); }
+        }
+    });
 
     return { sfx, settings: S,
              stopMusic: stopMusicAll,

@@ -1303,8 +1303,8 @@ function drawBossBattle() {
     // === CONTROLS HINT ===
     if (bossHintVisible) {
         const hintText = bossPlayerCat2
-            ? 'P1: WASD   P2: СТРЕЛКИ'
-            : 'WASD / СТРЕЛКИ - ДВИЖЕНИЕ';
+            ? 'P1: WASD   P2: ' + t('arrows')
+            : 'WASD / ' + t('arrows') + ' - ' + t('move').toUpperCase();
         ctx.fillStyle = 'rgba(0,0,0,0.7)';
         ctx.fillRect(cw/2 - 160, ch - margin + 4, 320, 20);
         ctx.fillStyle = '#ffd700';

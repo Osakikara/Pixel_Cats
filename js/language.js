@@ -14,7 +14,7 @@ const translations = {
         waitFriend: "Ждите подключения друга...", joinFriend: "ПРИСОЕДИНИТЬСЯ К ДРУГУ:", pasteId: "ВСТАВЬТЕ ID СЮДА",
         joinGame: "ПРИСОЕДИНИТЬСЯ", back: "НАЗАД", idCopied: "ID скопирован!", enterId: "Введите ID", connectionLost: "Соединение потеряно",
         score: "СЧЁТ:", infinityScore: "БЕСК. СЧЁТ:", best: "РЕКОРД:", menu: "Меню", p1Controls: "ИГРОК 1:", p2Controls: "ИГРОК 2:",
-        jump: "Прыжок", move: "Движение", gameOver: "ИГРА ОКОНЧЕНА", distance: "ДИСТАНЦИЯ:",
+        jump: "Прыжок", move: "Движение", arrows: "СТРЕЛКИ", gameOver: "ИГРА ОКОНЧЕНА", distance: "ДИСТАНЦИЯ:",
         tryAgainHint: "НАЖМИТЕ ENTER ИЛИ ПОПРОБУЙТЕ СНОВА", tryAgain: "ПОПРОБОВАТЬ СНОВА", menuBtn: "МЕНЮ",
         victory: "ПОБЕДА!", reachedCastle: "Вы достигли Замка!", highScoreSaved: "РЕКОРД СОХРАНЁН!",
         nextLevel: "СЛЕДУЮЩИЙ УРОВЕНЬ", hardUnlocked: "СЛОЖНЫЙ РЕЖИМ ОТКРЫТ!", megaUnlocked: "МЕГАСЛОЖНО ОТКРЫТО!",
@@ -111,6 +111,10 @@ const translations = {
         onlineLobbyBtn: "↩ ОНЛАЙН ЛОББИ",
         // — Босс —
         bossResume: "▶ ПРОДОЛЖИТЬ БОЙ", bossEnterHint: "НАЖМИТЕ ENTER ЧТОБЫ ПОПРОБОВАТЬ СНОВА",
+        bossReviveAd: "СМОТРЕТЬ РЕКЛАМУ И ПРОДОЛЖИТЬ (необязательно)",
+        replayTutorial: "ОБУЧЕНИЕ",
+        adFishReward: "ПОСМОТРЕТЬ РЕКЛАМУ → +5🟠 +3🔵 +1🟡",
+        ctrlJoyStyleLabel: "Стиль джойстика:", joyFixed: "📌 ФИКС.", joyFloat: "〰 ПЛАВАЮЩИЙ",
         // — Настройки —
         shopTitle: "🛒 МАГАЗИН СКИНОВ", shopEquipP1: "✅ П1 НАДЕТЬ", shopEquipP2: "✅ П2 НАДЕТЬ", shopBack: "← НАЗАД",
         shopSelected: "✓ ВЫБРАН", shopOwned: "✓ ЕСТЬ", shopDist: "ДИСТ. ",
@@ -136,6 +140,7 @@ const translations = {
         statusWaitInit: "⚠ Сначала дождитесь инициализации (ваш ID)",
         srvName1: "Сервер 1", srvName2: "Сервер 2",
         diffLabelPrefix: "РЕЖИМ: ",
+        diffName: { easy: "ЛЁГКИЙ", hard: "СЛОЖНЫЙ", megahard: "МЕГА", infinity: "БЕСКОНЕЧНОСТЬ" },
         // Firebase статусы
         fbStatusSearching: "🔍 Поиск свободного сервера...",
         fbStatusReady: "✅ Готово. Создайте или войдите в комнату.",
@@ -241,7 +246,7 @@ const translations = {
         waitFriend: "Wait for friend to join...", joinFriend: "JOIN FRIEND'S GAME:", pasteId: "PASTE ID HERE",
         joinGame: "JOIN GAME", back: "BACK", idCopied: "ID Copied!", enterId: "Enter ID", connectionLost: "Connection Lost",
         score: "SCORE:", infinityScore: "INFINITY SCORE:", best: "BEST:", menu: "Menu", p1Controls: "P1:", p2Controls: "P2:",
-        jump: "Jump", move: "Move", gameOver: "GAME OVER", distance: "DISTANCE:",
+        jump: "Jump", move: "Move", arrows: "ARROWS", gameOver: "GAME OVER", distance: "DISTANCE:",
         tryAgainHint: "PRESS ENTER OR TRY AGAIN", tryAgain: "TRY AGAIN", menuBtn: "MENU",
         victory: "VICTORY!", reachedCastle: "You reached the Castle!", highScoreSaved: "HIGH SCORE SAVED!",
         nextLevel: "PLAY NEXT LEVEL", hardUnlocked: "HARD MODE UNLOCKED!", megaUnlocked: "MEGAHARD UNLOCKED!",
@@ -338,6 +343,10 @@ const translations = {
         onlineLobbyBtn: "↩ ONLINE LOBBY",
         // — Boss —
         bossResume: "▶ RESUME BATTLE", bossEnterHint: "PRESS ENTER TO TRY AGAIN",
+        bossReviveAd: "WATCH AD AND CONTINUE (optional)",
+        replayTutorial: "TUTORIAL",
+        adFishReward: "WATCH AD → +5🟠 +3🔵 +1🟡",
+        ctrlJoyStyleLabel: "Joystick style:", joyFixed: "📌 FIXED", joyFloat: "〰 FLOATING",
         // — Shop & Settings —
         shopTitle: "🛒 SKIN SHOP", shopEquipP1: "✅ P1 EQUIP", shopEquipP2: "✅ P2 EQUIP", shopBack: "← BACK",
         shopSelected: "✓ SELECTED", shopOwned: "✓ OWNED", shopDist: "DIST. ",
@@ -363,6 +372,7 @@ const translations = {
         statusWaitInit: "⚠ Please wait for initialization (your ID)",
         srvName1: "Server 1", srvName2: "Server 2",
         diffLabelPrefix: "MODE: ",
+        diffName: { easy: "EASY", hard: "HARD", megahard: "MEGA", infinity: "INFINITY" },
         // Firebase statuses
         fbStatusSearching: "🔍 Searching for available server...",
         fbStatusReady: "✅ Ready. Create or join a room.",
@@ -509,6 +519,7 @@ function updateAllTexts() {
     const mobileBtn = document.getElementById('btn-mobile-toggle');
     if (mobileBtn) mobileBtn.innerText = forceMobile ? t('mobileOn') : t('mobileAuto');
     safeSetText('btn-online-menu', t('online'));
+    safeSetText('btn-replay-tutorial', t('replayTutorial'));
     safeSetText('btn-fullscreen', t('fullscreen'));
     safeSetText('p1-label', t('player1Label'));
     safeSetText('p2-label', t('player2Label'));
@@ -528,7 +539,12 @@ function updateAllTexts() {
     safeSetText('best-label', t('best'));
     safeSetText('inf-best-label', t('best'));
     safeSetText('menu-hint', t('menu'));
-    const p1Text = numPlayers === 1 ? `${t('p1Controls')} <span class="key-badge">WASD</span> / <span class="key-badge">ARROWS</span>` :
+    // Игровой индикатор сложности (если игра идёт)
+    if (typeof currentDifficulty !== 'undefined' && currentDifficulty) {
+        const _dn = t('diffName.' + currentDifficulty);
+        safeSetText('diff-label', t('diffLabelPrefix') + (_dn.indexOf('diffName.') === 0 ? currentDifficulty.toUpperCase() : _dn));
+    }
+    const p1Text = numPlayers === 1 ? `${t('p1Controls')} <span class="key-badge">WASD</span> / <span class="key-badge">${t('arrows')}</span>` :
         `${t('p1Controls')} <span class="key-badge">W</span> ${t('jump')} <span class="key-badge">A</span><span class="key-badge">D</span> ${t('move')}`;
     safeSetHTML('hint-p1', p1Text);
     safeSetHTML('hint-p2', `${t('p2Controls')} <span class="key-badge">▲</span> ${t('jump')} <span class="key-badge">◄</span><span class="key-badge">►</span> ${t('move')}`);
@@ -536,6 +552,7 @@ function updateAllTexts() {
     safeSetText('distance-label', t('distance'));
     safeSetText('try-again-hint', t('tryAgainHint'));
     safeSetText('btn-try-again', t('tryAgain'));
+    safeSetText('btn-game-ad-fish', t('adFishReward'));
     safeSetText('btn-menu-go', t('menuBtn'));
     safeSetText('win-title', t('victory'));
     safeSetText('win-message', t('reachedCastle'));
@@ -557,6 +574,7 @@ function updateAllTexts() {
     safeSetText('boss-lose-title', t('bossLose'));
     safeSetText('boss-lose-msg', t('bossLost'));
     safeSetText('btn-boss-retry', t('bossRetry'));
+    safeSetText('btn-boss-revive', t('bossReviveAd'));
     safeSetText('btn-boss-lose-back', t('bossSelectOther'));
     safeSetText('dodge-hint', t('dodgeHint'));
     updateMenuButtons();
@@ -605,6 +623,9 @@ function updateAllTexts() {
     _s('set-ctrl-type-label',     t('ctrlTypeLabel'));
     _s('ctrl-type-joy',           t('ctrlJoystick'));
     _s('ctrl-type-dpad',          t('ctrlDpad'));
+    _s('set-joy-style-label',     t('ctrlJoyStyleLabel'));
+    _s('joy-style-fixed',         t('joyFixed'));
+    _s('joy-style-float',         t('joyFloat'));
     _s('btn-edit-controls',       t('ctrlEdit'));
     _s('set-ctrl-drag-hint',      t('ctrlDragHint'));
     // Shop

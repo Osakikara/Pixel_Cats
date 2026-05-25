@@ -41,6 +41,10 @@ ctx.fillText('Загрузка...', canvas.width/2, canvas.height/2);
         console.warn('[Main] SDK timeout or fail:', e);
     }
 
+    // ── Game Ready API: UI отрисован, первый кадр показан, SDK готов ──────────
+    // Сообщаем Яндексу, что игра загрузилась и готова к взаимодействию.
+    try { YandexSDK.gameReady(); } catch (e) {}
+
     // Восстановить сохранённое расположение мобильных кнопок
     try { applyLayout(loadLayout()); } catch (e) {}
 
