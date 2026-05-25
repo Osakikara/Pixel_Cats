@@ -1764,13 +1764,6 @@ function setupMobileControls() {
         left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown'
     }, 'p2', 'joy2-wrapper-2p');
 
-    // ESC / Menu button
-    const menuBtn = document.getElementById('mb-menu');
-    if (menuBtn) menuBtn.addEventListener('touchstart', e => {
-        e.preventDefault();
-        if (isPlaying || isGameOver || isWin) showMenu();
-        else if (bossBattleActive) showBossScreen(true);
-    }, { passive: false });
 }
 setupMobileControls();
 

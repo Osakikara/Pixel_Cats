@@ -17,7 +17,6 @@ const DEFAULT_LAYOUT = {
     joy1:    { x: 3,  y: 55, scale: 1.0 },
     joy1_2p: { x: 5,  y: 55, scale: 1.0 },
     joy2_2p: { x: 72, y: 55, scale: 1.0 },
-    mbMenu:  { x: 88, y: 2,  scale: 1.0 },
     dpLeft:  { x: 2,  y: 70, scale: 1.0 },
     dpRight: { x: 72, y: 70, scale: 1.0 },
 };
@@ -54,14 +53,12 @@ function applyLayout(layout) {
     const joy1w  = document.getElementById('joy1-wrapper');
     const joy1w2 = document.getElementById('joy1-wrapper-2p');
     const joy2w2 = document.getElementById('joy2-wrapper-2p');
-    const mbMenu = document.getElementById('mb-menu');
     const dpLeftW  = document.getElementById('dpad-left-wrapper');
     const dpRightW = document.getElementById('dpad-right-wrapper');
 
     if (layout.joy1)    set(joy1w,    layout.joy1.x,    layout.joy1.y,    layout.joy1.scale);
     if (layout.joy1_2p) set(joy1w2,   layout.joy1_2p.x, layout.joy1_2p.y, layout.joy1_2p.scale);
     if (layout.joy2_2p) set(joy2w2,   layout.joy2_2p.x, layout.joy2_2p.y, layout.joy2_2p.scale);
-    if (layout.mbMenu)  set(mbMenu,   layout.mbMenu.x,  layout.mbMenu.y,  layout.mbMenu.scale);
     if (layout.dpLeft)  set(dpLeftW,  layout.dpLeft.x,  layout.dpLeft.y,  layout.dpLeft.scale);
     if (layout.dpRight) set(dpRightW, layout.dpRight.x, layout.dpRight.y, layout.dpRight.scale);
 }
@@ -120,7 +117,6 @@ function _buildEditorGhosts(overlay) {
         { key: 'joy1',    label: '🕹️ P1',    baseW: 110, baseH: 110, round: true,  joystickOnly: true  },
         { key: 'joy1_2p', label: '🕹️ P1 2P', baseW: 110, baseH: 110, round: true,  joystickOnly: true  },
         { key: 'joy2_2p', label: '🕹️ P2 2P', baseW: 110, baseH: 110, round: true,  joystickOnly: true  },
-        { key: 'mbMenu',  label: '☰ ESC',    baseW:  70, baseH:  40, round: false, joystickOnly: true  },
         { key: 'dpLeft',  label: '◄ ►',      baseW: 150, baseH:  70, round: false, dpadOnly: true      },
         { key: 'dpRight', label: 'ESC ▼ ▲',  baseW: 200, baseH:  70, round: false, dpadOnly: true      },
     ];

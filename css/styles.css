@@ -358,18 +358,7 @@ h1 { font-size: 16px; color: #ffd700; text-shadow: 2px 2px #000; margin: 0 0 5px
     transform: translate(1px,1px);
 }
 
-/* pixel ESC / menu button */
-.mob-menu-btn {
-    border-radius: 0 !important;
-    image-rendering: pixelated;
-    box-shadow:
-        0 0 0 3px rgba(0,0,0,0.7),
-        inset 2px 2px 0 0 rgba(255,255,255,0.22),
-        inset -2px -2px 0 0 rgba(0,0,0,0.4) !important;
-}
-
 .joystick-label { text-align: center; font-size: 8px; color: rgba(255,255,255,0.4); margin-top: 4px; font-family: 'Press Start 2P', cursive; }
-.mob-menu-btn { pointer-events: auto; position: absolute; top: 10px; right: 16px; background: rgba(60,60,60,0.8); border: 2px solid #aaa; color: #aaa; font-family: 'Press Start 2P', cursive; font-size: 9px; padding: 6px 10px; border-radius: 4px; cursor: pointer; touch-action: manipulation; }
 
 /* ===== CONTROLS EDITOR ===== */
 #controls-editor-overlay {
