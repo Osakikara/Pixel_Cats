@@ -15,10 +15,14 @@ const CTRL_STORAGE_KEY = 'pixelCatsCtrlLayout';
 // Default layout — percentage of viewport (x, y) + scale multiplier
 const DEFAULT_LAYOUT = {
     joy1:    { x: 3,  y: 55, scale: 1.0 },
-    joy1_2p: { x: 5,  y: 55, scale: 1.0 },
-    joy2_2p: { x: 72, y: 55, scale: 1.0 },
+    joy1_2p: { x: 3,  y: 55, scale: 1.0 },
+    joy2_2p: { x: 80, y: 55, scale: 1.0 },
     dpLeft:  { x: 2,  y: 70, scale: 1.0 },
     dpRight: { x: 72, y: 70, scale: 1.0 },
+    // «Охота на призраков»: атака P1 (соло, справа повыше); атаки P1/P2 для дуэли (по сторонам)
+    ghAtk1:    { x: 86, y: 48, scale: 1.0 },
+    ghAtk1_2p: { x: 28, y: 53, scale: 1.0 },
+    ghAtk2_2p: { x: 58, y: 53, scale: 1.0 },
 };
 
 function loadLayout() {
@@ -61,6 +65,14 @@ function applyLayout(layout) {
     if (layout.joy2_2p) set(joy2w2,   layout.joy2_2p.x, layout.joy2_2p.y, layout.joy2_2p.scale);
     if (layout.dpLeft)  set(dpLeftW,  layout.dpLeft.x,  layout.dpLeft.y,  layout.dpLeft.scale);
     if (layout.dpRight) set(dpRightW, layout.dpRight.x, layout.dpRight.y, layout.dpRight.scale);
+    // Кнопки «Охоты на призраков» (создаются ghosthunt.js — могут отсутствовать)
+    const _ghDuo = (typeof GH !== 'undefined' && GH.mode === 'duo' && !GH.online);
+    if (_ghDuo) {
+        if (layout.ghAtk1_2p) set(document.getElementById('gh-mob-atk1'), layout.ghAtk1_2p.x, layout.ghAtk1_2p.y, layout.ghAtk1_2p.scale);
+        if (layout.ghAtk2_2p) set(document.getElementById('gh-mob-atk2'), layout.ghAtk2_2p.x, layout.ghAtk2_2p.y, layout.ghAtk2_2p.scale);
+    } else {
+        if (layout.ghAtk1) set(document.getElementById('gh-mob-atk1'), layout.ghAtk1.x, layout.ghAtk1.y, layout.ghAtk1.scale);
+    }
 }
 
 // Apply layout on load and resize
@@ -68,9 +80,18 @@ window.addEventListener('resize', () => applyLayout(loadLayout()));
 
 // ---- EDITOR ----
 let _editorLayout = null; // working copy during edit
+let _editorSource = 'settings'; // 'settings' | 'gh' — откуда открыт редактор
 
-function openControlsEditor() {
-    closeSettings();
+function openControlsEditor(source) {
+    _editorSource = (source === 'gh' || source === 'gh2') ? source : 'settings';
+    if (_editorSource === 'gh' || _editorSource === 'gh2') {
+        // Открыт из меню «Охоты на призраков» — спрятать её экран
+        const gs = document.getElementById('ghosthunt-screen');
+        if (gs) gs.style.display = 'none';
+        if (typeof ghEnsureMobileButtons === 'function') ghEnsureMobileButtons();
+    } else {
+        closeSettings();
+    }
     _showMobileControls();
     _editorLayout = JSON.parse(JSON.stringify(loadLayout()));
     const overlay = document.getElementById('controls-editor-overlay');
@@ -88,7 +109,13 @@ function saveControlsLayout() {
     SafeStorage.set(CTRL_STORAGE_KEY, JSON.stringify(_editorLayout));
     applyLayout(_editorLayout);
     closeControlsEditor();
-    openSettings();
+    if (_editorSource === 'gh' || _editorSource === 'gh2') {
+        _hideMobileControls();
+        const gs = document.getElementById('ghosthunt-screen');
+        if (gs) gs.style.display = 'block';
+    } else {
+        openSettings();
+    }
 }
 
 function resetControlsLayout() {
@@ -114,17 +141,25 @@ function _buildEditorGhosts(overlay) {
     }
 
     const items = [
-        { key: 'joy1',    label: '🕹️ P1',    baseW: 110, baseH: 110, round: true,  joystickOnly: true  },
-        { key: 'joy1_2p', label: '🕹️ P1 2P', baseW: 110, baseH: 110, round: true,  joystickOnly: true  },
-        { key: 'joy2_2p', label: '🕹️ P2 2P', baseW: 110, baseH: 110, round: true,  joystickOnly: true  },
-        { key: 'dpLeft',  label: '◄ ►',      baseW: 150, baseH:  70, round: false, dpadOnly: true      },
-        { key: 'dpRight', label: 'ESC ▼ ▲',  baseW: 200, baseH:  70, round: false, dpadOnly: true      },
+        { key: 'joy1',     label: t('edJoyP1'),    baseW: 110, baseH: 110, round: true,  src: ['settings','gh'],  joy: true },
+        { key: 'dpLeft',   label: '◄ ►',           baseW: 150, baseH:  70, round: false, src: ['settings','gh'],  dpad: true },
+        { key: 'dpRight',  label: 'ESC ▼ ▲',       baseW: 200, baseH:  70, round: false, src: ['settings','gh'],  dpad: true },
+        { key: 'ghAtk1',   label: t('edAtkP1'),    baseW: 88,  baseH:  88, round: false, src: ['gh'] },
+        // 2 игрока (отдельный редактор): джойстики + атаки по сторонам
+        { key: 'joy1_2p',  label: t('edJoyP1_2p'), baseW: 110, baseH: 110, round: true,  src: ['settings','gh2'], joySettings: true },
+        { key: 'joy2_2p',  label: t('edJoyP2_2p'), baseW: 110, baseH: 110, round: true,  src: ['settings','gh2'], joySettings: true },
+        { key: 'ghAtk1_2p',label: t('edAtkP1'),    baseW: 84,  baseH:  84, round: false, src: ['gh2'] },
+        { key: 'ghAtk2_2p',label: t('edAtkP2'),    baseW: 84,  baseH:  84, round: false, src: ['gh2'] },
     ];
 
     const isJoyMode = (ctrlType === 'joystick');
     items.forEach(item => {
-        if (item.joystickOnly && !isJoyMode) return;
-        if (item.dpadOnly && isJoyMode) return;
+        if (!item.src.includes(_editorSource)) return;
+        if (_editorSource !== 'gh2') {
+            if (item.joy && !isJoyMode) return;
+            if (item.dpad && isJoyMode) return;
+            if (item.joySettings && !isJoyMode) return;
+        }
 
         const sc = _editorLayout[item.key].scale || 1.0;
         const lx = _editorLayout[item.key].x;
@@ -253,3 +288,7 @@ function _makeDraggable(el, key) {
 
 
 // ---- Settings screen functions ----
+
+// Запрет контекстного меню и выделения текста (защита игрового интерфейса).
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+document.addEventListener('selectstart', function(e){ var tg=(e.target&&e.target.tagName)||''; if(tg!=='INPUT'&&tg!=='TEXTAREA') e.preventDefault(); });

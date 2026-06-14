@@ -11,8 +11,27 @@ ctx.textAlign = 'center';
 ctx.fillText('Загрузка...', canvas.width/2, canvas.height/2);
 
 (async () => {
+    // ── Хелпер: код языка платформы → поддерживаемый ru/en ───────────────────
+    // ru/en — как есть; любой другой непустой код → en; пусто/нет → null
+    const _resolveLang = (code) => {
+        code = (code || '').toLowerCase();
+        if (code === 'ru' || code === 'en') return code;
+        return code ? 'en' : null;
+    };
+    // Язык интерфейса Яндекса приходит в URL игры как ?lang=xx — доступен СРАЗУ,
+    // ещё до инициализации SDK, и надёжнее, чем environment.i18n.lang.
+    const _urlLang = _resolveLang(new URLSearchParams(location.search).get('lang'));
+    // Чистим устаревший флаг ручного выбора: язык теперь ВСЕГДА следует Яндексу.
+    try { SafeStorage.remove('pixelCatsLangManual'); } catch (e) {}
+
     // ── 1. СРАЗУ задаём язык через window, чтобы не было TDZ-ошибки ──────────
-    window.currentLang = window.currentLang || SafeStorage.get('pixelCatsLang') || 'ru';
+    // Приоритет: уже заданный → язык платформы из URL → сохранённый → ru.
+    // Так UI сразу рисуется на нужном языке, без «вспышки».
+    window.currentLang = window.currentLang
+        || _urlLang
+        || SafeStorage.get('pixelCatsLang')
+        || 'ru';
+    console.log('[Main] init lang:', { urlLang: _urlLang, currentLang: window.currentLang });
 
     // ── 2. СРАЗУ инициализируем UI — кнопки живут с первой миллисекунды ───────
     try {
@@ -87,8 +106,10 @@ ctx.fillText('Загрузка...', canvas.width/2, canvas.height/2);
         ['ico-dot-hard1','ico-dot-hard2'].forEach(id => set(id,'dot_red',10));
         ['ico-skull-mega1','ico-skull-mega2'].forEach(id => set(id,'skull',10));
         ['ico-inf1','ico-inf2'].forEach(id => set(id,'infinity',10));
-        ['ico-play-start','ico-play-p2p','ico-play-boss','ico-play-resume','ico-play-login'].forEach(id => set(id,'play',12));
+        ['ico-play-start','ico-play-p2p','ico-play-boss','ico-play-resume'].forEach(id => set(id,'play',12));
         set('ico-hg','hourglass',14); set('ico-timer-hpbar','timer',10);
+        ['ico-ghost-fb','ico-ghost-p2p','ico-ghost-fbsec','ico-ghost-p2psec','ico-ghost-tab'].forEach(id => { var _e=document.getElementById(id); if(_e) _e.style.display='none'; });
+        set('ico-play-ghost','play',12);
         set('ico-return-1','back_curved',12);
         set('ico-music','music',14); set('ico-speaker','speaker',14);
         set('ico-globe-lang','globe',14); set('ico-joy-ctrl','joystick',14); set('ico-joy-btn','joystick',11);
@@ -227,20 +248,28 @@ ctx.fillText('Загрузка...', canvas.width/2, canvas.height/2);
     }
     
 
-    // ── Применяем язык от Яндекса (если SDK его вернул и язык ещё не сохранён)
-    try {
-        const yLang = YandexSDK.getLang ? YandexSDK.getLang() : null;
-        if (yLang && !SafeStorage.get('pixelCatsLang')) {
-            window.currentLang = (yLang === 'ru' || yLang === 'en') ? yLang : 'en';
-            SafeStorage.set('pixelCatsLang', window.currentLang);
-            const langBtn = document.getElementById('btn-lang');
-            if (langBtn) langBtn.innerText = window.currentLang.toUpperCase();
-            updateAllTexts();
-        }
-    } catch (e) {}
+    // ── Язык ВСЕГДА = язык пользователя в Яндекс.Играх ────────────────────────
+    // Источник: SDK (environment.i18n.lang) ИЛИ ?lang= из URL. Применяется при
+    // КАЖДОМ запуске. Внутриигровая кнопка языка меняет язык лишь до перезагрузки.
+    let _sdkLang = null;
+    try { _sdkLang = YandexSDK.getLang ? _resolveLang(YandexSDK.getLang()) : null; } catch (e) {}
+    const platformLang = _sdkLang || _urlLang;   // что вернул Яндекс
+    console.log('[Main] platform lang:', { sdkLang: _sdkLang, urlLang: _urlLang, currentLang: window.currentLang });
 
-    // Показываем выбор языка только если он ещё не определён (ни Яндексом, ни сохранённым)
-    if (!SafeStorage.get('pixelCatsLang')) {
+    if (platformLang) {
+        if (platformLang !== window.currentLang) {
+            window.currentLang = platformLang;
+            const langBtn = document.getElementById('btn-lang');
+            if (langBtn) langBtn.innerText = platformLang.toUpperCase();
+            updateAllTexts();
+            console.log('[Main] язык переключён на язык платформы:', platformLang);
+        }
+        SafeStorage.set('pixelCatsLang', platformLang);
+    }
+
+    // Окно выбора языка — только в локальной разработке (нет языка платформы)
+    // и если язык ещё не сохранён.
+    if (!platformLang && !SafeStorage.get('pixelCatsLang')) {
         showLanguagePicker();
     } else {
         tryStartTutorial();
@@ -253,5 +282,10 @@ ctx.fillText('Загрузка...', canvas.width/2, canvas.height/2);
         } catch (e) {
             console.warn('[Main] AccountSystem заблокирован (Firebase/CSP):', e);
         }
+        // Автовход в онлайн: если Firebase доступен — подключаемся сами (тихо).
+        // При отсутствии доступа молча остаёмся офлайн.
+        try {
+            if (typeof _tryAutoOnline === 'function') _tryAutoOnline();
+        } catch (e) {}
     }, 500);
 })();

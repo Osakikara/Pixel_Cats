@@ -26,6 +26,16 @@
 //   samurai → samurai
 //   foxcoat → foxcoat (Edward Elric coat)
 // ============================================================
+// Тёмный ли сейчас фон (для адаптивного окраса скина-призрака):
+// тёмные — арена «Охоты на призраков», бои с боссами, infinity и луна (megahard);
+// светлые — меню, магазин, easy, hard.
+function _ghostSkinOnDarkBg() {
+    // Светлый фон только в дневной классике (easy/hard) — там кот тёмный.
+    // Меню, магазин, таблица, охота, боссы, infinity, megahard — тёмный фон → кот светлый.
+    if (isPlaying && (currentDifficulty === 'easy' || currentDifficulty === 'hard')) return false;
+    return true;
+}
+
 function drawPixelCat(drawCtx, x, y, skin, facingRight, controls, isPlayer1, isJumping = false, forcedMoving = null) {
     const size = 3;
     const width = 10 * size;
@@ -35,6 +45,31 @@ function drawPixelCat(drawCtx, x, y, skin, facingRight, controls, isPlayer1, isJ
     drawCtx.save();
     drawCtx.translate(x + width / 2, y);
     if (!facingRight) drawCtx.scale(-1, 1);
+
+    // --- ghost: окрас по настройке игрока (авто / светлый / тёмный),
+    //     парение, полупрозрачность и контурное свечение ---
+    if (skin.type === 'ghost') {
+        // skin._variant — явное переопределение (таблица лидеров и т.п.),
+        // иначе настройка игрока (своя или удалённого в онлайне)
+        let _v = skin._variant || getSkinVariant(skin.id, isPlayer1);
+        if (_v === 'auto') _v = _ghostSkinOnDarkBg() ? 'light' : 'dark';
+        const _light = (_v !== 'dark');
+        skin = Object.assign({}, skin, _light
+            ? { body: '#f4f8ff', nose: '#9bb8d3', eye: '#7df9ff' }    // белый призрак (базовый)
+            : { body: '#2e2e44', nose: '#191926', eye: '#7df9ff' }); // тёмный призрак
+        drawCtx.translate(0, Math.sin(gameTime * 0.12) * 2.5);
+        drawCtx.globalAlpha = drawCtx.globalAlpha * 0.85;
+        // Контурное свечение: тень повторяет каждый пиксельный прямоугольник кота
+        drawCtx.shadowColor = _light ? 'rgba(125,249,255,0.85)' : 'rgba(120,90,220,0.85)';
+        drawCtx.shadowBlur = 10 + Math.sin(gameTime * 0.1) * 4;
+    }
+
+    // --- froggy: вариант окраса (обычный / голубая шапочка) ---
+    let frogVariant = null;
+    if (skin.id === 'froggy') {
+        frogVariant = skin._variant || getSkinVariant('froggy', isPlayer1);
+        if (frogVariant !== 'bluehat') frogVariant = 'normal';
+    }
 
     // Определяем, движется ли кот
     let isMoving = false;
@@ -396,6 +431,12 @@ function drawPixelCat(drawCtx, x, y, skin, facingRight, controls, isPlayer1, isJ
     } else {
         // foxcoat имеет золотые глаза
         const eyeColor = (skin.type === 'foxcoat') ? '#f39c12' : skin.eye;
+        // --- ghost: свечение вокруг глаз ---
+        if (skin.type === 'ghost') {
+            drawCtx.fillStyle = 'rgba(125,249,255,0.30)';
+            drawCtx.fillRect(drawX + 1.5*size, drawY + 1.5*size, 3*size, 3*size);
+            drawCtx.fillRect(drawX + 6.5*size, drawY + 1.5*size, 3*size, 3*size);
+        }
         drawCtx.fillStyle = eyeColor;
         drawCtx.fillRect(drawX + 2*size, drawY + 2*size, 2*size, 2*size);
         drawCtx.fillRect(drawX + 7*size, drawY + 2*size, 2*size, 2*size);
@@ -511,7 +552,8 @@ function drawPixelCat(drawCtx, x, y, skin, facingRight, controls, isPlayer1, isJ
 
     // --- froggy: шапка-лягушка ---
     if (skin.hat === 'frog') {
-        const green = '#badc58', white = '#ffffff', black = '#000000';
+        const green = (frogVariant === 'bluehat') ? '#5fb0f0' : '#badc58';
+        const white = '#ffffff', black = '#000000';
         drawCtx.fillStyle = green;
         drawCtx.fillRect(drawX - 1*size,   drawY - 1.5*size, 12*size, 3.5*size);
         drawCtx.fillRect(drawX - 1.5*size, drawY + 1*size,    3*size, 5*size);
@@ -618,7 +660,20 @@ function drawPixelCat(drawCtx, x, y, skin, facingRight, controls, isPlayer1, isJ
     // ----------------------------------------------------------------
     // 10. НОГИ
     // ----------------------------------------------------------------
-    {
+    if (skin.type === 'ghost') {
+        // У призрака вместо ног — волнистый призрачный шлейф
+        const ph = Math.floor(gameTime / 10) % 2;
+        drawCtx.fillStyle = skin.body;
+        for (let i = 0; i < 5; i++) {
+            drawCtx.fillRect(drawX + i * 2 * size, drawY + 12.6 * size + ((i + ph) % 2) * size, 2 * size, 1.6 * size);
+        }
+        // Лёгкая дымка под шлейфом (цвет зависит от варианта окраса)
+        drawCtx.fillStyle = (skin.body === '#2e2e44') ? 'rgba(70,70,110,0.45)' : 'rgba(207,232,245,0.35)';
+        for (let i = 0; i < 3; i++) {
+            const wob = Math.sin(gameTime * 0.15 + i * 2.1) * size;
+            drawCtx.fillRect(drawX + (1.5 + i * 3) * size + wob, drawY + 14.6 * size, 1.5 * size, 1 * size);
+        }
+    } else {
         let legColor;
 
         // --- samurai ---
@@ -659,35 +714,42 @@ function drawPixelCat(drawCtx, x, y, skin, facingRight, controls, isPlayer1, isJ
 }
 
 function drawMenuScene() {
-    let grad = ctx.createLinearGradient(0, 0, 0, canvas.height); grad.addColorStop(0, "#87CEEB"); grad.addColorStop(1, "#E0F7FA"); ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    drawRainbow(ctx, -canvas.width / 2); drawSun(ctx, canvas.width - 150, 100, 40, "#f1c40f", "#f39c12");
+    let grad = ctx.createLinearGradient(0, 0, 0, LOGICAL_H); grad.addColorStop(0, "#87CEEB"); grad.addColorStop(1, "#E0F7FA"); ctx.fillStyle = grad; ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+    drawRainbow(ctx, -LOGICAL_W / 2); drawSun(ctx, LOGICAL_W - 150, 100, 40, "#f1c40f", "#f39c12");
     ctx.fillStyle = "rgba(255,255,255,0.6)"; let cloudOff = (gameTime * 0.5) % 2000; ctx.fillRect(200 - cloudOff, 100, 100, 30); ctx.fillRect(1500 - cloudOff, 150, 80, 25);
-    let groundY = canvas.height - 100;
-    drawPixelGround(ctx, 0, groundY, canvas.width, 500);
+    let groundY = LOGICAL_H - 100;
+    drawPixelGround(ctx, 0, groundY, LOGICAL_W, 500);
     const menuScale = 4;
     const menuStep = (TREE_SPRITE_LEAVES[0].length + 1) * menuScale;
-    for (let tx = 0; tx < canvas.width + menuStep; tx += menuStep) {
-        if (tx > canvas.width / 2 - 200 && tx < canvas.width / 2 + 200) continue;
-        drawPixelTree(ctx, tx, canvas.height - 100, menuScale, Math.sin(tx * 0.37) * 999);
+    for (let tx = 0; tx < LOGICAL_W + menuStep; tx += menuStep) {
+        if (tx > LOGICAL_W / 2 - 200 && tx < LOGICAL_W / 2 + 200) continue;
+        drawPixelTree(ctx, tx, LOGICAL_H - 100, menuScale, Math.sin(tx * 0.37) * 999);
     }
-    drawCastle(ctx, canvas.width / 2, groundY); menuPixies.forEach(p => p.draw(ctx));
+    drawCastle(ctx, LOGICAL_W / 2, groundY); menuPixies.forEach(p => p.draw(ctx));
 }
 
 function menuLoop() {
     if (isPlaying) return;
-    p1PreviewCtx.clearRect(0, 0, 100, 80); p2PreviewCtx.clearRect(0, 0, 100, 80); onlineSkinCtx.clearRect(0, 0, 100, 80);
-    gameTime += 0.5;
-    const p1Y = 30, p2Y = 30;
-    drawPixelCat(p1PreviewCtx, 35, p1Y, SKINS[p1SkinIndex], true, null, true); drawPixelCat(onlineSkinCtx, 35, p1Y, SKINS[p1SkinIndex], true, null, true);
-    if (numPlayers === 2) drawPixelCat(p2PreviewCtx, 35, p2Y, SKINS[p2SkinIndex], true, null, false);
-    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
-    menuPixies.forEach(p => p.update(0.5, -100)); drawMenuScene(); menuAnimationId = requestAnimationFrame(menuLoop);
+    // rAF планируем ПЕРВЫМ — даже если кадр упадёт, анимация меню не «зависнет» навсегда
+    menuAnimationId = requestAnimationFrame(menuLoop);
+    try {
+        p1PreviewCtx.clearRect(0, 0, 100, 80); p2PreviewCtx.clearRect(0, 0, 100, 80); onlineSkinCtx.clearRect(0, 0, 100, 80);
+        gameTime += 0.5;
+        const p1Y = 30, p2Y = 30;
+        // Подстраховка от некорректного индекса скина (рассинхрон в онлайне и т.п.)
+        const _s1 = SKINS[p1SkinIndex] || SKINS[0];
+        const _s2 = SKINS[p2SkinIndex] || SKINS[1] || SKINS[0];
+        drawPixelCat(p1PreviewCtx, 35, p1Y, _s1, true, null, true); drawPixelCat(onlineSkinCtx, 35, p1Y, _s1, true, null, true);
+        if (numPlayers === 2) drawPixelCat(p2PreviewCtx, 35, p2Y, _s2, true, null, false);
+        ctx.setTransform(RS, 0, 0, RS, 0, 0); ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H);
+        menuPixies.forEach(p => p.update(0.5, -100)); drawMenuScene();
+    } catch (e) { /* не роняем анимацию меню из-за единичной ошибки кадра */ }
 }
 
 function initWorld() {
     // Инициализируем seeded RNG — у обоих игроков одинаковый seed
     seedRng(net.isOnline ? net.worldSeed : Math.floor(Math.random() * 0x7FFFFFFF));
-    terrain = []; items = []; pixies = []; nextTerrainX = 0;
+    terrain = []; items = []; pixies = []; nextTerrainX = 0; floatingTexts = [];
     // FIX #1: используем getWorldGround() — в онлайне у обоих одно значение (от хоста)
     lastHeight = getWorldGround();
     blocksSinceLastGap = 10; consecutiveGaps = 0; blocksSinceLastCactus = 5; lastBlockWasGap = false;
@@ -696,7 +758,7 @@ function initWorld() {
     if (currentDifficulty !== 'easy') {
         for (let i = 0; i < 3; i++) {
             const p = new Pixie();
-            p.x = camera.x + (canvas.width * (i / 3)) + rng() * (canvas.width / 3);
+            p.x = camera.x + (LOGICAL_W * (i / 3)) + rng() * (LOGICAL_W / 3);
             pixies.push(p);
         }
     }
@@ -727,7 +789,7 @@ function addTerrainBlock(canHaveHazards = true) {
     else if (currentDifficulty === 'megahard') diffSettings = { gapChance: 0.20, maxGapSize: 2, minSafe: 2, cactusChance: 0.11, minCactus: 4, heightChange: 0.42 };
     else if (currentDifficulty === 'infinity') diffSettings = { gapChance: 0.20, maxGapSize: 2, minSafe: 2, cactusChance: 0.22, minCactus: 2, heightChange: 0.42 };
     if (canHaveHazards && !lastBlockWasGap && rng() < diffSettings.heightChange) lastHeight += (Math.floor(rng() * 3) - 1) * 60;
-    // FIX #1: границы высоты привязаны к getWorldGround(), а не к canvas.height
+    // FIX #1: границы высоты привязаны к getWorldGround(), а не к LOGICAL_H
     const _wg = getWorldGround();
     if (lastHeight < _wg - 350) lastHeight = _wg - 350;
     if (lastHeight > _wg + 50) lastHeight = _wg + 50;
@@ -743,7 +805,7 @@ function addTerrainBlock(canHaveHazards = true) {
         }
     }
     else {
-        // FIX #1: h:2000 — фиксированная высота, не зависит от canvas.height
+        // FIX #1: h:2000 — фиксированная высота, не зависит от LOGICAL_H
         terrain.push({ x: nextTerrainX, y: lastHeight, w: w, h: 2000 });
         lastBlockWasGap = false; consecutiveGaps = 0; blocksSinceLastGap++; blocksSinceLastCactus++;
         if (canHaveHazards) {
@@ -784,7 +846,7 @@ function addTerrainBlock(canHaveHazards = true) {
 function manageChunks() {
     const lookAhead = 400 * (1 / zoomFactor);
     terrain = terrain.filter(b => b.x + b.w > camera.x - 200); items = items.filter(i => i.x + i.w > camera.x - 200);
-    while (nextTerrainX < camera.x + (canvas.width / zoomFactor) + lookAhead) addTerrainBlock(true);
+    while (nextTerrainX < camera.x + (LOGICAL_W / zoomFactor) + lookAhead) addTerrainBlock(true);
 }
 
 
@@ -873,22 +935,42 @@ function drawPixelTree(targetCtx, baseX, baseY, baseScale, seed) {
     }
 }
 
+// Кеш дерева-предмета: спрайт рисуется один раз в финальном масштабе, дальше блитится.
+function _treeItemCanvas(item, seed) {
+    const sc = RS * zoomFactor;
+    if (item._tc && item._tcSc === sc && item._tcSeed === seed) return item._tc;
+    const BW = 64, BH = 120;
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.ceil(BW * sc));
+    cv.height = Math.max(1, Math.ceil(BH * sc));
+    const gx = cv.getContext('2d');
+    gx.imageSmoothingEnabled = false;
+    gx.setTransform(sc, 0, 0, sc, 0, 0);
+    drawPixelTree(gx, BW / 2, 110, 4, seed); // baseX=центр, baseY=110 (дерево растёт вверх)
+    item._tc = cv; item._tcSc = sc; item._tcSeed = seed;
+    return cv;
+}
+
 // ---- drawForest: cached to offscreen canvas in world-space (static, no animation) ----
 function drawForest(ctx) {
     // FOREST_MIN сдвинут на ~50px правее старого -950 → первое дерево появляется
     // чуть позже начала castle_area платформы, без заметного сдвига всего леса.
     const CASTLE_CENTER = CASTLE_START_X + 1000, FOREST_MIN = CASTLE_CENTER - 900, FOREST_MAX = CASTLE_CENTER + 1100; // +150px ≈ 3 ёлки на правом краю
     if (currentDifficulty === 'infinity' || currentDifficulty === 'hard' || currentDifficulty === 'megahard') return;
-    if (camera.x + canvas.width / zoomFactor < FOREST_MIN - 200 || camera.x > FOREST_MAX + 200) return;
+    if (camera.x + LOGICAL_W / zoomFactor < FOREST_MIN - 200 || camera.x > FOREST_MAX + 200) return;
     const _forestGroundY = getWorldGround();
-    if (!_forestCache || _forestCacheH !== canvas.height || _forestCacheGround !== _forestGroundY) {
-        _forestCacheH = canvas.height;
+    const _forestW = FOREST_MAX - FOREST_MIN + 400, _forestH = LOGICAL_H + 300;
+    const _fsc = RS * zoomFactor; // финальный экранный масштаб → лес 1:1 (одинаково на ПК и телефоне)
+    if (!_forestCache || _forestCacheH !== LOGICAL_H || _forestCacheGround !== _forestGroundY || _forestCacheSc !== _fsc) {
+        _forestCacheH = LOGICAL_H;
         _forestCacheGround = _forestGroundY;
-        const fW = FOREST_MAX - FOREST_MIN + 400;
+        _forestCacheSc = _fsc;
         _forestCache = document.createElement('canvas');
-        _forestCache.width = fW;
-        _forestCache.height = canvas.height + 300;
+        _forestCache.width = Math.ceil(_forestW * _fsc);
+        _forestCache.height = Math.ceil(_forestH * _fsc);
         const fctx = _forestCache.getContext('2d');
+        fctx.imageSmoothingEnabled = false;
+        fctx.setTransform(_fsc, 0, 0, _fsc, 0, 0);   // рисуем в финальном экранном масштабе
         const forestScale = 4;
         const step = (TREE_SPRITE_LEAVES[0].length + 1) * forestScale;
         for (let tx = FOREST_MIN; tx < FOREST_MAX; tx += step) {
@@ -898,7 +980,7 @@ function drawForest(ctx) {
             drawPixelTree(fctx, dtx, _forestGroundY, forestScale, seed);
         }
     }
-    ctx.drawImage(_forestCache, FOREST_MIN - 200, 0);
+    ctx.drawImage(_forestCache, FOREST_MIN - 200, 0, _forestW, _forestH);
 }
 
 // Точные цвета с референс-арта:
@@ -947,17 +1029,16 @@ function drawPixelGround(c, bx, by, bw, bh) {
     // Рисуется сразу под плоской травой, впадины уходят вниз
     const waveTop = grassTop + GP * 4; // начало волны = конец плоской травы
 
-    for (let col = 0; col < bw; col += GP) {
-        const wIdx = Math.floor((bx + col) / GP) % period;
-        const depth = Math.round(GW[wIdx] * WAVE_DIP); // насколько вниз уходит этот столбец
-
-        // Верхний тёмно-зелёный пиксель волны
-        c.fillStyle = "#2a5c18";
-        c.fillRect(bx + col, waveTop + depth, GP, GP);
-
-        // Нижний ещё более тёмный пиксель
-        c.fillStyle = "#1e3d10";
-        c.fillRect(bx + col, waveTop + depth + GP, GP, GP);
+    // Столбцы одинаковой глубины рисуем одним широким прямоугольником (меньше fillRect, та же картинка)
+    let col = 0;
+    while (col < bw) {
+        const depth = Math.round(GW[Math.floor((bx + col) / GP) % period] * WAVE_DIP);
+        let end = col + GP;
+        while (end < bw && Math.round(GW[Math.floor((bx + end) / GP) % period] * WAVE_DIP) === depth) end += GP;
+        const runW = end - col;
+        c.fillStyle = "#2a5c18"; c.fillRect(bx + col, waveTop + depth, runW, GP);
+        c.fillStyle = "#1e3d10"; c.fillRect(bx + col, waveTop + depth + GP, runW, GP);
+        col = end;
     }
 }
 
@@ -1382,14 +1463,17 @@ function updateSandFills(timeScale) {
 }
 
 function drawWorld() {
-    drawForest(ctx); const renderWidth = canvas.width / zoomFactor;
+    drawForest(ctx); const renderWidth = LOGICAL_W / zoomFactor;
+    const _scov = zoomFactor * RS;
+    // целый масштаб (ПК) → 1px; дробный (мобила) → ≥2 экранных пикселя, чтобы убрать сабпиксельные швы на плоской земле (луна)
+    const _gov = Number.isInteger(_scov) ? 1 : Math.max(2, Math.ceil(2 / _scov));
     terrain.forEach(block => {
         let renderMargin = block.isCastleCenter ? 400 : 0; if (block.x > camera.x + renderWidth + renderMargin || block.x + block.w < camera.x - renderMargin) return;
-        if (currentDifficulty === 'infinity') { ctx.fillStyle = "#1a1a1a"; ctx.fillRect(block.x, block.y, block.w + 1, block.h); ctx.fillStyle = "#2d3436"; ctx.fillRect(block.x, block.y, block.w + 1, 15); ctx.fillStyle = "#636e72"; ctx.fillRect(block.x, block.y + 12, block.w + 1, 3); ctx.fillStyle = "#b2bec3"; ctx.fillRect(block.x + 10, block.y + 30, 4, 4); }
-        else if (currentDifficulty === 'hard') { drawSandGround(ctx, block.x, block.y, block.w + 1, block.h); }
-        else if (currentDifficulty === 'megahard') { drawMoonGround(ctx, block.x, block.y, block.w + 1, block.h); }
+        if (currentDifficulty === 'infinity') { ctx.fillStyle = "#1a1a1a"; ctx.fillRect(block.x, block.y, block.w + _gov, block.h); ctx.fillStyle = "#2d3436"; ctx.fillRect(block.x, block.y, block.w + _gov, 15); ctx.fillStyle = "#636e72"; ctx.fillRect(block.x, block.y + 12, block.w + _gov, 3); ctx.fillStyle = "#b2bec3"; ctx.fillRect(block.x + 10, block.y + 30, 4, 4); }
+        else if (currentDifficulty === 'hard') { drawSandGround(ctx, block.x, block.y, block.w + _gov, block.h); }
+        else if (currentDifficulty === 'megahard') { drawMoonGround(ctx, block.x, block.y, block.w + _gov, block.h); }
         else {
-            drawPixelGround(ctx, block.x, block.y, block.w + 1, block.h);
+            drawPixelGround(ctx, block.x, block.y, block.w + _gov, block.h);
         }
         if (block.type === 'castle_area' && block.isCastleCenter) drawCastle(ctx, block.x, block.y);
     });
@@ -1404,7 +1488,7 @@ function drawWorld() {
                 ctx.fillRect(tx + 8, ty - 60, 15, 4); ctx.fillRect(tx + 23, ty - 70, 3, 10); ctx.fillRect(tx + 4, ty - 90, 2, 10);
             } else {
                 const seed = item.seed !== undefined ? item.seed : item.x;
-                drawPixelTree(ctx, item.x + 20, item.y, 4, seed);
+                ctx.drawImage(_treeItemCanvas(item, seed), item.x - 12, item.y - 110, 64, 120);
             }
             return;
         }
@@ -1486,6 +1570,18 @@ function drawWorld() {
             else if (item.type === 'stump') { let sy = item.y - 20; ctx.fillStyle = "#5d4037"; ctx.fillRect(item.x + 5, sy, 25, 20); ctx.fillStyle = "#8d6e63"; ctx.fillRect(item.x + 5, sy, 25, 5); ctx.fillStyle = "#3e2723"; ctx.fillRect(item.x + 12, sy + 1, 10, 2); ctx.fillStyle = "#5d4037"; ctx.fillRect(item.x, sy + 15, 5, 5); ctx.fillRect(item.x + 30, sy + 15, 5, 5); }
         }
     });
+    // ── Анимация подбора рыбки: всплывающий «+1» в цвете рыбки ──
+    for (const ft of floatingTexts) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.alpha);
+        ctx.font = (ft.size || 13) + "px 'Press Start 2P', monospace";
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#000';
+        ctx.fillText(ft.text, ft.x + 1.5, ft.y + 1.5);
+        ctx.fillStyle = ft.color || '#ffffff';
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+    }
 }
 
 function drawCastle(ctx, x, y) {
@@ -1706,7 +1802,14 @@ function init(difficulty) {
     // INITIALIZE WORLD AND PLAYERS
     // Инициализация мира и игроков
     // ============================================
-    initWorld(); 
+    initWorld();
+    // Онлайн — всегда два игрока: гарантируем создание второго кота,
+    // иначе cats[1] окажется undefined и игровой цикл «зависает» (кадры замирают).
+    if (net.isOnline) numPlayers = 2;
+    // Подстраховка от некорректного индекса скина (например, рассинхрон скинов в онлайне),
+    // иначе new Cat() с undefined-скином ломает отрисовку.
+    if (!SKINS[p1SkinIndex]) p1SkinIndex = 0;
+    if (numPlayers === 2 && !SKINS[p2SkinIndex]) p2SkinIndex = 1;
     cats = [];
     // Player 1 (always present)
     cats.push(new Cat(100, SKINS[p1SkinIndex], { up: 'KeyW', left: 'KeyA', right: 'KeyD' }, true));
@@ -1738,12 +1841,16 @@ function init(difficulty) {
     // HIDE ALL MENUS
     // Скрыть все меню
     // ============================================
-    startScreen.style.display = 'none'; 
-    onlineScreen.style.display = 'none'; 
-    gameOverScreen.style.display = 'none'; 
-    winScreen.style.display = 'none'; 
+    startScreen.style.display = 'none';
+    onlineScreen.style.display = 'none';
+    gameOverScreen.style.display = 'none';
+    winScreen.style.display = 'none';
     npcDialog.style.display = 'none';
-    
+    { const _cs = document.getElementById('classic-screen'); if (_cs) _cs.style.display = 'none'; }
+    { const _ms = document.getElementById('minigames-screen'); if (_ms) _ms.style.display = 'none'; }
+    { const _gs = document.getElementById('ghosthunt-screen'); if (_gs) _gs.style.display = 'none'; }
+    { const _go = document.getElementById('ghosthunt-over-screen'); if (_go) _go.style.display = 'none'; }
+
     if (menuAnimationId) cancelAnimationFrame(menuAnimationId);
 }
 
@@ -1795,12 +1902,16 @@ function checkCollisions() {
                 
                 if (item.type.includes('fish')) { 
                     // Collect fish
-                    item.taken = true; 
+                    item.taken = true;
+                    let _isGold = false;
                     if (item.type === 'blue-fish') { fishWallet.blue++; AudioEngine.sfx.fishBlue(); }
-                    else if (item.type === 'gold-fish') { fishWallet.gold++; AudioEngine.sfx.fishGold(); }
+                    else if (item.type === 'gold-fish') { fishWallet.gold++; AudioEngine.sfx.fishGold(); _isGold = true; }
                     else { fishWallet.orange++; AudioEngine.sfx.fishOrange(); }
-                    saveGameData(); 
-                    updateFishUI(); 
+                    // Всплывающий «+1» в цвете рыбки — анимация подбора
+                    const _ftColor = item.type === 'gold-fish' ? '#ffd700' : item.type === 'blue-fish' ? '#29b6f6' : '#ffa726';
+                    floatingTexts.push({ text: '+1', x: item.x + item.w / 2, y: item.y - 6, alpha: 1, dy: -1.5, size: _isGold ? 18 : 13, color: _ftColor });
+                    saveGameData();
+                    updateFishUI();
                 } else { 
                     // Hit hazard (cactus, rock, stump)
                     if (!inCastle && !godMode) endGame(); 
@@ -1816,7 +1927,7 @@ function checkCollisions() {
     if (net.isOnline) {
         // В онлайне — только свой кот
         const myCat = net.isHost ? cats[0] : cats[1];
-        maxDist = myCat.x;
+        if (myCat) maxDist = myCat.x;
     } else {
         cats.forEach(c => { if (c.x > maxDist) maxDist = c.x; });
     }
@@ -1887,7 +1998,8 @@ function triggerWin() {
     unlockMsg.innerText = msg; 
     const _btnNext = btnNextLevel || document.getElementById('btn-next-level') || document.getElementById('btn-next');
     if (_btnNext) _btnNext.style.display = nextBtnVisible ? 'block' : 'none';
-    winScreen.style.display = 'block'; 
+    winScreen.style.display = 'block';
+    _hideMobileControls(); // на экране победы скрываем джойстик/кнопки
     const _lobbyWin = document.getElementById('btn-lobby-win');
     if (_lobbyWin) _lobbyWin.style.display = net.isOnline ? 'block' : 'none';
     if (net.isOnline && net.conn && net.conn.open) net.conn.send({ type: 'WIN', score: score, _t: Date.now() });
@@ -1925,13 +2037,13 @@ function updateCamera() {
         cats.forEach(c => totalX += c.x); 
         totalX /= cats.length;
         const midPoint = totalX;
-        let targetX = midPoint - (canvas.width / zoomFactor) / 2; 
+        let targetX = midPoint - (LOGICAL_W / zoomFactor) / 2; 
         if (targetX < 0) targetX = 0;
         camera.x += (targetX - camera.x) * 0.1; 
         return;
     }
 
-    let targetX = totalX - (canvas.width / zoomFactor) / 2; 
+    let targetX = totalX - (LOGICAL_W / zoomFactor) / 2; 
     if (targetX < 0) targetX = 0;
     camera.x += (targetX - camera.x) * 0.1; 
 }
@@ -1946,12 +2058,12 @@ function drawSun(ctx, cx, cy, radius, colorMain, colorSec) {
     if (!_sunCaches[key]) {
         const pixelSize = 4, steps = Math.floor(radius / pixelSize);
         const size = (steps * 2 + 1) * pixelSize + 2;
-        const sc = document.createElement('canvas'); sc.width = sc.height = size;
-        const sctx = sc.getContext('2d'); const mid = Math.floor(size / 2);
+        const sc = document.createElement('canvas'); sc.width = sc.height = Math.ceil(size * RS);
+        const sctx = sc.getContext('2d'); sctx.setTransform(RS, 0, 0, RS, 0, 0); const mid = Math.floor(size / 2);
         for (let y = -steps; y <= steps; y++) { for (let x = -steps; x <= steps; x++) { if (x * x + y * y <= steps * steps) { sctx.fillStyle = (Math.abs(x) > steps - 2 || Math.abs(y) > steps - 2) ? colorSec : colorMain; sctx.fillRect(mid + x * pixelSize, mid + y * pixelSize, pixelSize, pixelSize); } } }
-        _sunCaches[key] = { canvas: sc, mid };
+        _sunCaches[key] = { canvas: sc, mid, size };
     }
-    const c = _sunCaches[key]; ctx.drawImage(c.canvas, cx - c.mid, cy - c.mid);
+    const c = _sunCaches[key]; ctx.drawImage(c.canvas, cx - c.mid, cy - c.mid, c.size, c.size);
 }
 
 // ---- drawBehelit: cached to offscreen canvas, recreated only on radius change ----
@@ -1960,8 +2072,8 @@ function drawBehelit(ctx, cx, cy, radius) {
         _behelitCacheR = radius;
         const s = radius / 50;
         const W = Math.ceil(radius * 10), H = Math.ceil(radius * 14);
-        const bc = document.createElement('canvas'); bc.width = W; bc.height = H;
-        const bctx = bc.getContext('2d');
+        const bc = document.createElement('canvas'); bc.width = Math.ceil(W * RS); bc.height = Math.ceil(H * RS);
+        const bctx = bc.getContext('2d'); bctx.setTransform(RS, 0, 0, RS, 0, 0);
         const ocx = W / 2, ocy = H * 0.55;
         bctx.fillStyle = "#3e2723"; bctx.fillRect(ocx - 2 * s, ocy - 80 * s, 4 * s, 30 * s);
         bctx.fillStyle = "#c5a000"; bctx.beginPath(); bctx.moveTo(ocx - 15 * s, ocy - 50 * s); bctx.lineTo(ocx + 15 * s, ocy - 50 * s); bctx.lineTo(ocx + 20 * s, ocy - 40 * s); bctx.lineTo(ocx - 20 * s, ocy - 40 * s); bctx.fill();
@@ -1981,28 +2093,28 @@ function drawBehelit(ctx, cx, cy, radius) {
         bctx.fillStyle = "#300000"; bctx.beginPath(); bctx.ellipse(ocx, ocy + 55 * s, 18 * s, 10 * s, 0, 0, Math.PI * 2); bctx.fill();
         bctx.fillStyle = "#eee"; for (let i = -3; i <= 3; i++) { bctx.fillRect(ocx + (i * 5 * s) - 2 * s, ocy + 46 * s, 4 * s, 5 * s); } for (let i = -3; i <= 3; i++) { bctx.fillRect(ocx + (i * 5 * s) - 2 * s, ocy + 58 * s, 4 * s, 5 * s); }
         bctx.fillStyle = "#a30000"; bctx.beginPath(); bctx.arc(ocx, ocy + 62 * s, 6 * s, Math.PI, 0); bctx.fill();
-        _behelitCache = { canvas: bc, ox: ocx, oy: ocy };
+        _behelitCache = { canvas: bc, ox: ocx, oy: ocy, w: W, h: H };
     }
-    ctx.drawImage(_behelitCache.canvas, cx - _behelitCache.ox, cy - _behelitCache.oy);
+    ctx.drawImage(_behelitCache.canvas, cx - _behelitCache.ox, cy - _behelitCache.oy, _behelitCache.w, _behelitCache.h);
 }
 
 // ---- drawRainbow: cached to offscreen canvas, recreated only on screen size change ----
 function drawRainbow(ctx, camX, vOffset) {
-    const renderWidth = Math.ceil(canvas.width / zoomFactor), renderHeight = Math.ceil(canvas.height / zoomFactor);
+    const renderWidth = Math.ceil(LOGICAL_W / zoomFactor), renderHeight = Math.ceil(LOGICAL_H / zoomFactor);
     if (!_rainbowCache || _rainbowCacheW !== renderWidth || _rainbowCacheH !== renderHeight) {
         _rainbowCacheW = renderWidth; _rainbowCacheH = renderHeight;
-        _rainbowCache = document.createElement('canvas'); _rainbowCache.width = renderWidth; _rainbowCache.height = renderHeight;
-        const rctx = _rainbowCache.getContext('2d');
+        _rainbowCache = document.createElement('canvas'); _rainbowCache.width = Math.ceil(renderWidth * RS); _rainbowCache.height = Math.ceil(renderHeight * RS);
+        const rctx = _rainbowCache.getContext('2d'); rctx.setTransform(RS, 0, 0, RS, 0, 0);
         const rcx = renderWidth / 2, rcy = renderHeight + 100, radius = 700;
         const colors = ["rgba(255, 0, 0, 0.2)", "rgba(255, 127, 0, 0.2)", "rgba(255, 255, 0, 0.2)", "rgba(0, 255, 0, 0.2)", "rgba(0, 187, 255, 0.2)", "rgba(0, 4, 255, 0.2)", "rgba(136, 0, 255, 0.2)"];
         for (let i = 0; i < 7; i++) { rctx.beginPath(); rctx.arc(rcx, rcy, radius - i * 15, Math.PI, 2 * Math.PI); rctx.strokeStyle = colors[i]; rctx.lineWidth = 15; rctx.stroke(); }
     }
     // На мобильных vOffset > 0: рисуем с поправкой чтобы радуга совпадала с фоном
-    ctx.drawImage(_rainbowCache, camX, -(vOffset || 0));
+    ctx.drawImage(_rainbowCache, camX, -(vOffset || 0), _rainbowCacheW, _rainbowCacheH);
 }
 
 function drawBackground(vOffset) {
-    const renderWidth = canvas.width / zoomFactor, renderHeight = canvas.height / zoomFactor;
+    const renderWidth = LOGICAL_W / zoomFactor, renderHeight = LOGICAL_H / zoomFactor;
     // ---- Gradient cache: recreate only on difficulty or size change ----
     if (!_bgGrad || _bgGradDiff !== currentDifficulty || _bgGradH !== renderHeight || _bgGradOff !== vOffset) {
         _bgGradDiff = currentDifficulty; _bgGradH = renderHeight; _bgGradOff = vOffset;
@@ -2074,7 +2186,7 @@ function drawBackground(vOffset) {
             };
             // Switch to screen space — completely bypasses camera translate → zero jitter
             ctx.save();
-            ctx.setTransform(zoomFactor, 0, 0, zoomFactor, 0, 0);
+            ctx.setTransform(zoomFactor * RS, 0, 0, zoomFactor * RS, 0, 0);
             const _cs = 4;           // 4px/cell × 40 cells = 160px (= 2× sun diameter)
             const _ew = 40 * _cs;    // 160
             // Fixed screen position (integers → no sub-pixel gaps between cells)
@@ -2093,15 +2205,26 @@ function drawBackground(vOffset) {
             ctx.arc(_ecx, _ecy, _ew * 0.82, 0, Math.PI * 2);
             ctx.fill();
 
-            // Earth pixels — integer coords → perfectly flush, no cracks
-            for (let _r = 0; _r < 40; _r++) {
-                for (let _c = 0; _c < 40; _c++) {
-                    const _ch = _earthGrid[_r][_c];
-                    if (_ch === '_') continue;
-                    ctx.fillStyle = _earthColors[_ch];
-                    ctx.fillRect(_ex + _c * _cs, _ey + _r * _cs, _cs, _cs);
+            // Earth — кешируем спрайт (ячейки впритык в offscreen) и блитим целиком,
+            // иначе на дробном экранном масштабе между ячейками видны швы-сетка.
+            if (!_earthCache || _earthCacheRS !== RS) {
+                _earthCacheRS = RS;
+                _earthCache = document.createElement('canvas');
+                _earthCache.width = _ew * RS; _earthCache.height = _ew * RS;
+                const _ectx = _earthCache.getContext('2d');
+                _ectx.imageSmoothingEnabled = false;
+                _ectx.setTransform(RS, 0, 0, RS, 0, 0);
+                for (let _r = 0; _r < 40; _r++) {
+                    for (let _c = 0; _c < 40; _c++) {
+                        const _ch = _earthGrid[_r][_c];
+                        if (_ch === '_') continue;
+                        _ectx.fillStyle = _earthColors[_ch];
+                        _ectx.fillRect(_c * _cs, _r * _cs, _cs, _cs);
+                    }
                 }
             }
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(_earthCache, _ex, _ey, _ew, _ew);
 
             ctx.restore(); // back to world (camera-translated) space
         }
@@ -2187,6 +2310,7 @@ function endGame() {
     const _adRewardMsg = document.getElementById('game-ad-reward-msg');
     if (_adFishBtn) _adFishBtn.style.display = (!net.isOnline && YandexSDK.ready) ? 'block' : 'none';
     if (_adRewardMsg) _adRewardMsg.style.display = 'none';
+    _hideMobileControls(); // на экране проигрыша скрываем джойстик/кнопки
 
 
 }
@@ -2225,16 +2349,48 @@ function showMenu() {
     document.getElementById('online-guest-wait').style.display = 'none';
     gameOverScreen.style.display = 'none'; winScreen.style.display = 'none'; startScreen.style.display = 'block'; onlineScreen.style.display = 'none'; npcDialog.style.display = 'none';
     document.getElementById('shop-screen').style.display = 'none';
+    { const _cs = document.getElementById('classic-screen'); if (_cs) _cs.style.display = 'none'; }
+    { const _ms = document.getElementById('minigames-screen'); if (_ms) _ms.style.display = 'none'; }
+    { const _gs = document.getElementById('ghosthunt-screen'); if (_gs) _gs.style.display = 'none'; }
+    { const _go = document.getElementById('ghosthunt-over-screen'); if (_go) _go.style.display = 'none'; }
+    if (typeof GH !== 'undefined' && GH.active) { GH.active = false; if (typeof ghAnimationId !== 'undefined' && ghAnimationId) cancelAnimationFrame(ghAnimationId); if (typeof ghShowMobileButtons === 'function') ghShowMobileButtons(false); }
     // Скрыть кнопки лобби
     const _lg = document.getElementById('btn-lobby-go'); if (_lg) _lg.style.display = 'none';
     const _lw = document.getElementById('btn-lobby-win'); if (_lw) _lw.style.display = 'none';
     const _ta = document.getElementById('btn-try-again'); if (_ta) _ta.style.display = '';
     if (animationId) cancelAnimationFrame(animationId); if (menuAnimationId) cancelAnimationFrame(menuAnimationId);
-    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = "#202028"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(RS, 0, 0, RS, 0, 0); ctx.fillStyle = "#202028"; ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     updateFishUI(); updatePlayerModeUI(); normalBestBox.style.display = 'block'; infinityBestBox.style.display = 'block'; highScoreEl.innerText = highScore;
     menuPixies = []; for (let i = 0; i < 8; i++) menuPixies.push(new Pixie()); menuLoop();
     AudioEngine.startMenuMusic();
     _hideMobileControls();
+}
+
+// ============================================
+// КЛАССИКА — отдельная страница выбора режима/сложности
+// ============================================
+function openClassic() {
+    startScreen.style.display = 'none';
+    const ms = document.getElementById('minigames-screen'); if (ms) ms.style.display = 'none';
+    const cs = document.getElementById('classic-screen'); if (cs) cs.style.display = 'block';
+    updateDifficultyButtons(); // обновляем блокировки режимов при каждом открытии
+}
+function closeClassic() {
+    const cs = document.getElementById('classic-screen'); if (cs) cs.style.display = 'none';
+    startScreen.style.display = 'block';
+}
+
+// ============================================
+// МИНИ-ИГРЫ — страница-заглушка «раздел в разработке»
+// ============================================
+function openMinigames() {
+    startScreen.style.display = 'none';
+    const cs = document.getElementById('classic-screen'); if (cs) cs.style.display = 'none';
+    const ms = document.getElementById('minigames-screen'); if (ms) ms.style.display = 'block';
+}
+function closeMinigames() {
+    const ms = document.getElementById('minigames-screen'); if (ms) ms.style.display = 'none';
+    startScreen.style.display = 'block';
 }
 
 
@@ -2298,9 +2454,9 @@ function showOnlineLobby() {
     AudioEngine.stopAllMusic();
     AudioEngine.startMenuMusic();
     // Канвас
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.setTransform(RS, 0, 0, RS, 0, 0);
     ctx.fillStyle = "#202028";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     updateFishUI(); updatePlayerModeUI();
 
     // Если гость возвращается в лобби — восстановить его собственный скин
@@ -2375,7 +2531,7 @@ function onlineSafeRestart() {
     if (net.isOnline && net.isHost && net.conn && net.conn.open) {
         // Хост онлайн — отправляем гостю новый INIT, затем стартуем у себя
         net.worldSeed = Math.floor(Math.random() * 0x7FFFFFFF);
-        net.worldGroundBase = canvas.height - 100;
+        net.worldGroundBase = LOGICAL_H - 100;
         p2SkinIndex = net.remoteSkin;
         // Скрыть экраны проигрыша/победы у хоста
         gameOverScreen.style.display = 'none';
@@ -2396,6 +2552,7 @@ function onlineSafeRestart() {
                 diff: currentDifficulty,
                 seed: net.worldSeed,
                 hostSkin: p1SkinIndex,
+                hostVariant: mySkinVariants[SKINS[p1SkinIndex].id] || 'auto',
                 guestSkin: net.remoteSkin,
                 groundBase: net.worldGroundBase
             });
@@ -2421,6 +2578,7 @@ function loop(timestamp) {
     // ============================================
     if (isGameOver || isWin) return; 
     animationId = requestAnimationFrame(loop);
+    try {
     
     // ============================================
     // DELTA TIME CALCULATION - For smooth animation
@@ -2456,18 +2614,17 @@ function loop(timestamp) {
         if (timestamp - net.lastSentTime > net.tickRate) {
             // Определить своего кота
             const myCat = net.isHost ? cats[0] : cats[1];
-            net.conn.send({ 
-                type: 'POS', 
-                x: myCat.x, 
-                y: myCat.y, 
-                dir: myCat.facingRight 
-            });
-            net.lastSentTime = timestamp;
-
-            // Пинг раз в 3 секунды
-            if (timestamp - net.lastPingTime > 3000) {
-                net.conn.send({ type: 'PING', time: timestamp });
-                net.lastPingTime = timestamp;
+            // Guard: если кот ещё не создан — пропускаем кадр, не роняя игровой цикл
+            if (myCat) {
+                try {
+                    net.conn.send({ type: 'POS', x: myCat.x, y: myCat.y, dir: myCat.facingRight });
+                    net.lastSentTime = timestamp;
+                    // Пинг раз в 3 секунды
+                    if (timestamp - net.lastPingTime > 3000) {
+                        net.conn.send({ type: 'PING', time: timestamp });
+                        net.lastPingTime = timestamp;
+                    }
+                } catch (e) { /* соединение могло закрыться между проверкой и отправкой */ }
             }
         }
         // Применяем интерполяцию к чужому коту (без velocity prediction)
@@ -2494,21 +2651,21 @@ function loop(timestamp) {
     // Смещение для мобильного зума
     // ============================================
     let verticalOffset = 0; 
-    if (zoomFactor < 1) verticalOffset = (canvas.height / zoomFactor) - canvas.height;
+    if (zoomFactor < 1) verticalOffset = (LOGICAL_H / zoomFactor) - LOGICAL_H;
 
     // FIX #1: для гостя добавляем вертикальный сдвиг, чтобы земля
     // хоста (worldGroundBase) совпала с землёй гостя на экране.
-    // У хоста сдвиг = 0 (его worldGroundBase = canvas.height - 100).
+    // У хоста сдвиг = 0 (его worldGroundBase = LOGICAL_H - 100).
     const groundSyncOffset = (net.isOnline && !net.isHost && net.worldGroundBase > 0)
-        ? (canvas.height - 100) - net.worldGroundBase
+        ? (LOGICAL_H - 100) - net.worldGroundBase
         : 0;
 
     // ============================================
     // CLEAR CANVAS - Prepare for new frame
     // Очистка канваса перед новым кадром
     // ============================================
-    ctx.setTransform(zoomFactor, 0, 0, zoomFactor, 0, 0); 
-    ctx.clearRect(0, 0, canvas.width / zoomFactor, canvas.height / zoomFactor);
+    ctx.setTransform(zoomFactor * RS, 0, 0, zoomFactor * RS, 0, 0); 
+    ctx.clearRect(0, 0, LOGICAL_W / zoomFactor, LOGICAL_H / zoomFactor);
     
     // ============================================
     // UPDATE GAME OBJECTS
@@ -2517,6 +2674,13 @@ function loop(timestamp) {
     frameCount++;
     if (frameCount % 3 === 0) manageChunks(); // Управление чанками мира (не каждый кадр — экономия CPU)
     cats.forEach(c => c.update(timeScale)); // Обновление котов
+    // Анимация подбора рыбки: всплывающий текст поднимается вверх и затухает
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y += ft.dy * timeScale;
+        ft.alpha -= 0.02 * timeScale;
+        if (ft.alpha <= 0) floatingTexts.splice(i, 1);
+    }
     if (npcCat) npcCat.update(timeScale); // Обновление NPC
     if (currentDifficulty === 'hard') pixies.forEach(pixie => pixie.update(timeScale, camera.x - 50)); // Обновление фей только для hard
     if (currentDifficulty === 'megahard') updateAliens(timeScale); // Обновление инопланетян
@@ -2537,13 +2701,18 @@ function loop(timestamp) {
     // ============================================
     // FIX SEAMS: округляем камеру чтобы блоки земли всегда рисовались
     // в целых пикселях → никаких разрывов при дробных значениях camera.x
-    const snapCamX = Math.round(camera.x);
-    const snapVOff  = Math.round(verticalOffset + groundSyncOffset);
+    const _scSnap = zoomFactor * RS; // мир выравниваем по целым ЭКРАННЫМ пикселям → нет дрожащих стыков
+    const snapCamX = Math.round(camera.x * _scSnap) / _scSnap;
+    const snapVOff  = Math.round((verticalOffset + groundSyncOffset) * _scSnap) / _scSnap;
     ctx.translate(-snapCamX, snapVOff); 
     drawBackground(snapVOff); // Фон
     drawWorld(); // Мир (блоки, предметы)
     if (npcCat) npcCat.draw(ctx); // NPC
     cats.forEach(c => c.draw()); // Коты
+    } catch (e) {
+        // Ошибка кадра не должна морозить игру — логируем один раз и продолжаем
+        if (!window._loopErrLogged) { console.error('[loop] ошибка кадра, игра продолжается:', e); window._loopErrLogged = true; }
+    }
 }
 
 function startGame(difficulty) {

@@ -7,7 +7,6 @@ function openSettings() {
     startScreen.style.display = 'none';
     document.getElementById('settings-screen').style.display = 'block';
     _syncSettingsUI();
-    _showMobileControls(); // show controls preview for layout editor
 }
 function closeSettings() {
     document.getElementById('settings-screen').style.display = 'none';
@@ -96,6 +95,9 @@ function renderShop() {
             badge.classList.add('badge-locked-score');
         } else if (skin.reqInfinityScore) {
             badge.textContent = '∞ ' + skin.reqInfinityScore;
+            badge.classList.add('badge-locked-score');
+        } else if (skin.reqGhostScore) {
+            badge.innerText = t('needGhost') + ' ' + skin.reqGhostScore;
             badge.classList.add('badge-locked-score');
         } else if (skin.cost) {
             const wallet = skin.currency === 'blue' ? fishWallet.blue
@@ -192,6 +194,92 @@ function setSfxOn(v) {
 function setMusicVol(val) {
     AudioEngine.setMusicVol(val);
     document.getElementById('music-vol-val').innerText = val + '%';
+}
+
+// ============================================================
+// НАСТРОЙКА СКИНА — выбор окраса (авто / светлый / тёмный)
+// ============================================================
+function openSkinConfig() {
+    const overlay = document.getElementById('skin-config-overlay');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    _buildSkinConfigOptions();
+    _syncSkinConfigUI();
+}
+function closeSkinConfig() {
+    const overlay = document.getElementById('skin-config-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+function _skinDefs() {
+    const skin = SKINS[p1SkinIndex];
+    return (skin && typeof SKIN_VARIANT_DEFS !== 'undefined') ? SKIN_VARIANT_DEFS[skin.id] : null;
+}
+// Динамически строит кнопки вариантов под текущий скин (попап «НАСТРОИТЬ»)
+function _buildSkinConfigOptions() {
+    const skin = SKINS[p1SkinIndex];
+    const cont = document.getElementById('skin-var-options');
+    const hintEl = document.getElementById('skin-config-hint');
+    const defs = _skinDefs();
+    if (hintEl) hintEl.innerText = t(defs && defs.hintKey ? defs.hintKey : 'skinCfg.hint');
+    if (!cont) return;
+    cont.innerHTML = '';
+    if (!skin || !defs) return;
+    defs.options.forEach(opt => {
+        const b = document.createElement('button');
+        b.className = 'toggle-btn';
+        b.id = 'skin-var-' + opt.id;
+        b.style.cssText = 'display:block;width:100%;margin:6px 0;padding:10px;font-size:12px;';
+        b.onclick = () => setSkinVariant(opt.id);
+        let label = t(opt.labelKey);
+        if (opt.cost && !isVariantUnlocked(skin.id, opt.id)) label += ' \u2014 ' + opt.cost + ' ' + t('skinCfg.gold');
+        b.innerText = label;
+        cont.appendChild(b);
+    });
+}
+function setSkinVariant(variant) {
+    const skin = SKINS[p1SkinIndex];
+    if (!skin || !skin.configurable) { closeSkinConfig(); return; }
+    const defs = _skinDefs();
+    const opt = defs ? defs.options.find(o => o.id === variant) : null;
+    // Платный вариант — сначала покупка
+    if (opt && opt.cost && !isVariantUnlocked(skin.id, variant)) {
+        const wallet = opt.currency === 'gold' ? fishWallet.gold : opt.currency === 'blue' ? fishWallet.blue : fishWallet.orange;
+        if (wallet < opt.cost) {
+            const lb = document.getElementById('skin-var-' + variant);
+            if (lb) { lb.style.borderColor = '#e74c3c'; setTimeout(() => { lb.style.borderColor = ''; }, 600); }
+            if (typeof _showAccountToast === 'function') _showAccountToast(t('skinCfg.needGold'), '#e74c3c');
+            return;
+        }
+        if (opt.currency === 'gold') fishWallet.gold -= opt.cost;
+        else if (opt.currency === 'blue') fishWallet.blue -= opt.cost;
+        else fishWallet.orange -= opt.cost;
+        unlockedSkinVariants.push(skin.id + ':' + variant);
+        try { SafeStorage.set('pixelCatsUnlockedVariants', JSON.stringify(unlockedSkinVariants)); } catch (e) {}
+        if (typeof updateFishUI === 'function') updateFishUI();
+        if (AudioEngine.sfx && AudioEngine.sfx.unlock) AudioEngine.sfx.unlock();
+        _buildSkinConfigOptions();
+    }
+    mySkinVariants[skin.id] = variant;
+    saveGameData(); // localStorage + облако (через патч AccountSystem)
+    if (net.isOnline && net.conn && net.conn.open) {
+        try { net.conn.send({ type: 'SKIN', skin: p1SkinIndex, variant: variant }); } catch (e) {}
+    }
+    _syncSkinConfigUI();
+    if (AudioEngine.sfx && AudioEngine.sfx.click) AudioEngine.sfx.click();
+}
+function _syncSkinConfigUI() {
+    const skin = SKINS[p1SkinIndex];
+    const defs = _skinDefs();
+    if (!skin) return;
+    const cur = mySkinVariants[skin.id] || (defs ? defs.def : 'auto');
+    if (defs) defs.options.forEach(opt => {
+        const b = document.getElementById('skin-var-' + opt.id);
+        if (b) {
+            b.classList.toggle('active', cur === opt.id);
+            const locked = opt.cost && !isVariantUnlocked(skin.id, opt.id);
+            b.style.opacity = locked ? '0.85' : '1';
+        }
+    });
 }
 function setSfxVol(val) {
     AudioEngine.setSfxVol(val);

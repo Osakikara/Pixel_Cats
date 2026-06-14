@@ -160,6 +160,88 @@ const AudioEngine = (() => {
             boot(); if (!actx) return;
             [523,659,784,880].forEach((f,i) => beep(f, 0.18, 'sine', 0.11, i*0.1));
         },
+
+        // ══════════════════════════════════════════════════
+        // ОХОТА НА ПРИЗРАКОВ — звуки мини-игры
+        // ══════════════════════════════════════════════════
+        // Удар лапой — быстрый «вжух»
+        ghClaw() {
+            boot(); if (!actx) return;
+            const osc = actx.createOscillator(), g = actx.createGain();
+            osc.connect(g); g.connect(sfxGain); osc.type = 'sawtooth';
+            const t = actx.currentTime;
+            osc.frequency.setValueAtTime(900, t);
+            osc.frequency.exponentialRampToValueAtTime(220, t+0.09);
+            g.gain.setValueAtTime(0.07, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t+0.1);
+            osc.start(t); osc.stop(t+0.11);
+        },
+        // Бросок клубка — упругий «бойнг»
+        ghYarn() {
+            boot(); if (!actx) return;
+            const osc = actx.createOscillator(), g = actx.createGain();
+            osc.connect(g); g.connect(sfxGain); osc.type = 'sine';
+            const t = actx.currentTime;
+            osc.frequency.setValueAtTime(260, t);
+            osc.frequency.exponentialRampToValueAtTime(520, t+0.08);
+            osc.frequency.exponentialRampToValueAtTime(380, t+0.16);
+            g.gain.setValueAtTime(0.09, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t+0.18);
+            osc.start(t); osc.stop(t+0.2);
+        },
+        // Рыба-бумеранг — вращающийся свист
+        ghFish() {
+            boot(); if (!actx) return;
+            [440, 550, 440, 550].forEach((f, i) => beep(f, 0.07, 'triangle', 0.07, i*0.06));
+        },
+        // Лазер — резкий нисходящий «зап»
+        ghLaser() {
+            boot(); if (!actx) return;
+            const osc = actx.createOscillator(), g = actx.createGain();
+            osc.connect(g); g.connect(sfxGain); osc.type = 'sawtooth';
+            const t = actx.currentTime;
+            osc.frequency.setValueAtTime(1800, t);
+            osc.frequency.exponentialRampToValueAtTime(120, t+0.22);
+            g.gain.setValueAtTime(0.09, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t+0.24);
+            osc.start(t); osc.stop(t+0.26);
+            beep(2400, 0.05, 'square', 0.03, 0);
+        },
+        // Попадание по призраку (не добит)
+        ghGhostHit() {
+            boot(); if (!actx) return;
+            beep(330, 0.07, 'square', 0.06, 0);
+        },
+        // Призрак побеждён — воздушный растворяющийся тон
+        ghGhostDie() {
+            boot(); if (!actx) return;
+            const osc = actx.createOscillator(), g = actx.createGain();
+            osc.connect(g); g.connect(sfxGain); osc.type = 'sine';
+            const t = actx.currentTime;
+            osc.frequency.setValueAtTime(700, t);
+            osc.frequency.exponentialRampToValueAtTime(1400, t+0.18);
+            g.gain.setValueAtTime(0.08, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t+0.22);
+            osc.start(t); osc.stop(t+0.24);
+            beep(1760, 0.12, 'triangle', 0.04, 0.1);
+        },
+        // Игрок получил урон — глухой удар
+        ghHurt() {
+            boot(); if (!actx) return;
+            const osc = actx.createOscillator(), g = actx.createGain();
+            osc.connect(g); g.connect(sfxGain); osc.type = 'triangle';
+            const t = actx.currentTime;
+            osc.frequency.setValueAtTime(180, t);
+            osc.frequency.exponentialRampToValueAtTime(60, t+0.18);
+            g.gain.setValueAtTime(0.13, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t+0.2);
+            osc.start(t); osc.stop(t+0.22);
+        },
+        // Новая волна — тревожное восходящее арпеджио
+        ghWave() {
+            boot(); if (!actx) return;
+            [392, 466, 587, 698].forEach((f, i) => beep(f, 0.16, 'square', 0.05, i*0.09));
+        },
     };
 
     // ======================================================

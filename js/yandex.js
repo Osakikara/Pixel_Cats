@@ -25,18 +25,13 @@ const YandexSDK = (() => {
             console.log('[YandexSDK] SDK успешно инициализирован ✓');
 
             // ── Требование 2.14: автоопределение языка ────────────────────────
-            // Читаем язык из среды Яндекса — это делает индикатор 文 зелёным
+            // Только ЧИТАЕМ язык платформы (это делает индикатор 文 зелёным).
+            // Применение и сохранение языка выполняется в main.js ПОСЛЕ init(),
+            // чтобы гарантированно вызвать updateAllTexts() и обновить интерфейс.
+            // Здесь язык не записываем — иначе блок в main.js пропускается из-за
+            // условия !SafeStorage.get('pixelCatsLang') и UI не перерисовывается.
             try {
-                const lang = _ysdk.environment.i18n.lang;
-                console.log('[YandexSDK] Язык платформы:', lang);
-                // Устанавливаем язык только если игрок ещё не выбирал его вручную
-                if (!SafeStorage.get('pixelCatsLang')) {
-                    if (lang === 'ru' || lang === 'en') {
-                        window.currentLang = lang;
-                        SafeStorage.set('pixelCatsLang', lang);
-                        console.log('[YandexSDK] Язык автоматически выставлен:', lang);
-                    }
-                }
+                console.log('[YandexSDK] Язык платформы:', _ysdk.environment.i18n.lang);
             } catch (langErr) {
                 console.warn('[YandexSDK] Не удалось прочитать язык платформы:', langErr);
             }

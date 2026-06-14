@@ -8,7 +8,49 @@ const translations = {
         title: "PIXEL CATS", player1: "1 ИГРОК", player2: "2 ИГРОКА", mobileAuto: "МОБИЛЬНЫЙ: АВТО", mobileOn: "МОБИЛЬНЫЙ: ВКЛ",
         online: "ОНЛАЙН (бета)", fullscreen: "[ ] ПОЛНЫЙ ЭКРАН", player1Label: "ИГРОК 1", player2Label: "ИГРОК 2",
         easyMode: "ЛЁГКИЙ РЕЖИМ", hardMode: "СЛОЖНЫЙ РЕЖИМ", megaHardMode: "МЕГАСЛОЖНО", infinityMode: "БЕСКОНЕЧНОСТЬ",
-        locked: "🔒", buy: "КУПИТЬ", lockedBtn: "ЗАБЛОКИРОВАНО", needDist: "НУЖНО ДИСТ.", infScore: "БЕСК. СЧЁТ",
+        classicMode: "КЛАССИКА", minigamesMode: "МИНИ-ИГРЫ", classicHint: "Выберите режим",
+        minigamesTitle: "МИНИ-ИГРЫ", minigamesDev: "Мини-игры в разработке, ждите ближайших обновлений",
+        locked: "🔒", buy: "КУПИТЬ", lockedBtn: "ЗАБЛОКИРОВАНО", needDist: "НУЖНО ДИСТ.", infScore: "БЕСК. СЧЁТ", needGhost: "ПРИЗРАКИ:",
+        ghosthunt: {
+            name: "ОХОТА НА ПРИЗРАКОВ", btn: "ОХОТА НА ПРИЗРАКОВ",
+            hint: "Отбивайся от кото-призраков и набирай очки!",
+            solo: "1 ИГРОК — ВЫЖИВАНИЕ", duo: "2 ИГРОКА — ДУЭЛЬ",
+            soloDesc: "3 жизни. Продержись как можно дольше!",
+            duoDesc: "120 секунд. Кто наберёт больше очков?",
+            howtoTitle: "КАК ИГРАТЬ",
+            howto: 'Побеждай кото-призраков — за каждого дают <span style="color:#ffd700;">очки</span>.<br>'
+                + 'Каждые 30 секунд — <span style="color:#a88beb;">новая волна</span>: призраков больше, они быстрее.<br>'
+                + '<span style="color:#7df9ff;">ВЫЖИВАНИЕ:</span> 3 жизни, касание призрака отнимает одну.<br>'
+                + '<span style="color:#ffb86c;">ДУЭЛЬ:</span> 120 секунд, касание −10 очков. Кто набрал больше — победил!',
+            controlsTitle: "УПРАВЛЕНИЕ",
+            controlsInfo: 'P1: <span class="key-badge">A</span><span class="key-badge">D</span> движение · <span class="key-badge">W</span> прыжок · <span class="key-badge">S</span> спуск<br>'
+                + '<span class="key-badge">F</span> атака<br>'
+                + 'P2: <span class="key-badge">◄►▲▼</span> · <span class="key-badge">/</span> атака<br>'
+                + 'Мобильные: джойстик + кнопка атаки. Оружие — в меню ниже.',
+            layoutBtn: "РАСПОЛОЖЕНИЕ КНОПОК",
+            layoutBtn2: "РАСПОЛОЖЕНИЕ (2 ИГРОКА)",
+            weaponsTitle: "ОРУЖИЯ",
+            weapons: { claw: "ЛАПА", yarn: "КЛУБОК", fish: "РЫБА-БУМЕРАНГ", laser: "ЛАЗЕР" },
+            controls1: "P1: F — АТАКА · S — СПУСК",
+            controls2: "P2: / — АТАКА",
+            score: "СЧЁТ:", wave: "ВОЛНА", record: "РЕКОРД:", streak: "СЕРИЯ",
+            lifeLost: "-1 ЖИЗНЬ",
+            overSolo: "ВЫЖИВАНИЕ ОКОНЧЕНО", overDuo: "РАУНД ОКОНЧЕН",
+            winner: "ПОБЕДИЛ", drawRound: "НИЧЬЯ!", you: "ВЫ",
+            newRecord: "НОВЫЙ РЕКОРД!", again: "ЕЩЁ РАЗ",
+            skinUnlocked: "СКИН «ПРИЗРАК» ОТКРЫТ!",
+            skinHint: "Скин «ПРИЗРАК» за 300 очков",
+            skinReady: "Скин «ПРИЗРАК» открыт! Окрас меняется в меню скинов кнопкой «НАСТРОИТЬ».",
+            ghostModeInfo: "Дуэль 120 секунд: кто наберёт больше очков!",
+        },
+        skinCfg: {
+            configure: "НАСТРОИТЬ", title: "НАСТРОЙКА СКИНА",
+            hint: "Выберите окрас кота-призрака",
+            hintFrog: "Выберите вид лягушки",
+            auto: "АВТО (ПОД ФОН)", light: "СВЕТЛЫЙ", dark: "ТЁМНЫЙ", done: "ГОТОВО",
+            frogNormal: "ОБЫЧНАЯ", frogBlue: "ГОЛУБАЯ ШАПОЧКА", frogDivine: "БОЖЕСТВЕННАЯ",
+            gold: "ЗОЛОТЫХ", needGold: "Не хватает золотых рыбок",
+        },
         onlineTitle: "ОНЛАЙН ЛОББИ", yourSkin: "ВАШ СКИН", initializing: "Инициализация P2P...", ready: "Готов к подключению.",
         connected: "ПОДКЛЮЧЕНО!", playerJoined: "ИГРОК ПОДКЛЮЧИЛСЯ! Ожидание данных...", yourId: "ВАШ ID (ОТПРАВЬТЕ ДРУГУ):",
         waitFriend: "Ждите подключения друга...", joinFriend: "ПРИСОЕДИНИТЬСЯ К ДРУГУ:", pasteId: "ВСТАВЬТЕ ID СЮДА",
@@ -20,7 +62,7 @@ const translations = {
         nextLevel: "СЛЕДУЮЩИЙ УРОВЕНЬ", hardUnlocked: "СЛОЖНЫЙ РЕЖИМ ОТКРЫТ!", megaUnlocked: "МЕГАСЛОЖНО ОТКРЫТО!",
         infinityUnlocked: "БЕСКОНЕЧНОСТЬ ОТКРЫТА!", secretUnlocked: "СЕКРЕТНЫЙ СКИН САМУРАЯ ОТКРЫТ!",
         skins: { white: "БЕЛЫЙ", orange: "РЫЖИЙ", black: "ЧЁРНЫЙ", calico: "ТРЁХЦВЕТНЫЙ", pink: "РОЗОВЫЙ", witch: "ВЕДЬМА",
-            cyber: "КИБЕР", froggy: "ЛЯГУШКА", sims: "СИМС", newyear: "НОВОГОДНИЙ", angel: "АНГЕЛ", samurai: "САМУРАЙ ★", foxcoat: "ЭДВАРД" },
+            cyber: "КИБЕР", froggy: "ЛЯГУШКА", sims: "СИМС", newyear: "НОВОГОДНИЙ", angel: "АНГЕЛ", samurai: "САМУРАЙ ★", foxcoat: "ЭДВАРД", ghost: "ПРИЗРАК" },
         npcMessage: "Ваша цель: дойти до замка!", npcMessageInfinity: "Ваша цель: ... у самурая нет цели, только путь.", rotate: "ПОВЕРНИТЕ УСТРОЙСТВО", landscapeRequired: "Требуется альбомная ориентация",
         notEnough: "НЕДОСТАТОЧНО", fish: "РЫБЫ!",
         bossBattle: "БИТВА С БОССОМ", bossSelectHint: "Выберите босса для битвы", bossBack: "НАЗАД",
@@ -38,51 +80,45 @@ const translations = {
             next: 'Далее',
             play: 'Играть!',
             welcome: {
-                title: 'Добро пожаловать в Pixel Cats!',
-                desc:  'Онлайн-игра про котов, рыбок и боссов.<br>Давай покажем тебе, как всё работает!'
+                title: 'Привет!',
+                desc:  'Игра про котов: бегай, прыгай, собирай рыбок.<br>Сейчас покажем основы.'
             },
             movement: {
-                title: 'Управление',
-                desc:  '<kbd>A</kbd><kbd>D</kbd> или <kbd>←</kbd><kbd>→</kbd> — движение<br>'
-                    + '<kbd>W</kbd> или <kbd>Space</kbd> — прыжок<br>'
-                    + 'На мобиле — джойстик слева.'
+                title: 'Движение',
+                desc:  '<kbd>A</kbd><kbd>D</kbd> или <kbd>←</kbd><kbd>→</kbd> — идти.<br>'
+                    + '<kbd>W</kbd> или <kbd>Пробел</kbd> — прыжок.<br>'
+                    + 'На телефоне — джойстик слева.'
             },
             collect: {
-                title: 'Собирай рыбок',
-                desc:  'Прыгай на рыбок, чтобы собирать очки.<br>'
+                title: 'Рыбки',
+                desc:  'Касайся рыбок, чтобы собрать. До высоких — прыгай.<br>'
                     + '<span class="or">Оранжевые</span> · <span class="bl">Синие</span> · <span class="hl">Золотые</span><br>'
-                    + 'Рыбки = валюта для скинов!'
+                    + 'Рыбки — валюта для скинов.'
             },
             modes: {
-                title: 'Режимы игры',
-                desc:  '<span class="gr">Easy</span> → победи, чтобы открыть <span class="hl">Hard</span><br>'
-                    + '<span class="hl">Hard</span> → победи, чтобы открыть <span class="or">Mega</span><br>'
-                    + '<span class="or">Mega</span> → открывает режим <span class="hl">∞ Infinity</span>'
+                title: 'Режимы',
+                desc:  'Классика: <span class="gr">Easy</span> → <span class="hl">Hard</span> → <span class="or">Mega</span> → <span class="hl">∞</span>.<br>'
+                    + 'Ещё: Битва с боссом и Охота на призраков.'
             },
             controls: {
-                title: 'Настрой кнопки под себя!',
-                desc:  'Зайди в <span class="hl">⚙ Настройки → Расположение кнопок</span>.<br>'
-                    + 'Перетаскивай кнопки <span class="gr">в любое место экрана</span>.<br>'
-                    + 'Меняй их <span class="or">размер</span> кнопками − и +.<br>'
-                    + '<span class="hl">Особенно важно для мобильных игроков!</span>'
+                title: 'Кнопки под себя',
+                desc:  '<span class="hl">Настройки → Расположение кнопок</span>.<br>'
+                    + 'Двигай кнопки и меняй размер (− / +).<br>'
+                    + 'Особенно удобно на телефоне.'
             },
             shop: {
-                title: 'Магазин скинов',
-                desc:  'Трать рыбок на новые скины для котиков.<br>'
-                    + 'Некоторые скины открываются за <span class="hl">рекорды</span>,<br>'
-                    + 'другие — купить в магазине.'
+                title: 'Магазин',
+                desc:  'Трать рыбок на скины.<br>'
+                    + 'Часть открывается за <span class="hl">рекорды</span>, часть — за рыбок.'
             },
             online: {
-                title: 'Онлайн-игра',
-                desc:  'Нажми <span class="bl">ОНЛАЙН</span> в главном меню.<br>'
-                    + 'Создай комнату и отправь код другу.<br>'
-                    + 'Поддержка <span class="hl">P2P</span> и <span class="or">Firebase</span> соединений.'
+                title: 'Онлайн (бета)',
+                desc:  'Кнопка <span class="bl">ОНЛАЙН</span> в меню.<br>'
+                    + 'Создай комнату и дай код другу.'
             },
             ready: {
-                title: 'Готов к игре!',
-                desc:  'Теперь ты знаешь всё необходимое.<br>'
-                    + 'Не забудь настроить управление в <span class="hl">⚙ Настройках</span>.<br>'
-                    + '<span class="gr">Удачи и хорошей игры!</span>'
+                title: 'Готово!',
+                desc:  'Это всё нужное.<br><span class="gr">Удачи!</span>'
             },
         },
         settings: "⚙ НАСТРОЙКИ", settingsBack: "← НАЗАД",
@@ -124,8 +160,9 @@ const translations = {
         ctrlEdit: "✏️ РЕДАКТИРОВАТЬ РАСПОЛОЖЕНИЕ", ctrlDragHint: "Перетащите элементы управления",
         editorTitle: "✏️ РЕДАКТОР УПРАВЛЕНИЯ", editorHint: "Перетащи элементы куда удобно",
         editorReset: "↺ СБРОС", editorSave: "✓ СОХРАНИТЬ",
+        edJoyP1: "ДЖОЙ P1", edJoyP1_2p: "ДЖОЙ P1 (2И)", edJoyP2_2p: "ДЖОЙ P2 (2И)", edAtkP1: "АТАКА P1", edWeapon: "ОРУЖИЕ P1", edAtkP2: "АТАКА P2", edWeapon2: "ОРУЖИЕ P2",
         // — Мобильный промпт —
-        mobilePrompt: "📱 Рекомендуется полноэкранный режим для удобства игры!",
+        mobilePrompt: "Рекомендуется полноэкранный режим для удобства игры!",
         // — JS статусы P2P —
         statusInitializing: "⏳ Подключение к серверу...",
         statusAllDown: "⚠ Все серверы недоступны. Проверьте интернет или попробуйте позже.",
@@ -179,7 +216,7 @@ const translations = {
         bossGuestDesc: "Хост выберет этого босса",
         // — Аккаунты: авторизация —
         accLogin: "ВХОД", accRegister: "РЕГИСТРАЦИЯ",
-        accLoginBtn: "▶ ВОЙТИ", accRegisterBtn: "✅ СОЗДАТЬ",
+        accLoginBtn: "ВОЙТИ", accRegisterBtn: "✅ СОЗДАТЬ",
         accLoggingIn: "⏳ Входим...", accCreating: "⏳ Создаём...",
         accBack: "← НАЗАД",
         accProfileTitle: "ПРОФИЛЬ",
@@ -212,9 +249,9 @@ const translations = {
         // — Аккаунты: таблица рекордов —
         accBoardTitle: "ТАБЛИЦА РЕКОРДОВ",
         accBoardBtn: "РЕКОРДЫ",
-        accBoardNormal: "ОБЫЧНЫЙ", accBoardInfinity: "БЕСКОНЕЧНЫЙ", accBoardBosses: "БОССЫ",
+        accBoardNormal: "ОБЫЧНЫЙ", accBoardInfinity: "БЕСКОНЕЧНЫЙ", accBoardBosses: "БОССЫ", accBoardGhost: "ПРИЗРАКИ",
         accBoardLoading: "Загрузка...", accBoardEmpty: "Пока нет рекордов",
-        accBoardNoConn: "Нет соединения", accBoardErr: "Ошибка загрузки",
+        accBoardNoConn: "Нет соединения", accBoardErr: "Ошибка загрузки", noInternet: "Нет доступа к интернету",
         accBoardYou: "ты",
         accBoardColRank: "№", accBoardColName: "ИМЯ", accBoardColCat: "КОТ", accBoardColScore: "СЧЁТ", accBoardColBosses: "БОССЫ",
         // — Босс: уведомления во время боя —
@@ -240,7 +277,49 @@ const translations = {
         title: "PIXEL CATS", player1: "1 PLAYER", player2: "2 PLAYERS", mobileAuto: "MOBILE: AUTO", mobileOn: "MOBILE: ON",
         online: "ONLINE (beta)", fullscreen: "[ ] FULLSCREEN", player1Label: "PLAYER 1", player2Label: "PLAYER 2",
         easyMode: "EASY MODE", hardMode: "HARD MODE", megaHardMode: "MEGAHARD", infinityMode: "INFINITY",
-        locked: "🔒", buy: "BUY", lockedBtn: "LOCKED", needDist: "NEED DIST", infScore: "INF SCORE",
+        classicMode: "CLASSIC", minigamesMode: "MINIGAMES", classicHint: "Choose a mode",
+        minigamesTitle: "MINIGAMES", minigamesDev: "Minigames are in development, stay tuned for upcoming updates",
+        locked: "🔒", buy: "BUY", lockedBtn: "LOCKED", needDist: "NEED DIST", infScore: "INF SCORE", needGhost: "GHOSTS:",
+        ghosthunt: {
+            name: "GHOST HUNT", btn: "GHOST HUNT",
+            hint: "Fight off the ghost cats and score points!",
+            solo: "1 PLAYER — SURVIVAL", duo: "2 PLAYERS — DUEL",
+            soloDesc: "3 lives. Survive as long as you can!",
+            duoDesc: "120 seconds. Who scores more?",
+            howtoTitle: "HOW TO PLAY",
+            howto: 'Defeat ghost cats — each one gives <span style="color:#ffd700;">points</span>.<br>'
+                + 'Every 30 seconds a <span style="color:#a88beb;">new wave</span>: more ghosts, faster ghosts.<br>'
+                + '<span style="color:#7df9ff;">SURVIVAL:</span> 3 lives, a ghost touch costs one.<br>'
+                + '<span style="color:#ffb86c;">DUEL:</span> 120 seconds, touch −10 points. Highest score wins!',
+            controlsTitle: "CONTROLS",
+            controlsInfo: 'P1: <span class="key-badge">A</span><span class="key-badge">D</span> move · <span class="key-badge">W</span> jump · <span class="key-badge">S</span> drop<br>'
+                + '<span class="key-badge">F</span> attack<br>'
+                + 'P2: <span class="key-badge">◄►▲▼</span> · <span class="key-badge">/</span> attack<br>'
+                + 'Mobile: joystick + attack button. Weapon — in the menu below.',
+            layoutBtn: "BUTTON LAYOUT",
+            layoutBtn2: "LAYOUT (2 PLAYERS)",
+            weaponsTitle: "WEAPONS",
+            weapons: { claw: "CLAW", yarn: "YARN BALL", fish: "FISH BOOMERANG", laser: "LASER" },
+            controls1: "P1: F — ATTACK · S — DROP",
+            controls2: "P2: / — ATTACK",
+            score: "SCORE:", wave: "WAVE", record: "BEST:", streak: "STREAK",
+            lifeLost: "-1 LIFE",
+            overSolo: "SURVIVAL OVER", overDuo: "ROUND OVER",
+            winner: "WINNER:", drawRound: "DRAW!", you: "YOU",
+            newRecord: "NEW RECORD!", again: "PLAY AGAIN",
+            skinUnlocked: "GHOST SKIN UNLOCKED!",
+            skinHint: "GHOST skin at 300 points",
+            skinReady: "GHOST skin unlocked! Change its colour via CONFIGURE in the skin menu.",
+            ghostModeInfo: "120-second duel: who scores more!",
+        },
+        skinCfg: {
+            configure: "CONFIGURE", title: "SKIN SETTINGS",
+            hint: "Choose the ghost cat colouring",
+            hintFrog: "Choose the frog style",
+            auto: "AUTO (MATCH BG)", light: "LIGHT", dark: "DARK", done: "DONE",
+            frogNormal: "NORMAL", frogBlue: "BLUE CAP", frogDivine: "DIVINE",
+            gold: "GOLD", needGold: "Not enough gold fish",
+        },
         onlineTitle: "ONLINE LOBBY", yourSkin: "YOUR SKIN", initializing: "Initializing P2P...", ready: "Ready to connect.",
         connected: "CONNECTED!", playerJoined: "PLAYER JOINED! Waiting for data...", yourId: "YOUR ID (SEND TO FRIEND):",
         waitFriend: "Wait for friend to join...", joinFriend: "JOIN FRIEND'S GAME:", pasteId: "PASTE ID HERE",
@@ -252,7 +331,7 @@ const translations = {
         nextLevel: "PLAY NEXT LEVEL", hardUnlocked: "HARD MODE UNLOCKED!", megaUnlocked: "MEGAHARD UNLOCKED!",
         infinityUnlocked: "INFINITY UNLOCKED!", secretUnlocked: "SECRET SAMURAI SKIN UNLOCKED!",
         skins: { white: "WHITE", orange: "ORANGE", black: "BLACK", calico: "CALICO", pink: "PINK", witch: "WITCH",
-            cyber: "CYBER", froggy: "FROG", sims: "SIMS", newyear: "XMAS", angel: "ANGEL", samurai: "SAMURAI ★", foxcoat: "FULLMETAL" },
+            cyber: "CYBER", froggy: "FROG", sims: "SIMS", newyear: "XMAS", angel: "ANGEL", samurai: "SAMURAI ★", foxcoat: "FULLMETAL", ghost: "GHOST" },
         npcMessage: "Your goal is to reach the castle!", npcMessageInfinity: "Your goal: ... a samurai has no goal, only the path.", rotate: "PLEASE ROTATE YOUR DEVICE", landscapeRequired: "Landscape mode required",
         notEnough: "NOT ENOUGH", fish: "FISH!",
         bossBattle: "BOSS BATTLE", bossSelectHint: "Select a boss to fight", bossBack: "BACK",
@@ -270,51 +349,45 @@ const translations = {
             next: 'Next',
             play: "Let's Play!",
             welcome: {
-                title: 'Welcome to Pixel Cats!',
-                desc:  'An online game about cats, fish and bosses.<br>Let us show you how everything works!'
+                title: 'Hi!',
+                desc:  'A game about cats: run, jump, collect fish.<br>Here are the basics.'
             },
             movement: {
-                title: 'Controls',
-                desc:  '<kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> — move<br>'
-                    + '<kbd>W</kbd> or <kbd>Space</kbd> — jump<br>'
-                    + 'On mobile — use the joystick on the left.'
+                title: 'Movement',
+                desc:  '<kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> — move.<br>'
+                    + '<kbd>W</kbd> or <kbd>Space</kbd> — jump.<br>'
+                    + 'On mobile — joystick on the left.'
             },
             collect: {
-                title: 'Collect Fish',
-                desc:  'Jump onto fish to score points.<br>'
+                title: 'Fish',
+                desc:  'Touch fish to collect them. Jump to reach high ones.<br>'
                     + '<span class="or">Orange</span> · <span class="bl">Blue</span> · <span class="hl">Gold</span><br>'
-                    + 'Fish = score points AND shop currency!'
+                    + 'Fish are currency for skins.'
             },
             modes: {
-                title: 'Game Modes',
-                desc:  '<span class="gr">Easy</span> → win to unlock <span class="hl">Hard</span><br>'
-                    + '<span class="hl">Hard</span> → win to unlock <span class="or">Mega</span><br>'
-                    + '<span class="or">Mega</span> → unlocks <span class="hl">∞ Infinity</span> mode'
+                title: 'Modes',
+                desc:  'Classic: <span class="gr">Easy</span> → <span class="hl">Hard</span> → <span class="or">Mega</span> → <span class="hl">∞</span>.<br>'
+                    + 'Also: Boss Battle and Ghost Hunt.'
             },
             controls: {
-                title: 'Customize Your Controls!',
-                desc:  'Go to <span class="hl">⚙ Settings → Controls Layout</span>.<br>'
-                    + 'Drag buttons <span class="gr">anywhere on the screen</span>.<br>'
-                    + 'Use − and + to <span class="or">resize</span> them freely.<br>'
-                    + '<span class="hl">Essential for mobile players!</span>'
+                title: 'Custom controls',
+                desc:  '<span class="hl">Settings → Controls Layout</span>.<br>'
+                    + 'Drag buttons and resize (− / +).<br>'
+                    + 'Especially handy on mobile.'
             },
             shop: {
-                title: 'Skin Shop',
-                desc:  'Spend your fish on new cat skins.<br>'
-                    + 'Some skins unlock via <span class="hl">high scores</span>,<br>'
-                    + 'others are available to buy in the shop.'
+                title: 'Shop',
+                desc:  'Spend fish on skins.<br>'
+                    + 'Some unlock via <span class="hl">records</span>, some are bought.'
             },
             online: {
-                title: 'Online Play',
-                desc:  'Press <span class="bl">ONLINE</span> in the main menu.<br>'
-                    + 'Create a room and share the code with a friend.<br>'
-                    + 'Supports <span class="hl">P2P</span> and <span class="or">Firebase</span> connections.'
+                title: 'Online (beta)',
+                desc:  'Press <span class="bl">ONLINE</span> in the menu.<br>'
+                    + 'Create a room and share the code.'
             },
             ready: {
-                title: 'Ready to Play!',
-                desc:  "Now you know everything you need.<br>"
-                    + 'Don\'t forget to customize controls in <span class="hl">⚙ Settings</span>.<br>'
-                    + '<span class="gr">Good luck and happy fish hunting!</span>'
+                title: 'Ready!',
+                desc:  "That's all you need.<br><span class=\"gr\">Good luck!</span>"
             },
         },
         settings: "⚙ SETTINGS", settingsBack: "← BACK",
@@ -356,8 +429,9 @@ const translations = {
         ctrlEdit: "✏️ EDIT LAYOUT", ctrlDragHint: "Drag controls to reposition",
         editorTitle: "✏️ CONTROLS EDITOR", editorHint: "Drag elements where you like",
         editorReset: "↺ RESET", editorSave: "✓ SAVE",
+        edJoyP1: "JOY P1", edJoyP1_2p: "JOY P1 (2P)", edJoyP2_2p: "JOY P2 (2P)", edAtkP1: "ATTACK P1", edWeapon: "WEAPON P1", edAtkP2: "ATTACK P2", edWeapon2: "WEAPON P2",
         // — Mobile prompt —
-        mobilePrompt: "📱 Fullscreen mode is recommended for the best experience!",
+        mobilePrompt: "Fullscreen mode is recommended for the best experience!",
         // — JS P2P statuses —
         statusInitializing: "⏳ Connecting to server...",
         statusAllDown: "⚠ All servers unavailable. Check your internet or try later.",
@@ -411,7 +485,7 @@ const translations = {
         bossGuestDesc: "Host will select this boss",
         // — Accounts: auth —
         accLogin: "LOGIN", accRegister: "REGISTER",
-        accLoginBtn: "▶ LOGIN", accRegisterBtn: "✅ CREATE",
+        accLoginBtn: "LOGIN", accRegisterBtn: "✅ CREATE",
         accLoggingIn: "⏳ Logging in...", accCreating: "⏳ Creating...",
         accBack: "← BACK",
         accProfileTitle: "PROFILE",
@@ -444,9 +518,9 @@ const translations = {
         // — Accounts: leaderboard —
         accBoardTitle: "LEADERBOARD",
         accBoardBtn: "RECORDS",
-        accBoardNormal: "NORMAL", accBoardInfinity: "∞ INFINITY", accBoardBosses: "BOSSES",
+        accBoardNormal: "NORMAL", accBoardInfinity: "∞ INFINITY", accBoardBosses: "BOSSES", accBoardGhost: "GHOSTS",
         accBoardLoading: "Loading...", accBoardEmpty: "No records yet",
-        accBoardNoConn: "No connection", accBoardErr: "Load error",
+        accBoardNoConn: "No connection", accBoardErr: "Load error", noInternet: "No internet access",
         accBoardYou: "you",
         accBoardColRank: "№", accBoardColName: "NAME", accBoardColCat: "CAT", accBoardColScore: "SCORE", accBoardColBosses: "⚔️ BOSSES",
         // — Boss: in-battle notifications —
@@ -516,14 +590,39 @@ function safeSetHTML(id, html) {
 
 function updateAllTexts() {
     safeSetText('btn-mode', numPlayers === 1 ? t('player1') : t('player2'));
-    const mobileBtn = document.getElementById('btn-mobile-toggle');
-    if (mobileBtn) mobileBtn.innerText = forceMobile ? t('mobileOn') : t('mobileAuto');
+    if (typeof updateMobileToggleUI === 'function') updateMobileToggleUI();
     safeSetText('btn-online-menu', t('online'));
     safeSetText('btn-replay-tutorial', t('replayTutorial'));
     safeSetText('btn-fullscreen', t('fullscreen'));
     safeSetText('p1-label', t('player1Label'));
     safeSetText('p2-label', t('player2Label'));
     safeSetText('btn-easy', t('easyMode'));
+    // Новые кнопки/страницы меню режимов
+    safeSetText('btn-classic', t('classicMode'));
+    safeSetText('btn-minigames', t('minigamesMode'));
+    safeSetText('classic-title', t('classicMode'));
+    safeSetText('classic-hint', t('classicHint'));
+    safeSetText('btn-classic-back', '← ' + t('back'));
+    safeSetText('minigames-title', t('minigamesTitle'));
+    safeSetText('minigames-dev', t('minigamesDev'));
+    safeSetText('btn-minigames-back', '← ' + t('back'));
+    // Охота на призраков
+    if (typeof updateGhostHuntTexts === 'function') { try { updateGhostHuntTexts(); } catch (e) {} }
+    safeSetText('fb-ghost-title', t('ghosthunt.name'));
+    safeSetText('fb-ghost-info', t('ghosthunt.ghostModeInfo'));
+    safeSetText('p2p-ghost-title', t('ghosthunt.name'));
+    safeSetText('p2p-ghost-info', t('ghosthunt.ghostModeInfo'));
+    const _ghIco = t('accBoardGhost');
+    safeSetText('fb-omode-ghost', _ghIco);
+    safeSetText('p2p-omode-ghost', _ghIco);
+    // Настройка скина
+    safeSetText('btn-skin-config', t('skinCfg.configure'));
+    safeSetText('skin-config-title', t('skinCfg.title'));
+    safeSetText('skin-config-hint', t('skinCfg.hint'));
+    safeSetText('skin-var-auto', t('skinCfg.auto'));
+    safeSetText('skin-var-light', t('skinCfg.light'));
+    safeSetText('skin-var-dark', t('skinCfg.dark'));
+    safeSetText('skin-config-close', t('skinCfg.done'));
     updateDifficultyButtons();
     safeSetText('online-title', t('onlineTitle'));
     safeSetText('your-skin-label', t('yourSkin'));
@@ -566,7 +665,7 @@ function updateAllTexts() {
     safeSetText('boss-title', t('bossBattle'));
     safeSetText('boss-select-hint', t('bossSelectHint'));
     safeSetText('btn-boss-back', t('bossBack'));
-    safeSetText('btn-boss', '⚔️ ' + t('bossBattle'));
+    safeSetText('btn-boss', t('bossBattle'));
     safeSetText('boss-win-title', t('bossWin'));
     safeSetText('boss-win-msg', t('bossDefeated'));
     safeSetText('btn-boss-continue', t('bossContinue'));
@@ -641,7 +740,7 @@ function updateAllTexts() {
     _s('btn-editor-save',         t('editorSave'));
     // Mobile prompt
     const _fp = document.getElementById('fullscreen-prompt');
-    if (_fp) { const inner = _fp.querySelector('span,div') || _fp; if (_fp.childNodes.length) _fp.childNodes[0].textContent = t('mobilePrompt'); }
+    if (_fp) _fp.textContent = t('mobilePrompt');
     // ── Accounts UI ─────────────────────────────────────────────
     const _s2 = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
     const _ph = (id, txt) => { const el = document.getElementById(id); if (el) el.placeholder = txt; };
@@ -667,6 +766,7 @@ function updateAllTexts() {
     _s2('btn-open-leaderboard', t('accBoardBtn'));
     _s2('board-tab-bosses',   t('accBoardBosses'));
     _s2('board-tab-infinity',  t('accBoardInfinity'));
+    _s2('board-tab-ghost',     t('accBoardGhost'));
     _s2('btn-board-back',      t('accBoardBack'));
     _s2('board-th-rank',       t('accBoardColRank'));
     _s2('board-th-name',       t('accBoardColName'));

@@ -31,21 +31,35 @@ const p2PreviewCanvas = document.getElementById('p2-preview'), p2PreviewCtx = p2
 const onlineSkinCanvas = document.getElementById('online-skin-preview'), onlineSkinCtx = onlineSkinCanvas.getContext('2d');
 const onlineSkinLabel = document.getElementById('online-skin-name');
 
-let zoomFactor = 1.0, isMobile = false, forceMobile = false;
+let zoomFactor = 1.0, isMobile = false, forceMobile = SafeStorage.getBool('pixelCatsForceMobile');
+
+// ── HiDPI / Retina rendering ─────────────────────────────────────────────────
+// Игра рисует в ЛОГИЧЕСКИХ координатах (LOGICAL_W × LOGICAL_H = CSS-пиксели),
+// а буфер канваса увеличен в RS раз (= devicePixelRatio, капнут до 2). Масштаб RS
+// вшит только в базовые трансформы — пропорции мира не меняются, но на смартфонах
+// с плотным экраном картинка такая же чёткая, как на ПК.
+let LOGICAL_W = window.innerWidth, LOGICAL_H = window.innerHeight, RS = 1;
 
 // Render caches — declared here so resizeCanvas() can access them safely
 let _bgGrad = null, _bgGradDiff = null, _bgGradH = 0, _bgGradOff = null;
 let _sunCaches = {};
 let _rainbowCache = null, _rainbowCacheW = 0, _rainbowCacheH = 0;
 let _behelitCache = null, _behelitCacheR = 0;
-let _forestCache = null, _forestCacheH = 0, _forestCacheGround = 0;
+let _forestCache = null, _forestCacheH = 0, _forestCacheGround = 0, _forestCacheSc = 0;
+let _earthCache = null, _earthCacheRS = 0;
 
 function toggleMobileMode() {
     forceMobile = !forceMobile;
+    SafeStorage.set('pixelCatsForceMobile', forceMobile ? 'true' : 'false'); // сохраняем выбор между перезагрузками
+    updateMobileToggleUI();
+    resizeCanvas(); updatePlayerModeUI();
+}
+// Приводит вид кнопки «МОБИЛЬНЫЙ» в соответствие с forceMobile (вызывается и при старте)
+function updateMobileToggleUI() {
     const btn = document.getElementById('btn-mobile-toggle');
+    if (!btn) return;
     if (forceMobile) { btn.innerText = t('mobileOn'); btn.classList.remove('btn-dark'); btn.classList.add('btn-green'); }
     else { btn.innerText = t('mobileAuto'); btn.classList.add('btn-dark'); btn.classList.remove('btn-green'); }
-    resizeCanvas(); updatePlayerModeUI();
 }
 
 // Track whether mobile controls should be visible (only during gameplay or settings)
@@ -66,7 +80,11 @@ function _hideMobileControls() {
 
 function checkMobile() {
     if (forceMobile) isMobile = true;
-    else isMobile = ('ontouchstart' in window) || (window.innerWidth <= 900);
+    // pointer:coarse — стандартный признак сенсорного устройства (на мыши = false, не ломает ПК).
+    // maxTouchPoints НЕ используем — он даёт ложные срабатывания на Windows-ПК.
+    else isMobile = ('ontouchstart' in window)
+        || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+        || (window.innerWidth <= 900);
     const controlsLayer = document.getElementById('mobile-controls-layer');
     if (isMobile) {
         // Уменьшаем зум сильнее — больше мира видно на экране
@@ -98,12 +116,28 @@ function checkMobile() {
     }
 }
 
-function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; checkMobile();
+function resizeCanvas() {
+    LOGICAL_W = window.innerWidth;
+    LOGICAL_H = window.innerHeight;
+    // Рендер-масштаб = плотность пикселей устройства (капнут до 2 ради FPS).
+    // На ПК обычно 1 → поведение не меняется; на смартфонах 2 → вдвое больше пикселей.
+    RS = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+    // CSS-размер канваса = логический (как было: 100vw × 100vh)
+    canvas.style.width = LOGICAL_W + 'px';
+    canvas.style.height = LOGICAL_H + 'px';
+    // Буфер канваса = логический × RS (физические пиксели → чёткость)
+    canvas.width = Math.round(LOGICAL_W * RS);
+    canvas.height = Math.round(LOGICAL_H * RS);
+    ctx.imageSmoothingEnabled = false; // пиксель-арт: чёткие кеши (земля, лес, солнце)
+    checkMobile();
     // Invalidate screen-size-dependent caches
-    _bgGrad = null; _rainbowCache = null; _forestCache = null; _forestCacheGround = 0; }
+    _bgGrad = null; _rainbowCache = null; _forestCache = null; _forestCacheGround = 0;
+    _sunCaches = {}; _behelitCache = null;
+}
 window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
 let gameTime = 0, score = 0, isGameOver = false, isPlaying = false, isWin = false;
+let floatingTexts = [];   // всплывающий «+1» при сборе рыбки (анимация подбора)
 let animationId, menuAnimationId, currentDifficulty = 'easy', lastTime = 0, fpsDisplayTime = 0, fpsFrames = 0, numPlayers = 1, frameCount = 0;
 const camera = { x: 0, y: 0 }, moveSpeed = 6, blockSize = 50;
 // gravity и jumpStrength объявлены как let, чтобы init() мог переключать
@@ -113,6 +147,41 @@ const CASTLE_SCORE = 250, CASTLE_START_X = CASTLE_SCORE * blockSize;
 let castleGenerated = false, inCastle = false;
 let highScore = SafeStorage.getInt('pixelCatsDiffScore');
 let infinityHighScore = SafeStorage.getInt('pixelCatsInfinityHighScore');
+// Рекорд мини-игры «Охота на призраков»
+let ghostHighScore = SafeStorage.getInt('pixelCatsGhostHighScore');
+// Настройки окраса скинов: { skinId: 'auto' | 'light' | 'dark' }.
+// Базовая форма — светлая ('light'). Синхронизируется с облаком и видна другим игрокам.
+let mySkinVariants = SafeStorage.getJSON('pixelCatsSkinVariants') || {};
+let unlockedSkinVariants = SafeStorage.getJSON('pixelCatsUnlockedVariants') || [];
+
+// Вариант окраса скина для кота: свой или удалённого игрока (в онлайне)
+function getSkinVariant(skinId, isPlayer1) {
+    if (net.isOnline) {
+        const isRemote = (net.isHost && isPlayer1 === false) || (!net.isHost && isPlayer1 === true);
+        if (isRemote) return net.remoteSkinVariant || 'auto';
+    }
+    return mySkinVariants[skinId] || 'auto';
+}
+
+// Определения вариантов окраса по скинам (для попапа «НАСТРОИТЬ»).
+const SKIN_VARIANT_DEFS = {
+    ghost:  { hintKey: 'skinCfg.hint', def: 'auto', options: [
+        { id: 'auto',  labelKey: 'skinCfg.auto'  },
+        { id: 'light', labelKey: 'skinCfg.light' },
+        { id: 'dark',  labelKey: 'skinCfg.dark'  },
+    ]},
+    froggy: { hintKey: 'skinCfg.hintFrog', def: 'normal', options: [
+        { id: 'normal',  labelKey: 'skinCfg.frogNormal' },
+        { id: 'bluehat', labelKey: 'skinCfg.frogBlue'   },
+    ]},
+};
+function isVariantUnlocked(skinId, vId) {
+    const defs = SKIN_VARIANT_DEFS[skinId];
+    if (!defs) return true;
+    const opt = defs.options.find(o => o.id === vId);
+    if (!opt || !opt.cost) return true;
+    return unlockedSkinVariants.includes(skinId + ':' + vId);
+}
 let hardUnlocked = SafeStorage.getBool('pixelCatsHardUnlocked');
 let megaHardUnlocked = SafeStorage.getBool('pixelCatsMegaHardUnlocked');
 let infinityUnlocked = SafeStorage.getBool('pixelCatsInfinityUnlocked');
@@ -126,7 +195,7 @@ const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
 function getWorldGround() {
     return (net.isOnline && net.worldGroundBase > 0)
         ? net.worldGroundBase
-        : (canvas.height - 100);
+        : (LOGICAL_H - 100);
 }
 
 // ============================================
@@ -152,6 +221,7 @@ const net = {
     myId: null,
     worldSeed: 0,
     remoteSkin: 0,
+    remoteSkinVariant: 'auto',
     remote: { x: 160, y: 100, vx: 0, vy: 0, dir: true, lastTime: 0 },
     lastSentTime: 0,
     gameStartTime: 0,
@@ -189,12 +259,15 @@ const SKINS = [
     { id: 'pink', nameKey: 'skins.pink', body: '#ffc0cb', nose: '#ff1493', eye: 'black', type: 'solid', cost: 10, currency: 'blue' },
     { id: 'witch', nameKey: 'skins.witch', body: '#2c3e50', nose: '#bdc3c7', eye: '#e74c3c', type: 'solid', hat: 'witch', reqScore: 200 },
     { id: 'cyber', nameKey: 'skins.cyber', body: '#2d3436', nose: '#00cec9', eye: '#00cec9', type: 'cyber', cost: 20, currency: 'blue' },
-    { id: 'froggy', nameKey: 'skins.froggy', body: '#57606f', nose: '#ffafcc', eye: 'black', type: 'tabby', hat: 'frog', cost: 20, currency: 'gold' },
+    { id: 'froggy', nameKey: 'skins.froggy', body: '#57606f', nose: '#ffafcc', eye: 'black', type: 'tabby', hat: 'frog', cost: 20, currency: 'gold', configurable: true },
     { id: 'sims', nameKey: 'skins.sims', body: '#dfe6e9', nose: '#ffafcc', eye: 'black', type: 'solid', hat: 'plumbob', cost: 50, currency: 'orange' },
     { id: 'newyear', nameKey: 'skins.newyear', body: '#ffeaa7', nose: '#ff9ff3', eye: '#63421d', type: 'tabby', hat: 'santa', acc: 'garland' },
     { id: 'angel', nameKey: 'skins.angel', body: '#ffffff', nose: '#ffafcc', eye: '#3498db', type: 'solid', hat: 'halo', acc: 'wings', reqInfinityScore: 300 },
     { id: 'samurai', nameKey: 'skins.samurai', body: '#1a1a1a', nose: '#8b0000', eye: '#ff0000', type: 'samurai', hat: 'samurai', acc: 'katana', secret: true },
-    { id: 'foxcoat', nameKey: 'skins.foxcoat', body: '#f1c40f', nose: '#ffafcc', eye: '#f39c12', type: 'foxcoat', cost: 30, currency: 'orange' }
+    { id: 'foxcoat', nameKey: 'skins.foxcoat', body: '#f1c40f', nose: '#ffafcc', eye: '#f39c12', type: 'foxcoat', cost: 30, currency: 'orange' },
+    // Кот-призрак — награда мини-игры «Охота на призраков» (300 очков).
+    // Базовая форма белая; окрас настраивается (авто/светлый/тёмный) кнопкой «НАСТРОИТЬ».
+    { id: 'ghost', nameKey: 'skins.ghost', body: '#f4f8ff', nose: '#9bb8d3', eye: '#7df9ff', type: 'ghost', reqGhostScore: 300, configurable: true }
 ];
 
 let p1SkinIndex = 0, p2SkinIndex = 1;
@@ -561,6 +634,16 @@ const IconGenerator = (() => {
             rects(ctx, [[1,8,14,2]], '#1e8449');
             rects(ctx, [[4,3,8,1],[4,12,8,1]], '#52be80');
         },
+        // Кото-призрак (для режима «Охота на призраков»)
+        ghost(ctx) {
+            rects(ctx, [[3,3,10,9]], '#dfe9f5');                           // тело
+            rects(ctx, [[3,1,3,2],[3,0,1,1],[10,1,3,2],[12,0,1,1]], '#dfe9f5'); // уши
+            rects(ctx, [[3,12,2,2],[7,12,2,2],[11,12,2,2]], '#dfe9f5');    // волнистый низ
+            rects(ctx, [[5,12,2,1],[9,12,2,1]], '#9fc4ea');                // тень между зубцами
+            rects(ctx, [[5,6,2,2],[9,6,2,2]], '#7df9ff');                  // глаза
+            rects(ctx, [[5,6,1,1],[9,6,1,1]], '#ffffff');                  // блики
+            rects(ctx, [[7,9,2,1]], '#9bb8d3');                            // рот
+        },
         // 💡 Подсказка
         hint(ctx) {
             rects(ctx, [[5,1,6,6],[4,3,8,6]], '#ffd700');
@@ -594,7 +677,8 @@ const IconGenerator = (() => {
             return url;
         },
         getCatIcon(skin) {
-            const key = 'cat_' + skin.id;
+            // Вариант окраса входит в ключ кэша — настроенные скины не перемешиваются
+            const key = 'cat_' + skin.id + (skin._variant ? '_' + skin._variant : '');
             if (cache[key]) return cache[key];
             const CW = 120, CH = 80;
             const c = document.createElement('canvas');

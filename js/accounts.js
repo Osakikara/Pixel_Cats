@@ -23,24 +23,8 @@ async function handleOnlineClick() {
     if (btn) { btn.disabled = true; btn.textContent = '⏳ ПОДКЛЮЧЕНИЕ...'; }
 
     try {
-        // 1. Firebase SDK
-        await _loadSdkIfNeeded('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
-        await _loadSdkIfNeeded('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js');
-        await _loadSdkIfNeeded('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js');
-
-        // 2. PeerJS — пробуем несколько CDN
-        if (typeof Peer === 'undefined') {
-            const PEER_CDNS = [
-                'https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js',
-                'https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js',
-            ];
-            let peerLoaded = false;
-            for (const url of PEER_CDNS) {
-                try { await _loadSdkIfNeeded(url); peerLoaded = true; break; } catch(e) {}
-            }
-            if (!peerLoaded) window._peerJsLoadFailed = true;
-        }
+        // 1-2. Firebase SDK + PeerJS
+        await _loadOnlineSdks();
 
         // 3. Инициализируем систему аккаунтов (Firebase Auth + DB)
         await AccountSystem.connectFirebase();
@@ -54,7 +38,47 @@ async function handleOnlineClick() {
         _onlineConnecting = false;
         console.error('[handleOnlineClick] Ошибка подключения:', e);
         if (btn) { btn.disabled = false; btn.textContent = 'ОНЛАЙН (бета)'; }
-        _showAccountToast('✗ Нет соединения с интернетом', '#e74c3c');
+        _showAccountToast((typeof t==='function'?t('noInternet'):'Нет доступа к интернету'), '#e74c3c');
+    }
+}
+
+// Загрузка SDK для онлайна (Firebase + PeerJS). Используется и кнопкой, и автоподключением.
+async function _loadOnlineSdks() {
+    await _loadSdkIfNeeded('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+    await _loadSdkIfNeeded('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js');
+    await _loadSdkIfNeeded('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js');
+    if (typeof Peer === 'undefined') {
+        const PEER_CDNS = [
+            'https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js',
+            'https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js',
+        ];
+        let peerLoaded = false;
+        for (const url of PEER_CDNS) {
+            try { await _loadSdkIfNeeded(url); peerLoaded = true; break; } catch(e) {}
+        }
+        if (!peerLoaded) window._peerJsLoadFailed = true;
+    }
+}
+
+// Автоподключение к онлайну при старте — ТИХО. Если Firebase доступен,
+// сами включаем онлайн (кнопка → «ОНЛАЙН ЛОББИ», появляются ВОЙТИ/РЕКОРДЫ).
+// Если доступа нет — молча остаёмся офлайн, без ошибок и тостов.
+async function _tryAutoOnline() {
+    if (_onlineConnected || _onlineConnecting) return false;
+    _onlineConnecting = true;
+    try {
+        await _loadOnlineSdks();
+        await AccountSystem.connectFirebase();
+        _onlineConnected = true;
+        _onlineConnecting = false;
+        _revealOnlineUI();
+        console.info('[AutoOnline] Firebase доступен — онлайн включён автоматически.');
+        return true;
+    } catch (e) {
+        _onlineConnecting = false;
+        console.info('[AutoOnline] Firebase недоступен — остаёмся офлайн.');
+        return false;
     }
 }
 
@@ -199,6 +223,8 @@ const AccountSystem = (() => {
         return {
             highScore:         highScore || 0,
             infinityHighScore: infinityHighScore || 0,
+            ghostHighScore:    (typeof ghostHighScore !== 'undefined' ? ghostHighScore : 0) || 0,
+            skinVariants:      (typeof mySkinVariants !== 'undefined' ? Object.assign({}, mySkinVariants) : {}),
             hardUnlocked:      hardUnlocked || false,
             megaHardUnlocked:  megaHardUnlocked || false,
             infinityUnlocked:  infinityUnlocked || false,
@@ -218,6 +244,11 @@ const AccountSystem = (() => {
     function _applyProgress(prog) {
         highScore         = Math.max(prog.highScore || 0, highScore || 0);
         infinityHighScore = Math.max(prog.infinityHighScore || 0, infinityHighScore || 0);
+        if (typeof ghostHighScore !== 'undefined') ghostHighScore = Math.max(prog.ghostHighScore || 0, ghostHighScore || 0);
+        // Настройки окраса скинов: облачные дополняют локальные (локальные приоритетнее)
+        if (typeof mySkinVariants !== 'undefined' && prog.skinVariants) {
+            mySkinVariants = Object.assign({}, prog.skinVariants, mySkinVariants);
+        }
         hardUnlocked      = hardUnlocked || prog.hardUnlocked || false;
         megaHardUnlocked  = megaHardUnlocked || prog.megaHardUnlocked || false;
         infinityUnlocked  = infinityUnlocked || prog.infinityUnlocked || false;
@@ -306,13 +337,17 @@ const AccountSystem = (() => {
         const ref = _db.ref(DB_BOARD + '/' + uid);
         ref.once('value').then(snap => {
             const prev = snap.val() || {};
-            const isNew = mode === 'infinity' ? scoreVal > (prev.scoreInfinity||0) : scoreVal > (prev.scoreNormal||0);
+            const isNew = mode === 'infinity' ? scoreVal > (prev.scoreInfinity||0)
+                        : mode === 'ghost'    ? scoreVal > (prev.scoreGhost||0)
+                        : scoreVal > (prev.scoreNormal||0);
             if (!isNew) return;
             return ref.set({
                 name:          _profile.name,
                 skinId:        (SKINS[p1SkinIndex]||SKINS[0]).id,
-                scoreNormal:   mode==='infinity' ? (prev.scoreNormal||0) : Math.max(scoreVal,prev.scoreNormal||0),
+                skinVariant:   (typeof mySkinVariants!=='undefined' ? mySkinVariants[(SKINS[p1SkinIndex]||SKINS[0]).id] : null) || 'auto',
+                scoreNormal:   mode==='normal'   ? Math.max(scoreVal,prev.scoreNormal||0)   : (prev.scoreNormal||0),
                 scoreInfinity: mode==='infinity' ? Math.max(scoreVal,prev.scoreInfinity||0) : (prev.scoreInfinity||0),
+                scoreGhost:    mode==='ghost'    ? Math.max(scoreVal,prev.scoreGhost||0)    : (prev.scoreGhost||0),
                 bossCount:     typeof defeatedBosses!=='undefined' ? defeatedBosses.length : (prev.bossCount||0),
                 updatedAt:     Date.now()
             });
@@ -326,6 +361,7 @@ const AccountSystem = (() => {
             const prev = snap.val() || {};
             return _db.ref(DB_BOARD+'/'+uid).update({
                 name: _profile.name, skinId: (SKINS[p1SkinIndex]||SKINS[0]).id,
+                skinVariant: (typeof mySkinVariants!=='undefined' ? mySkinVariants[(SKINS[p1SkinIndex]||SKINS[0]).id] : null) || 'auto',
                 bossCount: typeof defeatedBosses!=='undefined' ? defeatedBosses.length : (prev.bossCount||0),
                 updatedAt: Date.now()
             });
@@ -337,13 +373,13 @@ const AccountSystem = (() => {
 
     function fetchLeaderboard(mode) {
         if (!_ready) return Promise.reject('offline');
-        const field = mode==='infinity' ? 'scoreInfinity' : (mode==='bosses' ? 'bossCount' : 'scoreNormal');
+        const field = mode==='infinity' ? 'scoreInfinity' : (mode==='bosses' ? 'bossCount' : (mode==='ghost' ? 'scoreGhost' : 'scoreNormal'));
         return _db.ref(DB_BOARD).once('value').then(snap => {
             const rows = [];
             snap.forEach(child => {
                 const d = child.val() || {};
-                if ((d[field]||0)>0) rows.push({id:child.key, name:d.name, skinId:d.skinId,
-                    scoreNormal:d.scoreNormal||0, scoreInfinity:d.scoreInfinity||0, bossCount:d.bossCount||0});
+                if ((d[field]||0)>0) rows.push({id:child.key, name:d.name, skinId:d.skinId, skinVariant:d.skinVariant||'auto',
+                    scoreNormal:d.scoreNormal||0, scoreInfinity:d.scoreInfinity||0, scoreGhost:d.scoreGhost||0, bossCount:d.bossCount||0});
             });
             rows.sort((a,b)=>(b[field]||0)-(a[field]||0));
             return rows.map((r,i)=>Object.assign({rank:i+1},r));
@@ -368,10 +404,10 @@ const AccountSystem = (() => {
         const el = document.getElementById('acc-profile-badge');
         if (!el) return;
         if (_profile && _profile.name) {
-            el.innerHTML = IconGenerator.html('person','12px') + ' ' + _escHtml(_profile.name);
+            el.innerText = _profile.name;
             el.style.color = '#ffd700';
         } else {
-            el.innerHTML = IconGenerator.html('person','12px') + ' ВОЙТИ';
+            el.innerText = (typeof t === 'function' ? t('accLoginBadge') : 'ВОЙТИ');
             el.style.color = '#aaa';
         }
     }
@@ -522,7 +558,7 @@ const AccountSystem = (() => {
     function switchBoardMode(mode) { _currentBoardMode=mode; _renderBoardTabs(); _loadAndRenderBoard(); }
 
     function _renderBoardTabs() {
-        ['bosses','infinity'].forEach(m=>{
+        ['bosses','infinity','ghost'].forEach(m=>{
             const tab=document.getElementById('board-tab-'+m);
             if(tab) tab.className='board-tab'+(_currentBoardMode===m?' board-tab-active':'');
         });
@@ -531,20 +567,22 @@ const AccountSystem = (() => {
     function _loadAndRenderBoard() {
         const body=document.getElementById('acc-board-body'); if(!body) return;
         body.innerHTML='<tr><td colspan="4" class="board-empty-cell">Загрузка...</td></tr>';
-        if(!_ready){body.innerHTML='<tr><td colspan="4" class="board-empty-cell" style="color:#e74c3c;">Нет соединения</td></tr>';return;}
+        if(!_ready){body.innerHTML='<tr><td colspan="4" class="board-empty-cell" style="color:#e74c3c;">'+(typeof t==='function'?t('accBoardNoConn'):'Нет соединения')+'</td></tr>';return;}
         const scoreHeader=document.getElementById('board-th-score');
         if(scoreHeader) scoreHeader.innerHTML=_currentBoardMode==='bosses'?'⚔️ БОССЫ':'СЧЁТ';
         fetchLeaderboard(_currentBoardMode).then(rows=>{
             if(!rows.length){body.innerHTML='<tr><td colspan="4" class="board-empty-cell">Пусто</td></tr>';return;}
             const isBosses=_currentBoardMode==='bosses';
-            const field=isBosses?'bossCount':(_currentBoardMode==='infinity'?'scoreInfinity':'scoreNormal');
+            const field=isBosses?'bossCount':(_currentBoardMode==='infinity'?'scoreInfinity':(_currentBoardMode==='ghost'?'scoreGhost':'scoreNormal'));
             body.innerHTML=rows.map(r=>{
                 const isMe=_user&&r.id===_user.uid;
                 const medal=r.rank===1?'<span style="color:#FFD700;font-family:\'Press Start 2P\',monospace;font-size:12px;">1</span>':
                             r.rank===2?'<span style="color:#C0C0C0;font-family:\'Press Start 2P\',monospace;font-size:12px;">2</span>':
                             r.rank===3?'<span style="color:#CD7F32;font-family:\'Press Start 2P\',monospace;font-size:12px;">3</span>':
                             '<span style="color:#777;font-family:\'Press Start 2P\',monospace;font-size:10px;">'+r.rank+'</span>';
-                const skin=SKINS.find(s=>s.id===r.skinId)||SKINS[0];
+                // Скин с учётом настройки окраса игрока (видна всем в таблице)
+                const _baseSkin=SKINS.find(s=>s.id===r.skinId)||SKINS[0];
+                const skin=_baseSkin.configurable?Object.assign({},_baseSkin,{_variant:r.skinVariant||'auto'}):_baseSkin;
                 return '<tr class="'+(isMe?'board-row-me':'')+'"><td class="board-rank">'+medal+'</td>'+
                     '<td class="board-name">'+_escHtml(r.name)+(isMe?' <span class="board-you-badge">ТЫ</span>':'')+
                     '</td><td class="board-skin">'+_skinEmoji(skin)+'</td>'+

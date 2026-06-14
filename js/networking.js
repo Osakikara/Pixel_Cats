@@ -352,7 +352,9 @@ function _fbStartListening(roomRef, isHost, conn) {
         if (!d || !d.type) return;
         // Обновляем ping по timestamp из POS
         if (d._t && d.type === 'POS') {
-            net.ping = Math.round(Date.now() - d._t);
+            // Date.now() у двух устройств расходится (рассинхрон часов) → разница бывает
+            // отрицательной. Клампим до 0, чтобы не показывать «PING: -2056ms».
+            net.ping = Math.max(0, Math.round(Date.now() - d._t));
             const pd = document.getElementById('ping-display');
             if (pd && pd.style.display !== 'none') {
                 pd.innerText = 'PING: ' + net.ping + 'ms';
@@ -772,22 +774,32 @@ function _hideLeaveBtn() {
 // ============================================
 function fbSetMode(mode) {
     setOnlineMode(mode);
-    const isRace = mode === 'race';
-    const raceBtn = document.getElementById('fb-omode-race');
-    const bossBtn = document.getElementById('fb-omode-boss');
+    const isRace  = mode === 'race';
+    const isBoss  = mode === 'boss';
+    const isGhost = mode === 'ghost';
+    const raceBtn  = document.getElementById('fb-omode-race');
+    const bossBtn  = document.getElementById('fb-omode-boss');
+    const ghostBtn = document.getElementById('fb-omode-ghost');
     if (raceBtn) {
         raceBtn.className = isRace
             ? 'pixel-btn pixel-btn-blue  lobby-mode-btn lobby-mode-active'
             : 'pixel-btn pixel-btn-dark lobby-mode-btn';
     }
     if (bossBtn) {
-        bossBtn.className = !isRace
+        bossBtn.className = isBoss
             ? 'pixel-btn pixel-btn-red   lobby-mode-btn lobby-mode-active'
             : 'pixel-btn pixel-btn-dark lobby-mode-btn';
     }
+    if (ghostBtn) {
+        ghostBtn.className = isGhost
+            ? 'pixel-btn pixel-btn-purple lobby-mode-btn lobby-mode-active'
+            : 'pixel-btn pixel-btn-dark lobby-mode-btn';
+    }
     document.getElementById('fb-diff-section').style.display = isRace  ? '' : 'none';
-    document.getElementById('fb-boss-section').style.display = !isRace ? '' : 'none';
-    if (!isRace) buildOnlineBossList('fb-boss-list-items');
+    document.getElementById('fb-boss-section').style.display = isBoss ? '' : 'none';
+    const ghSection = document.getElementById('fb-ghost-section');
+    if (ghSection) ghSection.style.display = isGhost ? '' : 'none';
+    if (isBoss) buildOnlineBossList('fb-boss-list-items');
 }
 
 function fbSetDiff(diff) {
@@ -877,6 +889,7 @@ function setupPeerConnection() {
             AudioEngine.stopBossMusic(false);
             document.getElementById('boss-battle-screen').style.display = 'none';
             document.getElementById('boss-lose-screen').style.display = 'block';
+            _hideMobileControls(); // скрываем джойстик/кнопки на экране поражения
             document.getElementById('boss-lose-msg').innerText = t('statusConnLostBoss');
             // Показываем кнопку возврата в лобби на экране поражения
             const bossLoseBack = document.getElementById('btn-boss-lose-back');
@@ -930,7 +943,7 @@ function _hostStartOnlineGame() {
     }
     // Генерируем seed и рассылаем INIT
     net.worldSeed = Math.floor(Math.random() * 0x7FFFFFFF);
-    net.worldGroundBase = canvas.height - 100;
+    net.worldGroundBase = LOGICAL_H - 100;
     p2SkinIndex = net.remoteSkin;
     const bossIdx = (onlineMode === 'boss') ? (net.selectedBossIndex !== undefined ? net.selectedBossIndex : selectedOnlineBoss) : undefined;
     setTimeout(() => {
@@ -939,15 +952,22 @@ function _hostStartOnlineGame() {
             // Режим боссов
             net.conn.send({ type: 'BOSS_START', bossIndex: bossIdx });
             openOnlineBossScreen(bossIdx);
+        } else if (onlineMode === 'ghost') {
+            // Охота на призраков — дуэль
+            net.conn.send({ type: 'GH_START', seed: net.worldSeed, hostSkin: p1SkinIndex, hostVariant: mySkinVariants[SKINS[p1SkinIndex].id] || 'auto', guestSkin: net.remoteSkin });
+            numPlayers = 2;
+            net.lastSentTime = performance.now() + 1000;
+            if (typeof ghStartOnlineHost === 'function') ghStartOnlineHost(net.worldSeed);
         } else {
-            net.conn.send({ 
-                type: 'INIT', 
-                diff: onlineDifficulty, 
-                seed: net.worldSeed, 
-                hostSkin: p1SkinIndex, 
+            net.conn.send({
+                type: 'INIT',
+                diff: onlineDifficulty,
+                seed: net.worldSeed,
+                hostSkin: p1SkinIndex,
+                hostVariant: mySkinVariants[SKINS[p1SkinIndex].id] || 'auto',
                 guestSkin: net.remoteSkin,
                 groundBase: net.worldGroundBase
-            }); 
+            });
             numPlayers = 2;
             net.lastSentTime = performance.now() + 1000;
             startGame(onlineDifficulty);
@@ -961,8 +981,9 @@ function _hostStartOnlineGame() {
 function handlePeerData(data) {
     switch(data.type) {
         case 'SKIN':
-            // Получили скин от другого игрока
+            // Получили скин от другого игрока (+ его настройку окраса)
             net.remoteSkin = data.skin;
+            net.remoteSkinVariant = data.variant || 'auto';
             if (net.isHost) {
                 // Хост получил скин гостя — показываем выбор режима и СТАРТ
                 if (connMode === 'firebase') {
@@ -1012,8 +1033,9 @@ function handlePeerData(data) {
             // Хост = P1, Гость = P2
             currentDifficulty = data.diff;
             net.worldSeed = data.seed;
+            if (data.hostVariant) net.remoteSkinVariant = data.hostVariant;
             // FIX #1: принимаем базу земли от хоста
-            net.worldGroundBase = data.groundBase || (canvas.height - 100);
+            net.worldGroundBase = data.groundBase || (LOGICAL_H - 100);
             net.remoteSkin = data.hostSkin;   // скин хоста
             // Сохраняем текущий скин гостя ДО перезаписи p1SkinIndex —
             // чтобы восстановить его при возврате в лобби
@@ -1192,6 +1214,20 @@ function handlePeerData(data) {
             }
             break;
         }
+
+        // ══════════════════════════════════════════════════════════
+        // ОХОТА НА ПРИЗРАКОВ — онлайн (хост-авторитарная симуляция)
+        // ══════════════════════════════════════════════════════════
+        case 'GH_START':
+            // ГОСТЬ: хост запустил мини-игру
+            if (typeof ghStartOnlineGuest === 'function') ghStartOnlineGuest(data);
+            break;
+        case 'GH_POS':
+        case 'GH_ATK':
+        case 'GH_STATE':
+        case 'GH_END':
+            if (typeof ghOnNet === 'function') ghOnNet(data);
+            break;
     }
 }
 
@@ -1281,6 +1317,15 @@ function setOnlineMode(mode) {
     onlineMode = mode;
     document.getElementById('online-race-opts').style.display = mode === 'race' ? '' : 'none';
     document.getElementById('online-boss-opts').style.display  = mode === 'boss' ? '' : 'none';
+    const ghOpts = document.getElementById('online-ghost-opts');
+    if (ghOpts) ghOpts.style.display = mode === 'ghost' ? '' : 'none';
+    // Подсветка кнопок режима (P2P)
+    const _pm = { race: 'p2p-omode-race', boss: 'p2p-omode-boss', ghost: 'p2p-omode-ghost' };
+    const _pc = { race: 'pixel-btn pixel-btn-blue', boss: 'pixel-btn pixel-btn-red', ghost: 'pixel-btn pixel-btn-purple' };
+    for (const m in _pm) {
+        const b = document.getElementById(_pm[m]);
+        if (b) b.className = (m === mode ? _pc[m] + ' lobby-mode-btn lobby-mode-active' : 'pixel-btn pixel-btn-dark lobby-mode-btn');
+    }
     if (mode === 'boss') buildOnlineBossList('p2p-boss-list-items');
 }
 
@@ -1411,6 +1456,8 @@ function saveGameData() {
     localStorage.setItem('pixelCatsDiffScore', highScore); localStorage.setItem('pixelCatsInfinityHighScore', infinityHighScore);
     localStorage.setItem('pixelCatsHardUnlocked', hardUnlocked); localStorage.setItem('pixelCatsMegaHardUnlocked', megaHardUnlocked);
     localStorage.setItem('pixelCatsInfinityUnlocked', infinityUnlocked);
+    localStorage.setItem('pixelCatsGhostHighScore', ghostHighScore);
+    localStorage.setItem('pixelCatsSkinVariants', JSON.stringify(mySkinVariants));
     if (typeof defeatedBosses !== 'undefined') {
         localStorage.setItem('pixelCatsDefeatedBosses', JSON.stringify(defeatedBosses));
     }
@@ -1428,9 +1475,10 @@ function isSkinUnlocked(skinId) {
     const skin = SKINS.find(s => s.id === skinId);
     if (!skin) return false;
     // Скин без требований и без цены — всегда доступен (базовые скины)
-    if (!skin.cost && !skin.reqScore && !skin.reqInfinityScore && !skin.secret) return true;
+    if (!skin.cost && !skin.reqScore && !skin.reqInfinityScore && !skin.reqGhostScore && !skin.secret) return true;
     if (skin.reqScore && highScore >= skin.reqScore) { if (!unlockedSkins.includes(skinId)) { unlockedSkins.push(skinId); saveGameData(); } return true; }
     if (skin.reqInfinityScore && infinityHighScore >= skin.reqInfinityScore) { if (!unlockedSkins.includes(skinId)) { unlockedSkins.push(skinId); saveGameData(); } return true; }
+    if (skin.reqGhostScore && ghostHighScore >= skin.reqGhostScore) { if (!unlockedSkins.includes(skinId)) { unlockedSkins.push(skinId); saveGameData(); } return true; }
     return false;
 }
 
@@ -1461,7 +1509,7 @@ function changeSkin(player, dir) {
     // Отправляем новый скин сразу — иначе хост запустит игру
     // со старым значением net.remoteSkin и выдаст гостю неверный скин.
     if (player === 1 && net.isOnline && net.conn && net.conn.open) {
-        net.conn.send({ type: 'SKIN', skin: p1SkinIndex });
+        net.conn.send({ type: 'SKIN', skin: p1SkinIndex, variant: mySkinVariants[SKINS[p1SkinIndex].id] || 'auto' });
     }
     // Обновляем запись в Firebase (для хоста, который читает snap.val().skin)
     if (player === 1 && net.isOnline && !net.isHost && _fbRoomRef) {
@@ -1484,6 +1532,7 @@ function updateMenuButtons() {
         if (!unlocked) {
             if (skin.reqScore) { statusEl.innerText = t('needDist') + " " + skin.reqScore; statusEl.style.color = '#c0392b'; actionEl.style.display = 'inline-block'; actionEl.innerText = t('lockedBtn'); actionEl.classList.add('action-lock'); }
             else if (skin.reqInfinityScore) { statusEl.innerText = t('infScore') + " " + skin.reqInfinityScore; statusEl.style.color = '#c0392b'; actionEl.style.display = 'inline-block'; actionEl.innerText = t('lockedBtn'); actionEl.classList.add('action-lock'); }
+            else if (skin.reqGhostScore) { statusEl.innerText = t('needGhost') + " " + skin.reqGhostScore; statusEl.style.color = '#c0392b'; actionEl.style.display = 'inline-block'; actionEl.innerText = t('lockedBtn'); actionEl.classList.add('action-lock'); }
             else if (skin.cost) { actionEl.style.display = 'inline-block'; let fishName = skin.currency==='blue' ? 'fish_blue' : skin.currency==='gold' ? 'fish_gold' : 'fish_orange'; actionEl.innerHTML = t('buy') + ' ' + skin.cost + ' ' + IconGenerator.html(fishName,'13px'); let currencyVal = (skin.currency === 'blue') ? fishWallet.blue : (skin.currency === 'gold' ? fishWallet.gold : fishWallet.orange); if (currencyVal >= skin.cost) actionEl.classList.add('action-buy'); else actionEl.classList.add('action-lock'); }
             else if (skin.secret) { statusEl.innerText = "???"; statusEl.style.color = '#8e44ad'; }
         }
@@ -1491,6 +1540,9 @@ function updateMenuButtons() {
     };
     const p1Ready = updatePlayerUI(p1SkinIndex, p1SkinLabel, p1Status, p1Action);
     let p2Ready = true; if (numPlayers === 2) p2Ready = updatePlayerUI(p2SkinIndex, p2SkinLabel, p2Status, p2Action);
+    // Кнопка «НАСТРОИТЬ» — только для настраиваемых скинов (призрак)
+    const cfgBtn = document.getElementById('btn-skin-config');
+    if (cfgBtn) cfgBtn.style.display = (SKINS[p1SkinIndex].configurable && p1Ready) ? 'inline-block' : 'none';
     let skinsReady = p1Ready && p2Ready;
     const onlineSkin = SKINS[p1SkinIndex]; onlineSkinLabel.innerText = t(onlineSkin.nameKey);
     const onlineUnlocked = isSkinUnlocked(onlineSkin.id); onlineSkinLabel.style.color = onlineUnlocked ? '#ffd700' : '#aaa';
@@ -1790,11 +1842,24 @@ function dpUp(dir) {
 function dpMenuDown() {
     const btn = document.getElementById('dp-menu');
     if (btn) { btn.classList.add('pressed'); btn.style.transform = 'scale(0.9)'; }
+    if (typeof GH !== 'undefined' && GH.active) { ghExitToMenu(); return; }
     if (isPlaying || isGameOver || isWin) showMenu();
     else if (bossBattleActive) showBossScreen(true);
 }
 function dpMenuUp() {
     const btn = document.getElementById('dp-menu');
+    if (btn) { btn.classList.remove('pressed'); btn.style.transform = 'scale(1)'; }
+}
+// ESC для режима джойстика (вверху справа, слева от счёта)
+function joyMenuDown() {
+    const btn = document.getElementById('joy-menu');
+    if (btn) { btn.classList.add('pressed'); btn.style.transform = 'scale(0.9)'; }
+    if (typeof GH !== 'undefined' && GH.active) { ghExitToMenu(); return; }
+    if (isPlaying || isGameOver || isWin) showMenu();
+    else if (bossBattleActive) showBossScreen(true);
+}
+function joyMenuUp() {
+    const btn = document.getElementById('joy-menu');
     if (btn) { btn.classList.remove('pressed'); btn.style.transform = 'scale(1)'; }
 }
 
@@ -1839,7 +1904,24 @@ function _applyCtrlType() {
         if (c2p) c2p.style.display = 'none';
         if (dpad) dpad.style.display = 'block';
     }
+    // Кнопка ESC для режима джойстика (у d-pad своя ESC внутри ▼▲ группы)
+    const joyMenu = document.getElementById('joy-menu');
+    if (joyMenu) {
+        joyMenu.style.display = isJoy ? 'block' : 'none';
+        if (isJoy) _positionJoyMenu();
+    }
 }
+
+// Ставим ESC-джойстика вверху справа, ВПЛОТНУЮ СЛЕВА от блока счёта,
+// чтобы не перекрывать его. Пересчёт по фактическому положению .stats-box.
+function _positionJoyMenu() {
+    const joyMenu = document.getElementById('joy-menu');
+    const sb = document.querySelector('.stats-box');
+    if (!joyMenu || !sb) return;
+    const left = sb.getBoundingClientRect().left;
+    joyMenu.style.right = Math.max(12, Math.round(window.innerWidth - left + 14)) + 'px';
+}
+window.addEventListener('resize', () => { if (ctrlType === 'joystick') _positionJoyMenu(); });
 
 // Init ctrl type UI
 (function() {
@@ -1863,18 +1945,20 @@ function _applyCtrlType() {
 const _origUpdatePlayerModeUI = updatePlayerModeUI;
 updatePlayerModeUI = function() {
     _origUpdatePlayerModeUI();
-    if (isMobile) {
-        // При 2P — всегда джойстик, кнопка dpad недоступна
-        if (numPlayers === 2 && !net.isOnline) {
-            if (ctrlType !== 'joystick') setCtrlType('joystick');
-            const dpadBtn = document.getElementById('ctrl-type-dpad');
-            if (dpadBtn) { dpadBtn.disabled = true; dpadBtn.style.opacity = '0.4'; }
-        } else {
-            const dpadBtn = document.getElementById('ctrl-type-dpad');
-            if (dpadBtn) { dpadBtn.disabled = false; dpadBtn.style.opacity = ''; }
-        }
-        _applyCtrlType();
+    // При 2P на мобильном — всегда джойстик, кнопка dpad недоступна
+    if (isMobile && numPlayers === 2 && !net.isOnline) {
+        if (ctrlType !== 'joystick') setCtrlType('joystick');
+        const dpadBtn = document.getElementById('ctrl-type-dpad');
+        if (dpadBtn) { dpadBtn.disabled = true; dpadBtn.style.opacity = '0.4'; }
+    } else {
+        const dpadBtn = document.getElementById('ctrl-type-dpad');
+        if (dpadBtn) { dpadBtn.disabled = false; dpadBtn.style.opacity = ''; }
     }
+    // ВСЕГДА синхронизируем видимый контрол с выбранным типом.
+    // _origUpdatePlayerModeUI() безусловно показывает джойстик (controls-1p)
+    // для 1 игрока — без этого вызова при выбранных «Кнопках» мог остаться
+    // активным джойстик (особенно если isMobile определился неверно).
+    _applyCtrlType();
 };
 
 window.addEventListener('keydown', (e) => {
@@ -1901,14 +1985,14 @@ window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.code) || e.c
 const PIXIE_COLORS = ["#ff9ff3", "#54a0ff", "#5f27cd", "#fab1a0", "#1dd1a1", "#feca57"];
 class Pixie {
     constructor() {
-        this.reset(); this.x = Math.random() * canvas.width;
+        this.reset(); this.x = Math.random() * LOGICAL_W;
         if (currentDifficulty === 'infinity') { const evilColors = ["#e74c3c", "#8b0000", "#9400D3", "#ff0033", "#ffffff", "#2c3e50"]; this.color = evilColors[Math.floor(Math.random() * evilColors.length)]; }
         else this.color = PIXIE_COLORS[Math.floor(Math.random() * PIXIE_COLORS.length)];
     }
-    reset() { this.x = camera.x + canvas.width + 800 + Math.random() * 800; this.baseY = 50 + Math.random() * 200; this.y = this.baseY; this.speed = 2 + Math.random() * 2; this.phase = Math.random() * Math.PI * 2; this.sparkles = []; }
+    reset() { this.x = camera.x + LOGICAL_W + 800 + Math.random() * 800; this.baseY = 50 + Math.random() * 200; this.y = this.baseY; this.speed = 2 + Math.random() * 2; this.phase = Math.random() * Math.PI * 2; this.sparkles = []; }
     update(timeScale, forceResetX) {
         this.x -= this.speed * timeScale; this.y = this.baseY + Math.sin(gameTime * 0.1 + this.phase) * 30;
-        let limitX = forceResetX || (camera.x - 50); if (this.x < limitX) { if (forceResetX) this.x = camera.x + canvas.width + 800 + Math.random() * 800; else this.reset(); }
+        let limitX = forceResetX || (camera.x - 50); if (this.x < limitX) { if (forceResetX) this.x = camera.x + LOGICAL_W + 800 + Math.random() * 800; else this.reset(); }
         if (this.sparkles.length < 8 && Math.random() < 0.08) this.sparkles.push({ x: this.x, y: this.y, life: 1.0 });
         for (let i = this.sparkles.length - 1; i >= 0; i--) { this.sparkles[i].life -= 0.05; this.sparkles[i].y += 0.5; if (this.sparkles[i].life <= 0) this.sparkles.splice(i, 1); }
     }
@@ -1962,7 +2046,7 @@ class Cat {
         if (godMode) {
             const flySpeed = 15; if (left) { this.x -= flySpeed * timeScale; this.facingRight = false; } if (right) { this.x += flySpeed * timeScale; this.facingRight = true; }
             if (up) this.y -= flySpeed * timeScale; if (down) this.y += flySpeed * timeScale;
-            if (this.x < camera.x) this.x = camera.x; if (this.x + this.width > camera.x + canvas.width / zoomFactor) this.x = camera.x + canvas.width / zoomFactor - this.width; return;
+            if (this.x < camera.x) this.x = camera.x; if (this.x + this.width > camera.x + LOGICAL_W / zoomFactor) this.x = camera.x + LOGICAL_W / zoomFactor - this.width; return;
         }
         // === ANALOG MOVEMENT — ax.x raw value (unit-clamped, no scaling) ===
         let dx = 0;
@@ -1978,9 +2062,9 @@ class Cat {
             if (right) { dx =  moveSpeed * timeScale; this.facingRight = true;  }
         }
         if (dx !== 0 && !this.checkWallCollision(dx)) this.x += dx; if (this.x < camera.x) this.x = camera.x;
-        const visibleWidth = canvas.width / zoomFactor; if (this.x + this.width > camera.x + visibleWidth) this.x = camera.x + visibleWidth - this.width;
+        const visibleWidth = LOGICAL_W / zoomFactor; if (this.x + this.width > camera.x + visibleWidth) this.x = camera.x + visibleWidth - this.width;
         // Ground detection: check left edge, center, and right edge to prevent falling into block seams
-        let groundY = canvas.height + 1000;
+        let groundY = LOGICAL_H + 1000;
         const checkXs = [this.x + 4, this.x + this.width / 2, this.x + this.width - 4];
         for (const cx of checkXs) {
             for (let block of terrain) {
@@ -1994,7 +2078,7 @@ class Cat {
         this.dy += gravity * timeScale; this.y += this.dy * timeScale;
         if (this.dy > 0 && this.y + this.height >= groundY) { if (this.y + this.height - (this.dy * timeScale) <= groundY + 10) { this.y = groundY - this.height; this.dy = 0; this.onGround = true; } }
         else this.onGround = false;
-        // FIX #1: используем getWorldGround() вместо canvas.height
+        // FIX #1: используем getWorldGround() вместо LOGICAL_H
         if (this.y > getWorldGround() + 200) endGame();
     }
     checkWallCollision(dx) { let checkLeft = this.x + dx, checkRight = this.x + dx + this.width, checkY = this.y + this.height - 10; for (let block of terrain) { if (checkRight > block.x && checkLeft < block.x + block.w) { if (block.y < checkY) return true; } } return false; }

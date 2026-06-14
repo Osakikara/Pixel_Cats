@@ -602,6 +602,7 @@ function bossLoop(timestamp) {
     let timeScale = deltaTime / 16.666;
     gameTime += timeScale;
     
+    try {
     // Update timer
     bossBattleTime -= deltaTime / 1000;
     if (currentBoss.id !== 'shadowLord') {
@@ -673,8 +674,12 @@ function bossLoop(timestamp) {
         }
     }
     
-    // Draw everything
-    drawBossBattle();
+    } catch (e) {
+        // Ошибка кадра не должна морозить бой — логируем один раз и продолжаем
+        if (!window._bossLoopErrLogged) { console.error('[bossLoop] ошибка кадра, бой продолжается:', e); window._bossLoopErrLogged = true; }
+    }
+    // Draw everything — рисуем ВСЕГДА, чтобы кадры не «замирали» даже при ошибке апдейта
+    try { drawBossBattle(); } catch (_) {}
 }
 
 // ============================================
@@ -1110,19 +1115,19 @@ function drawBossBattle() {
 
     // Равномерно масштабируем BOSS_VW×BOSS_VH под физический экран.
     // min(scaleX, scaleY) — не обрезаем ничего, letterbox по краям.
-    const scrW = canvas.width;
-    const scrH = canvas.height;
+    const scrW = LOGICAL_W;
+    const scrH = LOGICAL_H;
     const bossScale = Math.min(scrW / BOSS_VW, scrH / BOSS_VH);
     const bossDX   = (scrW - BOSS_VW * bossScale) / 2;
     const bossDY   = (scrH - BOSS_VH * bossScale) / 2;
 
     // Фон канваса (letterbox)
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.setTransform(RS, 0, 0, RS, 0, 0);
     ctx.fillStyle = '#0a0703';
     ctx.fillRect(0, 0, scrW, scrH);
 
     // Переходим во виртуальное пространство
-    ctx.setTransform(bossScale, 0, 0, bossScale, bossDX, bossDY);
+    ctx.setTransform(bossScale * RS, 0, 0, bossScale * RS, bossDX * RS, bossDY * RS);
 
     const cw = BOSS_VW;
     const ch = BOSS_VH;
@@ -1315,7 +1320,7 @@ function drawBossBattle() {
     }
 
     // Сбрасываем transform после рендера арены
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.setTransform(RS, 0, 0, RS, 0, 0);
 }
 
 // ============================================
@@ -2939,6 +2944,7 @@ function bossWin() {
     // Show win screen
     document.getElementById('boss-battle-screen').style.display = 'none';
     document.getElementById('boss-win-screen').style.display = 'block';
+    _hideMobileControls(); // на экране победы скрываем джойстик/кнопки
     document.getElementById('boss-win-title').innerText = t('bossWin');
     // Онлайн: показать кто победил вместе
     document.getElementById('boss-win-msg').innerText = net.bossOnline
@@ -2978,6 +2984,7 @@ function bossLose() {
     drawBossBattle();
     document.getElementById('boss-battle-screen').style.display = 'none';
     document.getElementById('boss-lose-screen').style.display = 'block';
+    _hideMobileControls(); // на экране поражения скрываем джойстик/кнопки
     document.getElementById('boss-lose-title').innerText = t('bossLose');
     document.getElementById('boss-lose-msg').innerText = t('bossLost');
 

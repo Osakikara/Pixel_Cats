@@ -65,6 +65,8 @@
         <div id="fps-counter">FPS: 0</div>
         <div id="diff-label" class="difficulty-label"></div>
         <div id="mobile-controls-layer">
+            <!-- ESC для режима джойстика — вверху справа, слева от счёта (показывается только в режиме джойстика) -->
+            <button class="joy-menu-btn" id="joy-menu" style="display:none;" onpointerdown="joyMenuDown()" onpointerup="joyMenuUp()">ESC</button>
             <!-- Joystick wrappers kept as invisible anchors for the controls editor layout system -->
             <div id="controls-1p" style="display:none;">
                 <div id="joy1-wrapper" style="position:absolute;pointer-events:none;">
@@ -120,7 +122,7 @@
             <!-- ACCOUNTS ROW (скрыт до подключения Firebase) -->
             <div id="acc-online-row" style="display:none;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;">
                 <button class="btn acc-btn-profile" style="width:140px;padding:10px;font-size:9px;margin:0;" onclick="AccountSystem.openAuthModal()">
-                    <span id="acc-profile-badge"><img id="ico-person" class="pixel-icon" style="width:12px;height:12px;"> ВОЙТИ</span>
+                    <span id="acc-profile-badge">ВОЙТИ</span>
                 </button>
                 <button id="btn-open-leaderboard" class="btn acc-btn-board" style="width:140px;padding:10px;font-size:9px;margin:0;" onclick="AccountSystem.openLeaderboard()">
                     <img id="ico-trophy" class="pixel-icon" style="width:14px;height:14px;"> РЕКОРДЫ
@@ -128,9 +130,6 @@
             </div>
             <button id="btn-fullscreen" class="btn btn-dark" style="margin-top: 10px; padding: 10px; font-size: 10px;" onclick="toggleFullscreen()">[ ] ПОЛНЫЙ ЭКРАН</button>
             <!-- Mobile fullscreen prompt -->
-            <div id="fullscreen-prompt" style="display:none;background:rgba(255,215,0,0.15);border:2px solid #ffd700;padding:8px 12px;margin-top:6px;font-size:7px;color:#ffd700;text-shadow:1px 1px 0 #000;border-radius:3px;" id="fullscreen-prompt-text">
-                <img id="ico-phone" class="pixel-icon" style="width:14px;height:14px;"> Рекомендуется полноэкранный режим для удобства игры!
-            </div>
             <button id="btn-settings" class="btn btn-dark" style="margin-top: 5px; padding: 10px; font-size: 10px;" onclick="openSettings()"><img id="ico-gear" class="pixel-icon" style="width:14px;height:14px;"> НАСТРОЙКИ</button>
             <button id="btn-shop" class="btn" style="background:#7d6608;border-color:#ffd700;color:#ffd700;margin-top: 5px; padding: 10px; font-size: 10px;" onclick="openShop()"><img id="ico-cart" class="pixel-icon" style="width:14px;height:14px;"> МАГАЗИН СКИНОВ</button>
             <div class="skin-selector">
@@ -144,6 +143,7 @@
                     </div>
                     <div id="p1-status" class="lock-overlay"></div>
                     <button id="p1-action" class="action-btn action-owned" onclick="buySkin(1)">КУПИТЬ</button>
+                    <button id="btn-skin-config" class="action-btn" style="display:none;background:#555;border:1px solid #999;color:#ccc;" onclick="openSkinConfig()">НАСТРОИТЬ</button>
                 </div>
                 <div id="p2-area" class="skin-col hidden">
                     <div style="font-size: 12px;" id="p2-label">ИГРОК 2</div>
@@ -157,12 +157,79 @@
                     <button id="p2-action" class="action-btn action-owned" onclick="buySkin(2)">КУПИТЬ</button>
                 </div>
             </div>
+            <!-- ═══ РЕЖИМЫ ИГРЫ ═══ -->
+            <button id="btn-classic" class="btn btn-green" onclick="openClassic()">КЛАССИКА</button>
+            <button id="btn-boss" class="btn" style="background: #8b0000; border-color: #ff0000;" onclick="showBossScreen()">БИТВА С БОССОМ</button>
+            <button id="btn-ghosthunt" class="btn" style="background:#3a2060;border-color:#a88beb;color:#e8dcff;" onclick="openGhostHunt()">ОХОТА НА ПРИЗРАКОВ</button>
+            <button id="btn-minigames" class="btn btn-blue" onclick="openMinigames()">МИНИ-ИГРЫ</button>
+        </div>
+
+        <!-- ═══ КЛАССИКА: выбор режима/сложности (отдельная страница) ═══ -->
+        <div id="classic-screen" class="screen-overlay">
+            <h2 style="color:#2ecc71;margin-bottom:14px;text-shadow:3px 3px 0 #000;" id="classic-title">КЛАССИКА</h2>
+            <p style="font-size:10px;color:#ccc;margin-bottom:16px;" id="classic-hint">Выберите режим</p>
             <button id="btn-easy" class="btn btn-green" onclick="startGame('easy')">ЛЁГКИЙ РЕЖИМ</button>
             <button id="btn-hard" class="btn btn-red btn-disabled" onclick="startGame('hard')" disabled>СЛОЖНЫЙ РЕЖИМ 🔒</button>
             <button id="btn-mega" class="btn btn-purple btn-disabled" onclick="startGame('megahard')" disabled>МЕГАСЛОЖНО 🔒</button>
             <button id="btn-infinity" class="btn btn-infinity btn-disabled" onclick="startGame('infinity')" disabled>БЕСКОНЕЧНОСТЬ 🔒</button>
-            <button id="btn-boss" class="btn" style="background: #8b0000; border-color: #ff0000;" onclick="showBossScreen()">⚔️ БИТВА С БОССОМ</button>
+            <button class="btn btn-dark" id="btn-classic-back" style="margin-top:14px;width:200px;" onclick="closeClassic()">← НАЗАД</button>
         </div>
+
+        <!-- ═══ МИНИ-ИГРЫ: раздел в разработке ═══ -->
+        <div id="minigames-screen" class="screen-overlay">
+            <h2 style="color:#29b6f6;margin-bottom:8px;text-shadow:3px 3px 0 #000;" id="minigames-title">МИНИ-ИГРЫ</h2>
+            <p style="font-size:13px;color:#ffd700;margin:28px 0;line-height:1.9;text-shadow:1px 1px 0 #000;" id="minigames-dev">🚧 РАЗДЕЛ В РАЗРАБОТКЕ 🚧</p>
+            <button class="btn btn-dark" id="btn-minigames-back" style="margin-top:10px;width:200px;" onclick="closeMinigames()">← НАЗАД</button>
+        </div>
+
+        <!-- ═══ ОХОТА НА ПРИЗРАКОВ: экран режима ═══ -->
+        <div id="ghosthunt-screen" class="screen-overlay">
+            <h2 style="color:#a88beb;margin-bottom:4px;text-shadow:3px 3px 0 #000;font-size:26px;" id="gh-title">ОХОТА НА ПРИЗРАКОВ</h2>
+            <p style="font-size:14px;color:#ffd700;margin-bottom:10px;text-shadow:1px 1px 0 #000;" id="gh-record">РЕКОРД: 0</p>
+
+            <!-- КАК ИГРАТЬ + УПРАВЛЕНИЕ — главный акцент окна -->
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;">
+                <div class="pixel-panel" style="flex:1;min-width:230px;max-width:300px;text-align:left;padding:8px 10px;">
+                    <div class="pixel-panel-title" id="gh-howto-title">КАК ИГРАТЬ</div>
+                    <div style="font-size:9px;color:#ccc;line-height:2.0;" id="gh-howto"></div>
+                </div>
+                <div class="pixel-panel" style="flex:1;min-width:230px;max-width:300px;text-align:left;padding:8px 10px;">
+                    <div class="pixel-panel-title" id="gh-controls-title">УПРАВЛЕНИЕ</div>
+                    <div style="font-size:9px;color:#ccc;line-height:2.0;" id="gh-controls"></div>
+                </div>
+            </div>
+            <div class="pixel-panel" style="max-width:608px;margin:0 auto 10px auto;padding:6px 10px;">
+                <div style="font-size:9px;color:#bbb;line-height:1.9;" id="gh-weapons-list"></div>
+            </div>
+
+            <button id="btn-gh-solo" class="btn" style="background:#1d3a5f;border-color:#7df9ff;color:#7df9ff;font-size:12px;" onclick="startGhostHunt(1)">1 ИГРОК — ВЫЖИВАНИЕ</button>
+            <button id="btn-gh-duo" class="btn" style="background:#5f3a1d;border-color:#ffb86c;color:#ffb86c;font-size:12px;" onclick="startGhostHunt(2)">2 ИГРОКА — ДУЭЛЬ</button>
+            <button id="btn-gh-layout" class="btn btn-dark" style="font-size:12px;" onclick="openControlsEditor('gh')">РАСПОЛОЖЕНИЕ КНОПОК</button>
+            <button id="btn-gh-layout2" class="btn btn-dark" style="font-size:12px;" onclick="openControlsEditor('gh2')">РАСПОЛОЖЕНИЕ (2 ИГРОКА)</button>
+            <p style="font-size:9px;color:#a88beb;margin:6px 0;" id="gh-skin-promo">Скин «ПРИЗРАК» за 300 очков</p>
+            <button class="btn btn-dark" id="btn-gh-back" style="font-size:12px;" onclick="closeGhostHunt()">← НАЗАД</button>
+        </div>
+
+        <!-- ═══ ОХОТА НА ПРИЗРАКОВ: результаты ═══ -->
+        <div id="ghosthunt-over-screen" class="screen-overlay">
+            <h2 style="color:#a88beb;margin-bottom:16px;text-shadow:2px 2px 0 #000;" id="gh-over-title">РАУНД ОКОНЧЕН</h2>
+            <p style="font-size:17px;line-height:2;" id="gh-over-scores"></p>
+            <p style="font-size:15px;color:#ffd700;margin:8px 0;" id="gh-over-sub"></p>
+            <p style="font-size:12px;color:#ccc;margin:10px 0;line-height:1.9;" id="gh-over-record"></p>
+            <button class="btn btn-blue" id="gh-btn-again" style="font-size:12px;" onclick="ghRestart()">ЕЩЁ РАЗ</button>
+            <button class="btn" style="background:#555;font-size:12px;" id="gh-btn-menu" onclick="ghBackToSetup()">МЕНЮ</button>
+        </div>
+
+        <!-- ═══ НАСТРОЙКА СКИНА: выбор окраса ═══ -->
+        <div id="skin-config-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center;pointer-events:auto;">
+            <div style="background:#1a1426;border:4px solid #a88beb;box-shadow:8px 8px 0 #000;padding:20px 24px;text-align:center;max-width:340px;">
+                <h3 style="font-size:15px;color:#a88beb;margin-bottom:6px;text-shadow:2px 2px 0 #000;" id="skin-config-title">НАСТРОЙКА СКИНА</h3>
+                <p style="font-size:11px;color:#aaa;margin-bottom:14px;" id="skin-config-hint">Выберите окрас кота-призрака</p>
+                <div id="skin-var-options"></div>
+                <button class="btn btn-dark" id="skin-config-close" style="width:100%;margin:12px 0 0 0;padding:10px;font-size:12px;" onclick="closeSkinConfig()">ГОТОВО</button>
+            </div>
+        </div>
+
         <div id="online-screen" class="screen-overlay">
 
             <!-- ═══ ШАПКА ═══ -->
@@ -267,6 +334,7 @@
                                 <div class="lobby-mode-row">
                                     <button id="fb-omode-race" onclick="fbSetMode('race')" class="pixel-btn pixel-btn-blue  lobby-mode-btn lobby-mode-active"><img id="ico-runner" class="pixel-icon" style="width:12px;height:12px;"> ГОНКА</button>
                                     <button id="fb-omode-boss" onclick="fbSetMode('boss')" class="pixel-btn pixel-btn-dark lobby-mode-btn">⚔️ БОССЫ</button>
+                                    <button id="fb-omode-ghost" onclick="fbSetMode('ghost')" class="pixel-btn pixel-btn-dark lobby-mode-btn"><img id="ico-ghost-fb" class="pixel-icon" style="width:12px;height:12px;"> ПРИЗРАКИ</button>
                                 </div>
                             </div>
 
@@ -289,6 +357,12 @@
                                 </div>
                             </div>
 
+                            <!-- Охота на призраков (описание) -->
+                            <div id="fb-ghost-section" class="pixel-panel" style="display:none;margin-bottom:6px;">
+                                <div class="pixel-panel-title"><img id="ico-ghost-fbsec" class="pixel-icon" style="width:12px;height:12px;"> <span id="fb-ghost-title">ОХОТА НА ПРИЗРАКОВ</span></div>
+                                <div style="font-size:clamp(6px,0.85vw,8px);color:#bbb;line-height:1.9;" id="fb-ghost-info">Дуэль 120 секунд: кто наберёт больше очков!</div>
+                            </div>
+
                             <!-- СТАРТ -->
                             <button id="fb-start-btn" onclick="_hostStartOnlineGame()" class="pixel-btn pixel-btn-green lobby-start-btn" style="animation:fbStartPulse 1.5s ease-in-out infinite;"><img id="ico-play-start" class="pixel-icon" style="width:12px;height:12px;"> СТАРТ</button>
                         </div>
@@ -299,6 +373,15 @@
                     <div id="online-host-start" style="display:none;">
                         <div class="pixel-panel lobby-joined-panel" style="margin-bottom:6px;">
                             <div class="lobby-joined-title" id="p2p-player-joined-label"><img id="ico-check-p2p" class="pixel-icon" style="width:14px;height:14px;"> ИГРОК ПОДКЛЮЧИЛСЯ!</div>
+                        </div>
+                        <!-- Режим (P2P) -->
+                        <div class="pixel-panel" style="margin-bottom:6px;">
+                            <div class="pixel-panel-title" id="p2p-select-mode-label">РЕЖИМ</div>
+                            <div class="lobby-mode-row">
+                                <button id="p2p-omode-race"  onclick="setOnlineMode('race')"  class="pixel-btn pixel-btn-blue lobby-mode-btn lobby-mode-active"><img id="ico-runner-p2p" class="pixel-icon" style="width:12px;height:12px;"> ГОНКА</button>
+                                <button id="p2p-omode-boss"  onclick="setOnlineMode('boss')"  class="pixel-btn pixel-btn-dark lobby-mode-btn">⚔️ БОССЫ</button>
+                                <button id="p2p-omode-ghost" onclick="setOnlineMode('ghost')" class="pixel-btn pixel-btn-dark lobby-mode-btn"><img id="ico-ghost-p2p" class="pixel-icon" style="width:12px;height:12px;"> ПРИЗРАКИ</button>
+                            </div>
                         </div>
                         <div id="online-race-opts" class="pixel-panel" style="margin-bottom:6px;">
                             <div class="pixel-panel-title" id="p2p-diff-label">СЛОЖНОСТЬ</div>
@@ -316,6 +399,11 @@
                                 <!-- заполняется через buildOnlineBossList() -->
                             </div>
                             <button class="pixel-btn pixel-btn-green lobby-start-btn" onclick="_hostStartOnlineGame()" id="btn-online-boss-start" style="margin-top:6px;display:none;" id="btn-p2p-boss-start"><img id="ico-play-boss" class="pixel-icon" style="width:12px;height:12px;"> СТАРТ</button>
+                        </div>
+                        <div id="online-ghost-opts" style="display:none;" class="pixel-panel">
+                            <div class="pixel-panel-title"><img id="ico-ghost-p2psec" class="pixel-icon" style="width:12px;height:12px;"> <span id="p2p-ghost-title">ОХОТА НА ПРИЗРАКОВ</span></div>
+                            <div style="font-size:clamp(6px,0.85vw,8px);color:#bbb;line-height:1.9;" id="p2p-ghost-info">Дуэль 120 секунд: кто наберёт больше очков!</div>
+                            <button class="pixel-btn pixel-btn-green lobby-start-btn" onclick="_hostStartOnlineGame()" id="btn-online-ghost-start" style="margin-top:6px;"><img id="ico-play-ghost" class="pixel-icon" style="width:12px;height:12px;"> СТАРТ</button>
                         </div>
                     </div>
 
@@ -560,6 +648,7 @@
             <div class="board-tabs">
                 <button id="board-tab-bosses"   class="board-tab board-tab-active" onclick="AccountSystem.switchBoardMode('bosses')">⚔️ БОССЫ</button>
                 <button id="board-tab-infinity" class="board-tab"                  onclick="AccountSystem.switchBoardMode('infinity')">∞ БЕСКОНЕЧНЫЙ</button>
+                <button id="board-tab-ghost"    class="board-tab"                  onclick="AccountSystem.switchBoardMode('ghost')"><img id="ico-ghost-tab" class="pixel-icon" style="width:12px;height:12px;"> ПРИЗРАКИ</button>
             </div>
             <div class="board-scroll-wrap">
                 <table class="board-table">
@@ -584,6 +673,7 @@
          без HTML <audio> тега — чтобы браузер не показывал системный медиаплеер. -->
 
     <script src="js/boss.js"></script>
+    <script src="js/ghosthunt.js"></script>
     <script src="js/accounts.js"></script>
     <script src="js/tutorial.js"></script>
     <script src="js/main.js"></script>
