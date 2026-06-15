@@ -390,6 +390,13 @@ const AccountSystem = (() => {
         if (!_user) { _showAccountToast('Сначала войдите','#e74c3c'); return; }
         const btn = document.getElementById('btn-manual-sync');
         if (btn) { btn.disabled=true; btn.textContent='⏳ Синхронизация...'; }
+        // Отправляем локальные рекорды режимов в таблицу лидеров
+        try {
+            if ((highScore || 0) > 0) submitScore(highScore, 'normal');
+            if ((infinityHighScore || 0) > 0) submitScore(infinityHighScore, 'infinity');
+            if (typeof ghostHighScore !== 'undefined' && (ghostHighScore || 0) > 0) submitScore(ghostHighScore, 'ghost');
+            submitBossProgress();
+        } catch (e) { console.warn('[sync] records:', e); }
         _push(_user.uid).then(()=>{
             _showAccountToast('Сохранено в облако!');
             if (btn) { btn.disabled=false; btn.textContent='☁ В ОБЛАКО'; }

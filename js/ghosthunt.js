@@ -32,14 +32,16 @@ const GH_PLATFORMS = [
 
 // ── Оружия ──
 const GH_WEAPONS = [
-    { id: 'claw',  cd: 16,  nameKey: 'ghosthunt.weapons.claw'  },
+    { id: 'claw',  cd: 10,  nameKey: 'ghosthunt.weapons.claw'  },
     { id: 'yarn',  cd: 34,  nameKey: 'ghosthunt.weapons.yarn'  },
     { id: 'fish',  cd: 60,  nameKey: 'ghosthunt.weapons.fish'  },
     { id: 'laser', cd: 100, nameKey: 'ghosthunt.weapons.laser' },
 ];
 
-// Выбор оружия в меню режима (P1, P2). Сохраняется между сессиями.
-let ghWeaponSel = (typeof SafeStorage !== 'undefined' && SafeStorage.getJSON('pixelCatsGhWeapon')) || [0, 1];
+// Лоадаут: каждый игрок берёт в бой 2 оружия из 4 (выбор до матча). Сохраняется.
+let ghLoadout = (typeof SafeStorage !== 'undefined' && SafeStorage.getJSON('pixelCatsGhLoadout')) || [[0, 3], [1, 2]];
+if (!Array.isArray(ghLoadout) || !Array.isArray(ghLoadout[0])) ghLoadout = [[0, 3], [1, 2]];
+
 // Оверлей перезарядки внутри кнопки атаки (заполняется снизу)
 const GH_CD_OVERLAY = '<div class="gh-cd" style="position:absolute;left:0;bottom:0;width:100%;height:0;background:rgba(0,0,0,0.55);pointer-events:none;"></div>';
 // Запомненный тип управления до принудительного джойстика в охоте (для восстановления)
@@ -118,11 +120,14 @@ function startGhostHunt(playersCount, opts) {
         const s2 = SKINS[p2SkinIndex] || SKINS[1] || SKINS[0];
         GH.players.push(ghMakePlayer(1, GH_VW / 2 + 130, s2));
     }
-    // Оружие из выбора в меню
-    GH.players.forEach((p, i) => {
-        p.weapon = GH.online ? (i === GH.localIdx ? (ghWeaponSel[0] | 0) : 0) : (ghWeaponSel[i] | 0);
+    // Лоадаут оружия из выбора до матча: в бою только выбранные 2
+    GH.players.forEach((pl, i) => {
+        let lo = GH.online ? (i === GH.localIdx ? (ghLoadout[0] || []).slice() : [0, 1, 2, 3])
+                           : (ghLoadout[i] || ghLoadout[0] || []).slice();
+        if (!lo.length) lo = [0];
+        pl.loadout = lo;
+        pl.weapon = lo[0];
     });
-
     // Скрыть экраны
     startScreen.style.display = 'none';
     onlineScreen.style.display = 'none';
@@ -220,13 +225,13 @@ window.addEventListener('keydown', (e) => {
     if (p1 && ghIsLocal(p1)) {
         if (e.code === 'KeyF' || e.code === 'KeyJ') ghTryAttack(p1);
         if (e.code === 'KeyQ') ghSwitchWeapon(p1, -1);
-        if (e.code === 'KeyE') ghSwitchWeapon(p1, 1);
-        if (e.code === 'Digit1') ghSetWeapon(p1, 0);
-        if (e.code === 'Digit2') ghSetWeapon(p1, 1);
-        if (e.code === 'Digit3') ghSetWeapon(p1, 2);
-        if (e.code === 'Digit4') ghSetWeapon(p1, 3);
+        if (e.code === 'KeyE' || e.code === 'KeyG') ghSwitchWeapon(p1, 1); // G — смена оружия одной кнопкой
+        if (e.code === 'Digit1') ghSetWeaponSlot(p1, 0);
+        if (e.code === 'Digit2') ghSetWeaponSlot(p1, 1);
         // В соло можно атаковать и с правой руки
         if (GH.mode === 'solo' && (e.code === 'Slash' || e.code === 'ShiftRight')) ghTryAttack(p1);
+        if (GH.mode === 'solo' && (e.code === 'Period' || e.code === 'NumpadDecimal')) ghSwitchWeapon(p1, 1);
+        if (GH.mode === 'solo' && e.code === 'Comma') ghSwitchWeapon(p1, -1);
     }
     // P2 — локальная дуэль
     if (p2local) {
@@ -238,40 +243,54 @@ window.addEventListener('keydown', (e) => {
 
 function ghSetWeapon(p, idx) {
     if (p.switchLock > 0 || p.weapon === idx) return;
-    p.weapon = idx; p.switchLock = 6;
+    p.weapon = idx; p.switchLock = 6; p.cd = 0; // смена оружия сбрасывает перезарядку
     AudioEngine.sfx.click();
 }
 function ghSwitchWeapon(p, dir) {
     if (p.switchLock > 0) return;
-    p.weapon = (p.weapon + dir + GH_WEAPONS.length) % GH_WEAPONS.length;
-    p.switchLock = 6;
+    const lo = (p.loadout && p.loadout.length) ? p.loadout : [0, 1, 2, 3];
+    let idx = lo.indexOf(p.weapon); if (idx < 0) idx = 0;
+    p.weapon = lo[(idx + dir + lo.length) % lo.length];
+    p.switchLock = 6; p.cd = 0; // смена оружия сбрасывает перезарядку
     AudioEngine.sfx.click();
 }
+// Выбрать слот лоадаута (клавиши 1/2)
+function ghSetWeaponSlot(p, slot) {
+    const lo = (p.loadout && p.loadout.length) ? p.loadout : [0, 1, 2, 3];
+    if (slot < lo.length) ghSetWeapon(p, lo[slot]);
+}
 
-// Выбор стартового оружия в меню режима
-function ghSetWeaponSel(player, idx) {
-    ghWeaponSel[player] = idx;
-    try { SafeStorage.set('pixelCatsGhWeapon', JSON.stringify(ghWeaponSel)); } catch (e) {}
-    ghRenderWeaponSelect();
+// Выбор 2 оружий в бой (до матча). Тап по оружию — добавить/снять (макс 2, мин 1).
+function ghToggleLoadout(player, wi) {
+    const lo = ghLoadout[player];
+    const at = lo.indexOf(wi);
+    if (at >= 0) { if (lo.length > 1) lo.splice(at, 1); }
+    else { lo.push(wi); if (lo.length > 2) lo.shift(); }
+    try { SafeStorage.set('pixelCatsGhLoadout', JSON.stringify(ghLoadout)); } catch (e) {}
+    ghRenderLoadout();
     if (AudioEngine.sfx && AudioEngine.sfx.click) AudioEngine.sfx.click();
 }
-function ghRenderWeaponSelect() {
+function ghRenderLoadout() {
     const cont = document.getElementById('gh-weapons-list');
     if (!cont) return;
     const names = GH_WEAPONS.map(w => t(w.nameKey));
-    const row = (player) => {
-        let h = '<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;align-items:center;margin:3px 0;">';
-        h += '<span style="color:#a88beb;font-size:8px;min-width:22px;text-align:right;">P' + (player + 1) + '</span>';
+    const row = (player, col) => {
+        let h = '<div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;align-items:center;margin:4px 0;">';
+        h += '<span style="color:' + col + ';font-size:9px;min-width:26px;text-align:right;">P' + (player + 1) + '</span>';
         for (let i = 0; i < GH_WEAPONS.length; i++) {
-            const sel = (ghWeaponSel[player] | 0) === i;
-            h += '<button onpointerdown="ghSetWeaponSel(' + player + ',' + i + ')" style="font-family:inherit;font-size:8px;padding:5px 6px;cursor:pointer;'
-               + 'border:2px solid ' + (sel ? '#7df9ff' : '#555') + ';background:' + (sel ? 'rgba(125,249,255,0.20)' : 'rgba(0,0,0,0.4)')
-               + ';color:' + (sel ? '#7df9ff' : '#bbb') + ';">' + names[i] + '</button>';
+            const sel = ghLoadout[player].includes(i);
+            h += '<button onpointerdown="ghToggleLoadout(' + player + ',' + i + ')" style="font-family:inherit;font-size:8px;padding:6px 7px;cursor:pointer;'
+               + 'border:2px solid ' + (sel ? col : '#555') + ';background:' + (sel ? 'rgba(125,249,255,0.18)' : 'rgba(0,0,0,0.4)')
+               + ';color:' + (sel ? col : '#bbb') + ';">' + names[i] + '</button>';
         }
-        h += '</div>';
-        return h;
+        return h + '</div>';
     };
-    cont.innerHTML = '<div style="color:#a88beb;font-size:9px;margin-bottom:3px;">' + t('ghosthunt.weaponsTitle') + '</div>' + row(0) + row(1);
+    const legend = '<div style="color:#888;font-size:7px;line-height:1.7;margin-top:4px;text-align:left;">'
+        + GH_WEAPONS.map((w, i) => names[i] + ' — ' + t('ghosthunt.wd.' + w.id)).join('<br>') + '</div>';
+    cont.innerHTML = '<div style="color:#ffd700;font-size:11px;margin-bottom:4px;text-shadow:1px 1px 0 #000;">' + t('ghosthunt.pickTitle') + '</div>'
+        + row(0, '#7df9ff') + row(1, '#ffb86c')
+        + '<div style="color:#a88beb;font-size:7px;margin-top:2px;">' + t('ghosthunt.pickHint') + '</div>'
+        + legend;
 }
 
 // ============================================================
@@ -303,22 +322,32 @@ function ghSpawnAttack(p, visualOnly) {
 
     if (w === 'claw') {
         AudioEngine.sfx.ghClaw && AudioEngine.sfx.ghClaw();
-        GH.fx.push({ kind: 'slash', x: cx + dir * 38, y: cy, dir: dir, life: 10, max: 10 });
+        const clx = cx + dir * 52, cly = cy, R = 58;        // круг урона впереди кота
+        GH.fx.push({ kind: 'slash', x: cx, y: p.y + 14, dir: dir, life: 12, max: 12 }); // визуал — разрезы у головы
         if (!visualOnly) {
-            const zone = { x: cx + (dir > 0 ? 6 : -86), y: p.y - 14, w: 80, h: 70 };
-            ghDamageZone(zone, 1, p, 'claw');
+            // ВЕСЬ круг наносит урон: пересечение круга с хитбоксом призрака (а не только центр)
+            for (const g of GH.ghosts) {
+                if (g.dead || g.phased) continue;
+                const gw = 30 * g.scale, ghh = 36 * g.scale;
+                const nx = Math.max(g.x, Math.min(clx, g.x + gw));  // ближайшая точка хитбокса к центру круга
+                const ny = Math.max(g.y, Math.min(cly, g.y + ghh));
+                const ddx = clx - nx, ddy = cly - ny;
+                if (ddx * ddx + ddy * ddy > R * R) continue;        // хитбокс не касается круга
+                ghDamageGhost(g, 1, p);
+                if (!g.dead) { g.vx = dir * 16; g.vy = -6; g.knock = 40; g.flash = 8; } // мощный отброс
+            }
         }
     } else if (w === 'yarn') {
         AudioEngine.sfx.ghYarn && AudioEngine.sfx.ghYarn();
         if (!visualOnly) {
             GH.projs.push({ kind: 'yarn', owner: p.idx, x: cx + dir * 16, y: cy - 6,
-                vx: 8.5 * dir, vy: -3.6, bounces: 2, life: 280, r: 9, rot: 0 });
+                vx: 8.5 * dir, vy: -3.6, bounces: 5, life: 360, r: 9, rot: 0 });
         }
     } else if (w === 'fish') {
         AudioEngine.sfx.ghFish && AudioEngine.sfx.ghFish();
         if (!visualOnly) {
             GH.projs.push({ kind: 'fish', owner: p.idx, x: cx + dir * 14, y: cy - 4,
-                vx: 10 * dir, vy: 0, out: 38, returning: false, life: 600, hitIds: [], rot: 0 });
+                vx: 15 * dir, vy: 0, out: 38, returning: false, life: 600, hitIds: [], rot: 0 });
             p.fishOut = true;
         } else { p.fishOut = true; }
     } else if (w === 'laser') {
@@ -424,7 +453,12 @@ function ghUpdateGhosts(ts) {
             const d = Math.abs(p.x - g.x) + Math.abs(p.y - g.y);
             if (d < bd) { bd = d; target = p; }
         }
-        if (target) {
+        if (g.knock > 0) {
+            // отброс лапой — призрак летит назад и не наводится, скорость затухает
+            g.knock -= ts;
+            g.vx *= Math.pow(0.9, ts);
+            g.vy *= Math.pow(0.9, ts);
+        } else if (target) {
             const sp = def.speed * speedMult * (g.phased ? 1.8 : 1);
             const dx = (target.x + 15) - (g.x + 15 * g.scale);
             const dy = (target.y + 10) - (g.y + 16 * g.scale);
@@ -502,14 +536,23 @@ function ghUpdateProjs(ts) {
                 else pr.life = 0;
             }
             if (pr.x < -40 || pr.x > GH_VW + 40) pr.life = 0;
-            // урон
+            // урон + отскок от моба
+            if (pr._noHit > 0) pr._noHit -= ts;
             const owner = GH.players[pr.owner];
-            for (const g of GH.ghosts) {
+            if (!(pr._noHit > 0)) for (const g of GH.ghosts) {
                 if (g.dead || g.phased) continue;
                 const gw = 30 * g.scale, ghh = 36 * g.scale;
                 if (pr.x > g.x - pr.r && pr.x < g.x + gw + pr.r && pr.y > g.y - pr.r && pr.y < g.y + ghh + pr.r) {
                     ghDamageGhost(g, 1, owner);
-                    pr.life = 0; break;
+                    if (!g.dead) { const _kd = Math.sign(pr.vx) || 1; g.vx = _kd * 16; g.vy = -6; g.knock = 40; g.flash = 8; } // отброс как у лапы
+                    if (owner) owner.cd = 0;                  // перезарядка сбрасывается при попадании
+                    if (pr.bounces > 0) {                      // клубок отскакивает обратно от моба
+                        pr.bounces--;
+                        pr.vx = -pr.vx; pr.vy = -Math.abs(pr.vy || 3) * 0.8 - 1.5;
+                        pr.x += pr.vx; pr.y += pr.vy;
+                        pr._noHit = 4;
+                    } else { pr.life = 0; }
+                    break;
                 }
             }
         } else if (pr.kind === 'fish') {
@@ -522,16 +565,19 @@ function ghUpdateProjs(ts) {
             } else if (owner) {
                 const dx = (owner.x + 15) - pr.x, dy = (owner.y + 16) - pr.y;
                 const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
-                pr.x += (dx / d) * 11 * ts;
-                pr.y += (dy / d) * 11 * ts;
+                pr.x += (dx / d) * 16 * ts;
+                pr.y += (dy / d) * 16 * ts;
                 if (d < 30) { pr.life = 0; owner.fishOut = false; }
             }
+            if (!pr.hitCd) pr.hitCd = {};
             for (const g of GH.ghosts) {
-                if (g.dead || g.phased || pr.hitIds.includes(g.id)) continue;
+                if (g.dead || g.phased) continue;
                 const gw = 30 * g.scale, ghh = 36 * g.scale;
                 if (pr.x + 13 > g.x && pr.x - 13 < g.x + gw && pr.y + 7 > g.y && pr.y - 7 < g.y + ghh) {
-                    pr.hitIds.push(g.id);
-                    ghDamageGhost(g, 1, owner || GH.players[0]);
+                    if ((pr.hitCd[g.id] || 0) <= gameTime) {   // урон при касании и повторном касании
+                        pr.hitCd[g.id] = gameTime + 18;
+                        ghDamageGhost(g, 1, owner || GH.players[0]);
+                    }
                 }
             }
             if (pr.life <= 0 && owner) owner.fishOut = false;
@@ -683,9 +729,12 @@ function ghShowOverScreen(newRecord, skinJustUnlocked) {
             (skinJustUnlocked ? '<br><span style="color:#2ecc71;">' + t('ghosthunt.skinUnlocked') + '</span>'
              : (!unlockedSkins.includes('ghost') ? '<br><span style="color:#888;font-size:8px;">' + t('ghosthunt.skinHint') + '</span>' : ''));
     }
-    // Гость в онлайне не может рестартовать сам
+    // Гость в онлайне не может рестартовать сам — показываем «ожидайте решения хоста»
     const againBtn = document.getElementById('gh-btn-again');
     if (againBtn) againBtn.style.display = (GH.online && !GH.isHost) ? 'none' : '';
+    if (rec && GH.online && !GH.isHost) {
+        rec.innerHTML += '<br><span style="color:#7df9ff;">' + t('ghosthunt.waitHost') + '</span>';
+    }
     ov.style.display = 'block';
 }
 
@@ -1197,18 +1246,18 @@ function ghDrawFx(f) {
         ctx.globalAlpha = Math.max(0, k);
         ctx.translate(f.x, f.y);
         if (f.dir < 0) ctx.scale(-1, 1);
-        ctx.fillStyle = '#ffffff';
-        const sw = 6;
-        // три дуговых штриха-когтя
-        for (let c = 0; c < 3; c++) {
-            const co = (c - 1) * 14;
-            ctx.fillRect(10, -28 + co, sw, 10);
-            ctx.fillRect(18, -20 + co, sw, 10);
-            ctx.fillRect(23, -10 + co, sw, 10);
-        }
-        ctx.globalAlpha = Math.max(0, k * 0.4);
-        ctx.fillStyle = '#7df9ff';
-        ctx.fillRect(4, -34, 30, 62);
+        // разрезы лапы: 3 СКРУГЛЁННЫЕ дуги (как нарисовано), по пол-радиуса, слегка за головой кота
+        const acx = -30, acy = 0, a0 = -0.62, a1 = 0.62;   // центр дуг позади кота, разворот вперёд
+        ctx.lineCap = 'round';
+        // мягкий голубой след
+        ctx.globalAlpha = Math.max(0, k * 0.30);
+        ctx.strokeStyle = '#7df9ff'; ctx.lineWidth = 11;
+        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(acx, acy, 48 + i * 9, a0, a1); ctx.stroke(); }
+        // белые скруглённые разрезы
+        ctx.globalAlpha = Math.max(0, k);
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5;
+        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(acx, acy, 48 + i * 9, a0, a1); ctx.stroke(); }
+        ctx.lineCap = 'butt';
     } else if (f.kind === 'laser') {
         ctx.globalAlpha = Math.max(0, k);
         const x1 = Math.min(f.x, f.x2), x2 = Math.max(f.x, f.x2);
@@ -1272,7 +1321,10 @@ function ghDrawHUD(sc, ox, oy) {
         ctx.globalAlpha = 1;
     }
 
-    // (панель выбранного оружия убрана — оружие выбирается в меню режима)
+    // — панели оружия (инвентарь): слева снизу, с индикатором перезарядки
+    ghDrawWeaponBar(p1, 18, LOGICAL_H - 64, true);
+    if (p2 && !GH.online) ghDrawWeaponBar(p2, W - 18 - ((p2.loadout ? p2.loadout.length : 2) * 52), LOGICAL_H - 64, false);
+    else if (p2 && GH.online && GH.localIdx === 1) ghDrawWeaponBar(p2, 18, LOGICAL_H - 64, true);
 
     // подсказка управления (первые секунды)
     if (GH.elapsed < 480 && !GH.online) {
@@ -1312,25 +1364,26 @@ function ghDrawHeart(x, y, full) {
 
 function ghDrawWeaponBar(p, x, y, showKeys) {
     const local = ghIsLocal(p);
-    for (let i = 0; i < GH_WEAPONS.length; i++) {
-        const sel = p.weapon === i;
-        const bx = x + i * 52;
+    const lo = (p.loadout && p.loadout.length) ? p.loadout : [p.weapon];
+    for (let s = 0; s < lo.length; s++) {
+        const wi = lo[s];
+        const sel = p.weapon === wi;
+        const bx = x + s * 52;
         ctx.fillStyle = sel ? 'rgba(125,249,255,0.18)' : 'rgba(0,0,0,0.45)';
         ctx.fillRect(bx, y, 46, 46);
         ctx.strokeStyle = sel ? '#7df9ff' : '#444';
         ctx.lineWidth = 2;
         ctx.strokeRect(bx + 1, y + 1, 44, 44);
-        ghDrawWeaponIcon(GH_WEAPONS[i].id, bx + 23, y + 22);
+        ghDrawWeaponIcon(GH_WEAPONS[wi].id, bx + 23, y + 22);
         if (showKeys && local) {
             ctx.font = "7px 'Press Start 2P', monospace";
             ctx.fillStyle = sel ? '#7df9ff' : '#888';
             ctx.textAlign = 'center';
-            ctx.fillText(String(i + 1), bx + 23, y + 42);
+            ctx.fillText(String(s + 1), bx + 23, y + 42);
             ctx.textAlign = 'left';
         }
-        // перезарядка выбранного
         if (sel && p.cd > 0 && local) {
-            const frac = Math.max(0, Math.min(1, p.cd / GH_WEAPONS[i].cd));
+            const frac = Math.max(0, Math.min(1, p.cd / GH_WEAPONS[wi].cd));
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
             ctx.fillRect(bx, y + 46 * (1 - frac), 46, 46 * frac);
         }
@@ -1398,12 +1451,16 @@ function ghEnsureMobileButtons() {
         layer.appendChild(b);
         return b;
     };
-    // P1 атака (большая)
+    // P1 атака (большая) + смена оружия (рядом)
     const atk1 = mk('gh-mob-atk1', 88);
     atk1.innerHTML = IconGenerator.html('swords', '36px') + GH_CD_OVERLAY;
-    // P2 атака (локальная дуэль)
+    const wpn1 = mk('gh-mob-wpn1', 60);
+    wpn1.innerHTML = _ghWpnHtml(null);
+    // P2 атака + смена оружия (локальная дуэль)
     const atk2 = mk('gh-mob-atk2', 88);
     atk2.innerHTML = IconGenerator.html('swords', '36px') + GH_CD_OVERLAY;
+    const wpn2 = mk('gh-mob-wpn2', 60);
+    wpn2.innerHTML = _ghWpnHtml(null);
     // Кнопка выхода (ESC) — фиксированно в левом верхнем углу
     const ext = mk('gh-mob-exit', 46);
     ext.style.position = 'fixed'; ext.style.left = '8px'; ext.style.top = '8px'; ext.style.fontSize = '10px';
@@ -1411,7 +1468,29 @@ function ghEnsureMobileButtons() {
 
     atk1.addEventListener('pointerdown', (e) => { e.preventDefault(); const p = GH.players[GH.online ? GH.localIdx : 0]; if (p) ghTryAttack(p); });
     atk2.addEventListener('pointerdown', (e) => { e.preventDefault(); const p = GH.players[1]; if (p && !GH.online) ghTryAttack(p); });
+    wpn1.addEventListener('pointerdown', (e) => { e.preventDefault(); const p = GH.players[GH.online ? GH.localIdx : 0]; if (p) { ghSwitchWeapon(p, 1); wpn1.innerHTML = _ghWpnHtml(p); } });
+    wpn2.addEventListener('pointerdown', (e) => { e.preventDefault(); const p = GH.players[1]; if (p && !GH.online) { ghSwitchWeapon(p, 1); wpn2.innerHTML = _ghWpnHtml(p); } });
     ext.addEventListener('pointerdown', (e) => { e.preventDefault(); ghExitToMenu(); });
+}
+
+// Подпись кнопки смены оружия: иконка + номер текущего оружия
+function _ghWpnHtml(p) {
+    return IconGenerator.html('rotate', '18px') + '<div style="font-size:9px;margin-top:2px;">' + ((p ? (p.weapon | 0) : 0) + 1) + '</div>';
+}
+// Кнопку оружия приставляем вплотную к кнопке атаки (следует за её положением)
+function _ghPlaceWpn(wpnId, atkId) {
+    const w = document.getElementById(wpnId), a = document.getElementById(atkId);
+    if (!w || !a) return;
+    const al = parseFloat(a.style.left), at = parseFloat(a.style.top);
+    if (isNaN(al) || isNaN(at)) return;
+    const asz = 88, wsz = 60;
+    let lx = al - wsz - 6;
+    if (lx < 4) lx = al + asz + 6;
+    w.style.position = 'absolute';
+    w.style.left = lx + 'px';
+    w.style.top = (at + (asz - wsz) / 2) + 'px';
+    w.style.bottom = 'unset'; w.style.right = 'unset';
+    w.style.transform = a.style.transform || '';
 }
 
 function ghUpdateAtkCD() {
@@ -1433,14 +1512,21 @@ function ghShowMobileButtons(show) {
     if (typeof applyLayout === 'function' && typeof loadLayout === 'function') applyLayout(loadLayout());
     const a1 = document.getElementById('gh-mob-atk1');
     const a2 = document.getElementById('gh-mob-atk2');
+    const w1 = document.getElementById('gh-mob-wpn1');
+    const w2 = document.getElementById('gh-mob-wpn2');
     const ext = document.getElementById('gh-mob-exit');
     const jm = document.getElementById('joy-menu');
     if (jm && show && isMobile) jm.style.display = 'none'; // в охоте свой ESC (слева сверху)
     const vis = (show && isMobile) ? 'block' : 'none';
     if (a1) a1.style.display = vis;
     if (ext) ext.style.display = vis;
+    if (w1) { w1.style.display = vis; w1.innerHTML = _ghWpnHtml(GH.players[GH.online ? GH.localIdx : 0]); }
     const duoVis = (show && isMobile && GH.mode === 'duo' && !GH.online) ? 'block' : 'none';
     if (a2) a2.style.display = duoVis;
+    if (w2) { w2.style.display = duoVis; w2.innerHTML = _ghWpnHtml(GH.players[1]); }
+    // оружие-кнопки приставляем к кнопкам атаки (после применения раскладки)
+    _ghPlaceWpn('gh-mob-wpn1', 'gh-mob-atk1');
+    if (GH.mode === 'duo' && !GH.online) _ghPlaceWpn('gh-mob-wpn2', 'gh-mob-atk2');
 }
 
 // ============================================================
@@ -1459,7 +1545,7 @@ function updateGhostHuntTexts() {
     safeSetHTML('gh-howto', t('ghosthunt.howto'));
     safeSetText('gh-controls-title', t('ghosthunt.controlsTitle'));
     safeSetHTML('gh-controls', t('ghosthunt.controlsInfo'));
-    ghRenderWeaponSelect();
+    ghRenderLoadout();
     const ghOwned = (typeof unlockedSkins !== 'undefined' && unlockedSkins.includes('ghost'));
     safeSetText('gh-skin-promo', ghOwned ? t('ghosthunt.skinReady') : t('ghosthunt.skinHint'));
     const rec = document.getElementById('gh-record');

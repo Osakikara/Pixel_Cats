@@ -845,7 +845,8 @@ function addTerrainBlock(canHaveHazards = true) {
 
 function manageChunks() {
     const lookAhead = 400 * (1 / zoomFactor);
-    terrain = terrain.filter(b => b.x + b.w > camera.x - 200); items = items.filter(i => i.x + i.w > camera.x - 200);
+    let _tk = 0; while (_tk < terrain.length && terrain[_tk].x + terrain[_tk].w <= camera.x - 200) _tk++; if (_tk > 0) terrain.splice(0, _tk);
+    let _ik = 0; while (_ik < items.length && items[_ik].x + items[_ik].w <= camera.x - 200) _ik++; if (_ik > 0) items.splice(0, _ik);
     while (nextTerrainX < camera.x + (LOGICAL_W / zoomFactor) + lookAhead) addTerrainBlock(true);
 }
 
@@ -1054,7 +1055,8 @@ function drawSandGround(c, bx, by, bw, bh) {
     c.fillStyle = "#b08030";
     // First stripe at the nearest world-grid line at or below (by + 4)
     const _firstStripe = Math.ceil((by + 4) / _stripeStep) * _stripeStep;
-    for (let _sy = _firstStripe; _sy < by + bh; _sy += _stripeStep) {
+    const _sandBot = by + Math.min(bh, (LOGICAL_H / zoomFactor) + 150); // полоски только в видимой глубине
+    for (let _sy = _firstStripe; _sy < _sandBot; _sy += _stripeStep) {
         c.fillRect(bx, _sy, bw, 3);
     }
 
@@ -1074,13 +1076,15 @@ function drawSandGround(c, bx, by, bw, bh) {
     c.fillStyle = "#d4a848"; c.fillRect(bx, by + GP * 2, bw, GP);
     c.fillStyle = "#b89030"; c.fillRect(bx, by + GP * 3, bw, GP);
     // Ripple wave on surface
-    for (let col = 0; col < bw; col += GP) {
-        const wIdx = Math.floor((bx + col) / GP) % GW.length;
-        const depth = Math.round(GW[wIdx] * WAVE_DIP);
-        c.fillStyle = "#a07828";
-        c.fillRect(bx + col, by + GP * 4 + depth, GP, GP);
-        c.fillStyle = "#8a6020";
-        c.fillRect(bx + col, by + GP * 4 + depth + GP, GP, GP);
+    let _scol = 0;
+    while (_scol < bw) {
+        const _d = Math.round(GW[Math.floor((bx + _scol) / GP) % GW.length] * WAVE_DIP);
+        let _send = _scol + GP;
+        while (_send < bw && Math.round(GW[Math.floor((bx + _send) / GP) % GW.length] * WAVE_DIP) === _d) _send += GP;
+        const _w = _send - _scol;
+        c.fillStyle = "#a07828"; c.fillRect(bx + _scol, by + GP * 4 + _d, _w, GP);
+        c.fillStyle = "#8a6020"; c.fillRect(bx + _scol, by + GP * 4 + _d + GP, _w, GP);
+        _scol = _send;
     }
 }
 
@@ -1113,11 +1117,13 @@ function drawMoonGround(c, bx, by, bw, bh) {
     c.fillStyle = "#707080"; c.fillRect(bx, by + GP * 2, bw, GP);
     c.fillStyle = "#606070"; c.fillRect(bx, by + GP * 3, bw, GP);
     // Subtle top wave
-    for (let col = 0; col < bw; col += GP) {
-        const wIdx = Math.floor((bx + col) / GP) % GW.length;
-        const depth = Math.round(GW[wIdx] * (WAVE_DIP * 0.5));
-        c.fillStyle = "#505060";
-        c.fillRect(bx + col, by + GP * 4 + depth, GP, GP);
+    let _mcol = 0;
+    while (_mcol < bw) {
+        const _d = Math.round(GW[Math.floor((bx + _mcol) / GP) % GW.length] * (WAVE_DIP * 0.5));
+        let _mend = _mcol + GP;
+        while (_mend < bw && Math.round(GW[Math.floor((bx + _mend) / GP) % GW.length] * (WAVE_DIP * 0.5)) === _d) _mend += GP;
+        c.fillStyle = "#505060"; c.fillRect(bx + _mcol, by + GP * 4 + _d, _mend - _mcol, GP);
+        _mcol = _mend;
     }
 }
 

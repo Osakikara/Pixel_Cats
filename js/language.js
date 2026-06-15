@@ -24,15 +24,16 @@ const translations = {
                 + '<span style="color:#ffb86c;">ДУЭЛЬ:</span> 120 секунд, касание −10 очков. Кто набрал больше — победил!',
             controlsTitle: "УПРАВЛЕНИЕ",
             controlsInfo: 'P1: <span class="key-badge">A</span><span class="key-badge">D</span> движение · <span class="key-badge">W</span> прыжок · <span class="key-badge">S</span> спуск<br>'
-                + '<span class="key-badge">F</span> атака<br>'
-                + 'P2: <span class="key-badge">◄►▲▼</span> · <span class="key-badge">/</span> атака<br>'
-                + 'Мобильные: джойстик + кнопка атаки. Оружие — в меню ниже.',
+                + '<span class="key-badge">F</span> атака · <span class="key-badge">G</span> сменить оружие<br>'
+                + 'P2: <span class="key-badge">◄►▲▼</span> движение · <span class="key-badge">/</span> атака · <span class="key-badge">.</span> оружие<br>'
+                + 'Мобильные: джойстик + кнопки атаки и смены оружия',
             layoutBtn: "РАСПОЛОЖЕНИЕ КНОПОК",
             layoutBtn2: "РАСПОЛОЖЕНИЕ (2 ИГРОКА)",
             weaponsTitle: "ОРУЖИЯ",
             weapons: { claw: "ЛАПА", yarn: "КЛУБОК", fish: "РЫБА-БУМЕРАНГ", laser: "ЛАЗЕР" },
-            controls1: "P1: F — АТАКА · S — СПУСК",
-            controls2: "P2: / — АТАКА",
+            wd: { claw: "широкий удар вблизи", yarn: "рикошет, до 5 отскоков", fish: "бумеранг, бьёт насквозь", laser: "луч через всю арену" },
+            controls1: "P1: F — АТАКА · G — ОРУЖИЕ · S — СПУСК",
+            controls2: "P2: / — АТАКА · . — ОРУЖИЕ",
             score: "СЧЁТ:", wave: "ВОЛНА", record: "РЕКОРД:", streak: "СЕРИЯ",
             lifeLost: "-1 ЖИЗНЬ",
             overSolo: "ВЫЖИВАНИЕ ОКОНЧЕНО", overDuo: "РАУНД ОКОНЧЕН",
@@ -42,6 +43,8 @@ const translations = {
             skinHint: "Скин «ПРИЗРАК» за 300 очков",
             skinReady: "Скин «ПРИЗРАК» открыт! Окрас меняется в меню скинов кнопкой «НАСТРОИТЬ».",
             ghostModeInfo: "Дуэль 120 секунд: кто наберёт больше очков!",
+            waitHost: "Пожалуйста, ожидайте решения хоста",
+            pickTitle: "ВЫБЕРИТЕ 2 ОРУЖИЯ В БОЙ", pickHint: "В бою доступны только выбранные 2",
         },
         skinCfg: {
             configure: "НАСТРОИТЬ", title: "НАСТРОЙКА СКИНА",
@@ -293,15 +296,16 @@ const translations = {
                 + '<span style="color:#ffb86c;">DUEL:</span> 120 seconds, touch −10 points. Highest score wins!',
             controlsTitle: "CONTROLS",
             controlsInfo: 'P1: <span class="key-badge">A</span><span class="key-badge">D</span> move · <span class="key-badge">W</span> jump · <span class="key-badge">S</span> drop<br>'
-                + '<span class="key-badge">F</span> attack<br>'
-                + 'P2: <span class="key-badge">◄►▲▼</span> · <span class="key-badge">/</span> attack<br>'
-                + 'Mobile: joystick + attack button. Weapon — in the menu below.',
+                + '<span class="key-badge">F</span> attack · <span class="key-badge">G</span> switch weapon<br>'
+                + 'P2: <span class="key-badge">◄►▲▼</span> move · <span class="key-badge">/</span> attack · <span class="key-badge">.</span> weapon<br>'
+                + 'Mobile: joystick + attack and weapon-switch buttons',
             layoutBtn: "BUTTON LAYOUT",
             layoutBtn2: "LAYOUT (2 PLAYERS)",
             weaponsTitle: "WEAPONS",
             weapons: { claw: "CLAW", yarn: "YARN BALL", fish: "FISH BOOMERANG", laser: "LASER" },
-            controls1: "P1: F — ATTACK · S — DROP",
-            controls2: "P2: / — ATTACK",
+            wd: { claw: "wide close swipe", yarn: "ricochet, up to 5 bounces", fish: "boomerang, pierces", laser: "beam across arena" },
+            controls1: "P1: F — ATTACK · G — WEAPON · S — DROP",
+            controls2: "P2: / — ATTACK · . — WEAPON",
             score: "SCORE:", wave: "WAVE", record: "BEST:", streak: "STREAK",
             lifeLost: "-1 LIFE",
             overSolo: "SURVIVAL OVER", overDuo: "ROUND OVER",
@@ -311,6 +315,8 @@ const translations = {
             skinHint: "GHOST skin at 300 points",
             skinReady: "GHOST skin unlocked! Change its colour via CONFIGURE in the skin menu.",
             ghostModeInfo: "120-second duel: who scores more!",
+            waitHost: "Please wait for the host's decision",
+            pickTitle: "PICK 2 WEAPONS FOR BATTLE", pickHint: "Only the chosen 2 are usable in battle",
         },
         skinCfg: {
             configure: "CONFIGURE", title: "SKIN SETTINGS",
@@ -568,13 +574,33 @@ function toggleLanguage() {
     updateAllTexts();
 }
 
+// Красивое пиксельное уведомление об открытии (вместо alert)
+function showUnlockToast(html) {
+    let el = document.getElementById('unlock-toast');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'unlock-toast';
+        el.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-24px);'
+            + 'background:#1a1426;border:4px solid #ffd700;box-shadow:6px 6px 0 #000;color:#ffd700;'
+            + "font-family:'Press Start 2P',monospace;font-size:11px;line-height:1.7;padding:16px 22px;"
+            + 'text-align:center;z-index:99999;max-width:90vw;opacity:0;pointer-events:none;'
+            + 'transition:opacity .4s ease, transform .4s ease;';
+        document.body.appendChild(el);
+    }
+    el.innerHTML = html;
+    requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateX(-50%) translateY(0)'; });
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(-50%) translateY(-24px)'; }, 3600);
+}
+
 function unlockSamuraiSkin() {
     samuraiUnlocked = true;
     SafeStorage.set('pixelCatsSamuraiUnlocked', 'true');
     if (!unlockedSkins.includes('samurai')) { unlockedSkins.push('samurai'); saveGameData(); }
     const btnLang = document.getElementById('btn-lang');
     btnLang.classList.add('secret-unlock');
-    alert(t('secretUnlocked'));
+    showUnlockToast('<span style="color:#fff;">\u2605</span> ' + t('secretUnlocked') + ' <span style="color:#fff;">\u2605</span>');
+    try { if (typeof AudioEngine !== 'undefined' && AudioEngine.sfx && AudioEngine.sfx.unlock) AudioEngine.sfx.unlock(); } catch (e) {}
     updateMenuButtons();
     setTimeout(() => btnLang.classList.remove('secret-unlock'), 1000);
 }
