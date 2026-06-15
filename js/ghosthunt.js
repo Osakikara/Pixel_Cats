@@ -243,7 +243,7 @@ window.addEventListener('keydown', (e) => {
 
 function ghSetWeapon(p, idx) {
     if (p.switchLock > 0 || p.weapon === idx) return;
-    p.weapon = idx; p.switchLock = 6; p.cd = 0; // смена оружия сбрасывает перезарядку
+    p.weapon = idx; p.switchLock = 6;
     AudioEngine.sfx.click();
 }
 function ghSwitchWeapon(p, dir) {
@@ -251,7 +251,7 @@ function ghSwitchWeapon(p, dir) {
     const lo = (p.loadout && p.loadout.length) ? p.loadout : [0, 1, 2, 3];
     let idx = lo.indexOf(p.weapon); if (idx < 0) idx = 0;
     p.weapon = lo[(idx + dir + lo.length) % lo.length];
-    p.switchLock = 6; p.cd = 0; // смена оружия сбрасывает перезарядку
+    p.switchLock = 6;
     AudioEngine.sfx.click();
 }
 // Выбрать слот лоадаута (клавиши 1/2)
