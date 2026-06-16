@@ -262,7 +262,7 @@ const AccountSystem = (() => {
         if (prog.p1SkinIndex !== undefined) p1SkinIndex = prog.p1SkinIndex;
         if (prog.p2SkinIndex !== undefined) p2SkinIndex = prog.p2SkinIndex;
         if (Array.isArray(prog.defeatedBossIds) && typeof defeatedBosses !== 'undefined') {
-            prog.defeatedBossIds.forEach(id => { if (!defeatedBosses.includes(id)) defeatedBosses.push(id); });
+            prog.defeatedBossIds.forEach(id => { if (!defeatedBosses.includes(id) && (typeof BOSSES === 'undefined' || BOSSES.some(b => b.id === id))) defeatedBosses.push(id); });
             localStorage.setItem('pixelCatsDefeatedBosses', JSON.stringify(defeatedBosses));
         }
         saveGameData(); updateFishUI();

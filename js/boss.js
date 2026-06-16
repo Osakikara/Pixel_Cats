@@ -61,6 +61,12 @@ const BOSSES = [
 // BOSS BATTLE STATE VARIABLES
 // ============================================
 let defeatedBosses = SafeStorage.getJSON('pixelCatsDefeatedBosses') || [];
+// Чистка: убрать ID несуществующих боссов (напр. удалённого 'kraken'), иначе счёт «5 из 4»
+(function () {
+    const _ids = BOSSES.map(b => b.id);
+    const _f = defeatedBosses.filter(id => _ids.includes(id));
+    if (_f.length !== defeatedBosses.length) { defeatedBosses = _f; SafeStorage.set('pixelCatsDefeatedBosses', JSON.stringify(defeatedBosses)); }
+})();
 
 // Виртуальное пространство координат арены босса — 4× увеличено,
 // одинаковое на всех устройствах, масштабируется под экран.

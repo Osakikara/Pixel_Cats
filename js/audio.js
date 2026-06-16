@@ -778,7 +778,9 @@ const AudioEngine = (() => {
     // По file:// (локальное открытие index.html напрямую) fetch блокируется
     // браузером, поэтому используется обычный <audio> элемент — на проде этот
     // путь не задействуется, так что медиаплеер модерации не помешает.
-    const MENU_TRACK_URL = 'media/vospominaniya-o-bylom.mp3';
+    const MENU_TRACKS = { classic: 'media/vospominaniya-o-bylom.mp3', moon: 'media/Endless Pixels.mp3' };
+    let _menuTheme = (typeof menuTheme !== 'undefined') ? menuTheme : 'moon';
+    function MENU_TRACK_URL_FN() { return MENU_TRACKS[_menuTheme] || MENU_TRACKS.classic; }
     const _menuUseHtmlAudio = (location.protocol === 'file:');
     let menuBuffer = null;       // декодированный буфер (грузится один раз)
     let menuLoading = null;      // промис активной загрузки
@@ -792,7 +794,7 @@ const AudioEngine = (() => {
 
     function _startMenuHtmlAudio() {
         if (!_menuAudioEl) {
-            _menuAudioEl = new Audio(MENU_TRACK_URL);
+            _menuAudioEl = new Audio(MENU_TRACK_URL_FN());
             _menuAudioEl.loop = true;
         }
         _menuAudioEl.volume = _menuAudioVol();
@@ -802,7 +804,7 @@ const AudioEngine = (() => {
     function _loadMenuBuffer() {
         if (menuBuffer) return Promise.resolve(menuBuffer);
         if (menuLoading) return menuLoading;
-        menuLoading = fetch(MENU_TRACK_URL)
+        menuLoading = fetch(MENU_TRACK_URL_FN())
             .then(r => r.arrayBuffer())
             .then(data => new Promise((res, rej) => actx.decodeAudioData(data, res, rej)))
             .then(buf => { menuBuffer = buf; return buf; })
@@ -811,6 +813,7 @@ const AudioEngine = (() => {
     }
 
     function startMenuMusic() {
+        if (typeof menuTheme !== 'undefined' && menuTheme !== _menuTheme) setMenuTheme(menuTheme); // синхрон темы (globals грузится позже)
         if (!S.musicOn) return;
         if (_menuUseHtmlAudio) { _startMenuHtmlAudio(); return; }
         boot();
@@ -859,6 +862,18 @@ const AudioEngine = (() => {
         if (!v) _stopMenuAudio(); else startMenuMusic();
     }
 
+    // Смена темы меню: переключает фоновый трек (classic ↔ moon)
+    function setMenuTheme(theme) {
+        if (theme !== 'classic' && theme !== 'moon') theme = 'classic';
+        if (theme === _menuTheme) return;
+        _menuTheme = theme;
+        menuBuffer = null; menuLoading = null;        // сбросить кеш декодированного трека
+        const wasPlaying = menuShouldPlay || (_menuAudioEl && !_menuAudioEl.paused);
+        _stopMenuAudio();
+        _menuAudioEl = null;                          // пересоздать <audio> с новым треком
+        if (wasPlaying && S.musicOn) startMenuMusic();
+    }
+
     // ── Требование модерации 1.3: глушим звук при сворачивании вкладки ──
     // Web Audio (меню по HTTP, босс, SFX) ставится на паузу через suspend().
     // HTML-аудио фолбэк (file://) не подчиняется AudioContext — паузим отдельно.
@@ -881,6 +896,6 @@ const AudioEngine = (() => {
              stopBossMusic: stopBossMusicEx,
              setMusicOn: setMusicOnEx,
              setMusicVol, setSfxVol, setMasterVol,
-             setSfxOn,
+             setSfxOn, setMenuTheme,
              applyVol, boot };
 })();

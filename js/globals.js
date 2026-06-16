@@ -47,6 +47,9 @@ let _rainbowCache = null, _rainbowCacheW = 0, _rainbowCacheH = 0;
 let _behelitCache = null, _behelitCacheR = 0;
 let _forestCache = null, _forestCacheH = 0, _forestCacheGround = 0, _forestCacheSc = 0;
 let _earthCache = null, _earthCacheRS = 0;
+let _menuEarthCache = null;  // кеш пиксельной Земли для лунной темы меню
+// Тема главного меню: 'classic' (небо/замок) | 'moon' (космос/Земля/луна)
+let menuTheme = (typeof SafeStorage !== 'undefined' && SafeStorage.get('pixelCatsMenuTheme')) || 'moon';
 
 function toggleMobileMode() {
     forceMobile = !forceMobile;

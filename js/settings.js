@@ -179,6 +179,23 @@ function _syncSettingsUI() {
     const _floatBtn = document.getElementById('joy-style-float');
     if (_fixedBtn) _fixedBtn.classList.toggle('active', _js === 'fixed');
     if (_floatBtn) _floatBtn.classList.toggle('active', _js === 'float');
+    // Тема меню
+    const _ct = (typeof menuTheme !== 'undefined') ? menuTheme : 'classic';
+    const _tc = document.getElementById('theme-classic'), _tm = document.getElementById('theme-moon');
+    if (_tc) _tc.classList.toggle('active', _ct === 'classic');
+    if (_tm) _tm.classList.toggle('active', _ct === 'moon');
+}
+
+// Смена темы главного меню (классика ↔ луна): меняет фон и музыку
+function setMenuTheme(theme) {
+    if (theme !== 'classic' && theme !== 'moon') theme = 'classic';
+    menuTheme = theme;
+    try { SafeStorage.set('pixelCatsMenuTheme', theme); } catch (e) {}
+    if (typeof AudioEngine !== 'undefined' && AudioEngine.setMenuTheme) AudioEngine.setMenuTheme(theme);
+    const c = document.getElementById('theme-classic'), m = document.getElementById('theme-moon');
+    if (c) c.classList.toggle('active', theme === 'classic');
+    if (m) m.classList.toggle('active', theme === 'moon');
+    if (typeof AudioEngine !== 'undefined' && AudioEngine.sfx && AudioEngine.sfx.click) AudioEngine.sfx.click();
 }
 function setMusicOn(v) {
     AudioEngine.setMusicOn(v);

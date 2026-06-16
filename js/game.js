@@ -714,6 +714,7 @@ function drawPixelCat(drawCtx, x, y, skin, facingRight, controls, isPlayer1, isJ
 }
 
 function drawMenuScene() {
+    if (menuTheme === 'moon') { drawMenuMoonScene(); return; }
     let grad = ctx.createLinearGradient(0, 0, 0, LOGICAL_H); grad.addColorStop(0, "#87CEEB"); grad.addColorStop(1, "#E0F7FA"); ctx.fillStyle = grad; ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     drawRainbow(ctx, -LOGICAL_W / 2); drawSun(ctx, LOGICAL_W - 150, 100, 40, "#f1c40f", "#f39c12");
     ctx.fillStyle = "rgba(255,255,255,0.6)"; let cloudOff = (gameTime * 0.5) % 2000; ctx.fillRect(200 - cloudOff, 100, 100, 30); ctx.fillRect(1500 - cloudOff, 150, 80, 25);
@@ -726,6 +727,205 @@ function drawMenuScene() {
         drawPixelTree(ctx, tx, LOGICAL_H - 100, menuScale, Math.sin(tx * 0.37) * 999);
     }
     drawCastle(ctx, LOGICAL_W / 2, groundY); menuPixies.forEach(p => p.draw(ctx));
+}
+
+// ---- Лунная тема главного меню: космос, звёзды, Земля, лунная поверхность, замок ----
+const MENU_EARTH_GRID = [
+    "________________________________________","________________________________________",
+    "_______________5111111225_______________","_____________55511111222255_____________",
+    "___________544551112222225556___________","_________5544455112222222225666_________",
+    "________555444551122222222224666________","_______55544445511222222222244466_______",
+    "______5655444455112222222222544666______","_____665544445511122222222225554466_____",
+    "_____665544445511122222222211555445_____","____66554444551111222222221111554455____",
+    "____66554444661111222222221116444455____","___6665544446611112222222111644444555___",
+    "___3665544445511112222222115444444556___","__333665544555111222222211555444445566__",
+    "__333665555555442222222211555555445566__","__333336655554442222222211555555445566__",
+    "__333336666644442222222211555444445566__","__333333366644442222222211554444445566__",
+    "__333333333333111222222211554444445566__","__333333333333111122222221155444445566__",
+    "__333333333333666662222221155444445566__","__333333333336666666222222115544455666__",
+    "__333333333336655555122222115544455666__","___3333333366555555511222221154455666___",
+    "___3333333366554455566222221155555666___","____33333366554444556622222221555566____",
+    "____33333366554444556622222222255566____","_____333333665544455622222222222556_____",
+    "_____333333665544455222222222223335_____","______3333333665445522222222223333______",
+    "_______33333366555552222222222333_______","________333333366555222222222333________",
+    "_________3333336655522222223333_________","___________333333655222223333___________",
+    "_____________33333332222233_____________","_______________3333322223_______________",
+    "________________________________________","________________________________________"
+];
+const MENU_EARTH_COLORS = { '1':'#5bafff','2':'#2f74ff','3':'#1c3cc7','4':'#b5e61d','5':'#2db43e','6':'#12742d' };
+let _menuEarthCacheW = 0;
+function drawMenuEarth(ex, ey, ew) {
+    const cells = 40, cs = Math.max(2, Math.round(ew / cells)), bw = cs * cells;
+    if (!_menuEarthCache || _menuEarthCacheW !== bw) {
+        _menuEarthCacheW = bw;
+        _menuEarthCache = document.createElement('canvas');
+        _menuEarthCache.width = bw; _menuEarthCache.height = bw;
+        const ec = _menuEarthCache.getContext('2d');
+        ec.imageSmoothingEnabled = false;
+        for (let r = 0; r < cells; r++) for (let c = 0; c < cells; c++) {
+            const ch = MENU_EARTH_GRID[r][c]; if (ch === '_') continue;
+            ec.fillStyle = MENU_EARTH_COLORS[ch]; ec.fillRect(c * cs, r * cs, cs, cs);
+        }
+    }
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(_menuEarthCache, Math.round(ex), Math.round(ey), bw, bw);
+}
+// Наведение на флаг Перми -> плавное появление perm.jpg (за флагом, чуть за поверхностью)
+let _permImg = null, _permHover = false, _permAlpha = 0, _permFlagRect = null, _permHoverBound = false, _permLastT = 0;
+function _bindPermHover() {
+    if (_permHoverBound) return;
+    _permHoverBound = true;
+    window.addEventListener('mousemove', (e) => {
+        if (menuTheme !== 'moon' || isPlaying || !_permFlagRect) { _permHover = false; return; }
+        const rc = canvas.getBoundingClientRect();
+        if (!rc.width || !rc.height) { _permHover = false; return; }
+        const lx = (e.clientX - rc.left) * (LOGICAL_W / rc.width);
+        const ly = (e.clientY - rc.top) * (LOGICAL_H / rc.height);
+        const fr = _permFlagRect;
+        _permHover = (lx >= fr.x && lx <= fr.x + fr.w && ly >= fr.y && ly <= fr.y + fr.h);
+    });
+}
+function drawPermImage(flagBaseX, groundY) {
+    if (!_permImg) { _permImg = new Image(); _permImg.src = 'media/perm.jpg'; }
+    const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const dt = _permLastT ? Math.min(0.1, (now - _permLastT) / 1000) : 0;
+    _permLastT = now;
+    // плавный переход за ~1 секунду (0 -> 0.5), независимо от FPS
+    _permAlpha = Math.max(0, Math.min(0.5, _permAlpha + (_permHover ? 1 : -1) * 0.5 * dt));
+    if (_permAlpha < 0.004) return;
+    if (!_permImg.complete || !_permImg.naturalWidth) return;
+    const fw = 76;
+    const imgW = Math.min(6 * fw, LOGICAL_W * 0.86);          // ~6 длин флага
+    const nW = _permImg.naturalWidth, nH = _permImg.naturalHeight;
+    const imgH = imgW * (nH / nW);
+    const ix = Math.round(flagBaseX + 3 + fw / 2 - imgW / 2); // картинка по центру за флагом
+    const iy = Math.round(groundY - 30 - imgH);               // немного ниже
+    const ampMax = imgH * 0.018;
+    // ОТДЕЛЬНОЕ ПОЛУПРОЗРАЧНОЕ ДРЕВКО на hoist-крае (слева) — толстое, чтобы держало флаг
+    const _ppW = 10, _ppX = ix - _ppW, _ppTop = iy - 12, _ppBot = groundY + 8;
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.45, _permAlpha);
+    ctx.fillStyle = '#c9c9d4'; ctx.fillRect(_ppX, _ppTop, _ppW, _ppBot - _ppTop);       // тело древка
+    ctx.fillStyle = '#eef0f6'; ctx.fillRect(_ppX + 1, _ppTop, 3, _ppBot - _ppTop);      // блик слева
+    ctx.fillStyle = '#9a9aa8'; ctx.fillRect(_ppX + _ppW - 3, _ppTop, 3, _ppBot - _ppTop); // тень справа
+    ctx.fillStyle = '#ffd24a'; ctx.fillRect(_ppX - 2, _ppTop - 9, _ppW + 4, 9);          // навершие (шар)
+    ctx.fillStyle = '#ffe79a'; ctx.fillRect(_ppX, _ppTop - 7, 4, 3);                     // блик на навершии
+    ctx.restore();
+    // ПОЛОТНО — развевается как флаг (спокойнее слева, развевается справа)
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.5, _permAlpha);
+    ctx.imageSmoothingEnabled = true;
+    const strip = 3;
+    for (let sx = 0; sx < imgW; sx += strip) {
+        const tt = sx / imgW;                                 // спокойнее у древка слева, развевается справа
+        const wob = Math.sin(sx * 0.045 - gameTime * 0.05) * (ampMax * tt) + Math.sin(gameTime * 0.025) * 1.2 * tt;
+        const sw = Math.min(strip, imgW - sx);
+        ctx.drawImage(_permImg, (sx / imgW) * nW, 0, (sw / imgW) * nW, nH, ix + sx, iy + wob, sw, imgH);
+    }
+    ctx.restore();
+    ctx.imageSmoothingEnabled = false;
+}
+
+// Кометы лунной темы: летят по диагонали (слева-сверху → справа-вниз), место — случайное
+function drawMenuComets() {
+    const groundY = LOGICAL_H - 100;
+    const diag = LOGICAL_W + LOGICAL_H + 400;
+    for (let i = 0; i < 3; i++) {
+        const speed = 0.004 + i * 0.0013, phase = i * 0.41;
+        const raw = gameTime * speed + phase;
+        const cyc = Math.floor(raw), tt = raw - cyc;
+        const hh = Math.sin((cyc * 7 + i * 131) * 12.9898) * 43758.5453;
+        const lane = hh - Math.floor(hh);
+        const startX = -200 + lane * (LOGICAL_W + 200), startY = -220;
+        const x = startX + tt * diag, y = startY + tt * diag;
+        if (y > groundY + 20 || x > LOGICAL_W + 60 || x < -80) continue;
+        for (let k = 10; k >= 1; k--) {                      // хвост (вверх-влево)
+            const a = (1 - k / 10) * 0.55, sz = Math.max(1, Math.round(6 - k * 0.5));
+            ctx.fillStyle = 'rgba(150,220,255,' + a.toFixed(3) + ')';
+            ctx.fillRect((x - k * 6) | 0, (y - k * 6) | 0, sz, sz);
+        }
+        ctx.fillStyle = 'rgba(200,240,255,0.6)'; ctx.fillRect((x - 5) | 0, (y - 5) | 0, 11, 11);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect((x - 2) | 0, (y - 2) | 0, 6, 6);
+    }
+}
+// Пиксельный овал (ячейки выровнены по сетке P)
+function _pixOval(cx, cy, rx, ry, P, col) {
+    ctx.fillStyle = col;
+    const x0 = Math.round((cx - rx) / P) * P, x1 = Math.round((cx + rx) / P) * P;
+    const y0 = Math.round((cy - ry) / P) * P, y1 = Math.round((cy + ry) / P) * P;
+    for (let py = y0; py <= y1; py += P) for (let px = x0; px <= x1; px += P) {
+        const nx = (px + P / 2 - cx) / rx, ny = (py + P / 2 - cy) / ry;
+        if (nx * nx + ny * ny <= 1) ctx.fillRect(px, py, P, P);
+    }
+}
+// Декоративные пиксельные кратеры на лунной поверхности
+function drawMoonCraters(groundY) {
+    const W = LOGICAL_W, P = 4;
+    const craters = [[W * 0.10, groundY + 55, 30], [W * 0.46, groundY + 36, 19], [W * 0.64, groundY + 66, 38], [W * 0.84, groundY + 44, 24], [W * 0.93, groundY + 74, 30]];
+    for (const cr of craters) {
+        const cx = cr[0], cy = cr[1], r = cr[2], ry = r * 0.45;
+        _pixOval(cx, cy, r, ry, P, '#8a8a98');                                  // светлый обод
+        _pixOval(cx, cy + P, r - P, ry - P, P, '#50505f');                      // тёмная чаша
+        _pixOval(cx, cy + 2 * P, (r - P) * 0.62, (ry - P) * 0.5, P, '#3e3e4a'); // тень в центре
+    }
+}
+// Статичный пиксельный флаг «Пермь / Perm», воткнутый в поверхность
+function drawMoonFlag(baseX, groundY) {
+    const poleH = 92, poleTop = groundY - poleH;
+    _permFlagRect = { x: baseX - 4, y: poleTop - 6, w: 90, h: poleH + 18 };  // зона наведения
+
+    ctx.fillStyle = '#d7d7e0'; ctx.fillRect(baseX, poleTop, 3, poleH + 10);
+    ctx.fillStyle = '#bcbcc8'; ctx.fillRect(baseX + 2, poleTop, 1, poleH + 10);
+    ctx.fillStyle = '#ffd24a'; ctx.fillRect(baseX - 1, poleTop - 4, 5, 5);
+    const fw = 76, fh = 40, fx = baseX + 3, fy = poleTop + 2;
+    ctx.fillStyle = '#c0392b'; ctx.fillRect(fx, fy, fw, fh);                 // тело флага
+    ctx.fillStyle = '#9c2b1e'; ctx.fillRect(fx + fw - 5, fy, 5, fh);         // тень у свободного края
+    ctx.fillStyle = '#f5f5ef'; ctx.fillRect(fx, fy, fw, 3); ctx.fillRect(fx, fy + fh - 3, fw, 3); // белые полосы
+    const label = (typeof window !== 'undefined' && window.currentLang === 'en') ? 'PERM' : 'ПЕРМЬ';
+    ctx.save();
+    ctx.font = "12px 'Press Start 2P', monospace";
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(label, fx + fw / 2, fy + fh / 2);
+    ctx.restore();
+}
+
+function drawMenuMoonScene() {
+    // Космический градиент (как на megahard)
+    let g = ctx.createLinearGradient(0, 0, 0, LOGICAL_H);
+    g.addColorStop(0, "#000008"); g.addColorStop(0.5, "#050520"); g.addColorStop(1, "#0a0a30");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+    // Звёзды (мерцают), заполняют весь экран — одинаково на ПК и телефоне
+    const starField = Math.max(40, LOGICAL_H * 0.74);
+    for (let i = 0; i < 110; i++) {
+        const hx = Math.sin(i * 12.9898 + 4.1) * 43758.5453, hy = Math.sin(i * 78.233 + 1.7) * 12543.1234;
+        const fx = hx - Math.floor(hx), fy = hy - Math.floor(hy);
+        const on = Math.sin(gameTime * 0.04 + i * 2.13) > 0.28;
+        ctx.fillStyle = on ? '#ffffff' : '#6677aa';
+        const sx = 3 + fx * Math.max(10, LOGICAL_W - 6), sy = 3 + fy * starField;
+        ctx.fillRect(sx | 0, sy | 0, on ? 2 : 1, on ? 2 : 1);
+    }
+    // Кометы (диагональ: слева-сверху → справа-вниз) вместо фей
+    drawMenuComets();
+    // Земля — справа сверху, размер пропорционален меньшей стороне (адаптация под телефон)
+    const ew = 160; // размер планеты как в мегахарде (40 ячеек × 4px)
+    const ex = Math.round(LOGICAL_W - ew - Math.max(18, LOGICAL_W * 0.05));
+    const ey = Math.round(Math.max(20, LOGICAL_H * 0.06));
+    const ecx = ex + ew / 2, ecy = ey + ew / 2;
+    const glow = ctx.createRadialGradient(ecx, ecy, ew * 0.06, ecx, ecy, ew * 0.82);
+    glow.addColorStop(0, 'rgba(255,255,255,0)'); glow.addColorStop(0.30, 'rgba(220,235,255,0.13)');
+    glow.addColorStop(0.65, 'rgba(255,255,255,0.10)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(ecx, ecy, ew * 0.82, 0, Math.PI * 2); ctx.fill();
+    drawMenuEarth(ex, ey, ew);
+    // Лунная поверхность + кратеры + флаг + замок
+    const groundY = LOGICAL_H - 100;
+    const flagBaseX = Math.round(LOGICAL_W * 0.2);
+    _bindPermHover();
+    drawPermImage(flagBaseX, groundY);          // фото за флагом и чуть за поверхностью (по наведению)
+    drawMoonGround(ctx, 0, groundY, LOGICAL_W, 500);
+    drawMoonCraters(groundY);
+    drawCastle(ctx, LOGICAL_W / 2, groundY);
+    drawMoonFlag(flagBaseX, groundY);
 }
 
 function menuLoop() {
@@ -1089,6 +1289,21 @@ function drawSandGround(c, bx, by, bw, bh) {
 }
 
 // ---- Moon grey ground for MEGAHARD difficulty ----
+// Пиксельный декоративный кратер (рисует в переданный контекст c)
+function _pixCraterC(c, cx, cy, r, P) {
+    const ry = r * 0.5;
+    const ov = (rx2, ryy, col, oy) => {
+        c.fillStyle = col;
+        const x0 = Math.round((cx - rx2) / P) * P, x1 = Math.round((cx + rx2) / P) * P;
+        const y0 = Math.round((cy + oy - ryy) / P) * P, y1 = Math.round((cy + oy + ryy) / P) * P;
+        for (let py = y0; py <= y1; py += P) for (let px = x0; px <= x1; px += P) {
+            const nx = (px + P / 2 - cx) / rx2, ny = (py + P / 2 - (cy + oy)) / ryy;
+            if (nx * nx + ny * ny <= 1) c.fillRect(px, py, P, P);
+        }
+    };
+    ov(r, ry, '#8a8a98', 0);          // светлый обод
+    ov(r - P, ry - P, '#48485a', 0);  // тёмная чаша
+}
 function drawMoonGround(c, bx, by, bw, bh) {
     // Dark grey regolith body
     c.fillStyle = "#606070";

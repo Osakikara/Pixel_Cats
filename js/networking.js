@@ -777,6 +777,11 @@ function fbSetMode(mode) {
     const isRace  = mode === 'race';
     const isBoss  = mode === 'boss';
     const isGhost = mode === 'ghost';
+    const isChess = mode === 'chess';
+    const chessBtn2 = document.getElementById('fb-omode-chess');
+    if (chessBtn2) chessBtn2.className = isChess ? 'pixel-btn pixel-btn-green lobby-mode-btn lobby-mode-active' : 'pixel-btn pixel-btn-dark lobby-mode-btn';
+    const fbChessSec = document.getElementById('fb-chess-section');
+    if (fbChessSec) fbChessSec.style.display = isChess ? '' : 'none';
     const raceBtn  = document.getElementById('fb-omode-race');
     const bossBtn  = document.getElementById('fb-omode-boss');
     const ghostBtn = document.getElementById('fb-omode-ghost');
@@ -946,6 +951,7 @@ function _hostStartOnlineGame() {
     net.worldGroundBase = LOGICAL_H - 100;
     p2SkinIndex = net.remoteSkin;
     const bossIdx = (onlineMode === 'boss') ? (net.selectedBossIndex !== undefined ? net.selectedBossIndex : selectedOnlineBoss) : undefined;
+    window.chessOnlinePending = false;
     setTimeout(() => {
         if (!net.conn || !net.conn.open) return; // повторная проверка
         if (onlineMode === 'boss' && bossIdx != null) {
@@ -958,6 +964,11 @@ function _hostStartOnlineGame() {
             numPlayers = 2;
             net.lastSentTime = performance.now() + 1000;
             if (typeof ghStartOnlineHost === 'function') ghStartOnlineHost(net.worldSeed);
+        } else if (onlineMode === 'chess') {
+            // Шахматы — хост белые, гость чёрные
+            net.conn.send({ type: 'CHESS_START', color: 'b' });
+            numPlayers = 2;
+            if (typeof startChess === 'function') startChess('online', 'w');
         } else {
             net.conn.send({
                 type: 'INIT',
@@ -996,6 +1007,12 @@ function handlePeerData(data) {
             } else {
                 // Гость получил скин хоста (на случай если придёт позже)
                 // (обычно гость получает скин в INIT)
+            }
+            // Если игрок зашёл через «ОНЛАЙН» из меню шахмат — сразу выбрать режим шахмат
+            if (net.isHost && window.chessOnlinePending) {
+                window.chessOnlinePending = false;
+                if (connMode === 'firebase') { if (typeof fbSetMode === 'function') fbSetMode('chess'); }
+                else if (typeof setOnlineMode === 'function') setOnlineMode('chess');
             }
             break;
 
@@ -1228,6 +1245,11 @@ function handlePeerData(data) {
         case 'GH_END':
             if (typeof ghOnNet === 'function') ghOnNet(data);
             break;
+        case 'CHESS_START':
+        case 'CHESS_MOVE':
+        case 'CHESS_END':
+            if (typeof chessOnNet === 'function') chessOnNet(data);
+            break;
     }
 }
 
@@ -1319,9 +1341,11 @@ function setOnlineMode(mode) {
     document.getElementById('online-boss-opts').style.display  = mode === 'boss' ? '' : 'none';
     const ghOpts = document.getElementById('online-ghost-opts');
     if (ghOpts) ghOpts.style.display = mode === 'ghost' ? '' : 'none';
+    const chOpts = document.getElementById('online-chess-opts');
+    if (chOpts) chOpts.style.display = mode === 'chess' ? '' : 'none';
     // Подсветка кнопок режима (P2P)
-    const _pm = { race: 'p2p-omode-race', boss: 'p2p-omode-boss', ghost: 'p2p-omode-ghost' };
-    const _pc = { race: 'pixel-btn pixel-btn-blue', boss: 'pixel-btn pixel-btn-red', ghost: 'pixel-btn pixel-btn-purple' };
+    const _pm = { race: 'p2p-omode-race', boss: 'p2p-omode-boss', ghost: 'p2p-omode-ghost', chess: 'p2p-omode-chess' };
+    const _pc = { race: 'pixel-btn pixel-btn-blue', boss: 'pixel-btn pixel-btn-red', ghost: 'pixel-btn pixel-btn-purple', chess: 'pixel-btn pixel-btn-green' };
     for (const m in _pm) {
         const b = document.getElementById(_pm[m]);
         if (b) b.className = (m === mode ? _pc[m] + ' lobby-mode-btn lobby-mode-active' : 'pixel-btn pixel-btn-dark lobby-mode-btn');

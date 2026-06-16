@@ -9,7 +9,8 @@ const translations = {
         online: "ОНЛАЙН (бета)", fullscreen: "[ ] ПОЛНЫЙ ЭКРАН", player1Label: "ИГРОК 1", player2Label: "ИГРОК 2",
         easyMode: "ЛЁГКИЙ РЕЖИМ", hardMode: "СЛОЖНЫЙ РЕЖИМ", megaHardMode: "МЕГАСЛОЖНО", infinityMode: "БЕСКОНЕЧНОСТЬ",
         classicMode: "КЛАССИКА", minigamesMode: "МИНИ-ИГРЫ", classicHint: "Выберите режим",
-        minigamesTitle: "МИНИ-ИГРЫ", minigamesDev: "Мини-игры в разработке, ждите ближайших обновлений",
+        minigamesTitle: "МИНИ-ИГРЫ", minigamesDev: "Скоро новые мини-игры",
+        chess: { title: "ШАХМАТЫ", local: "ЛОКАЛЬНО ВДВОЁМ", online: "ОНЛАЙН", lobbyInfo: "Классические шахматы. Хост играет белыми.", move: "Ход", white: "Белые", black: "Чёрные", check: "Шах!", mate: "Мат!", win: "победили", stalemate: "Пат — ничья", yourMove: "Ваш ход", oppMove: "Ход соперника", resign: "СДАТЬСЯ", rematch: "РЕВАНШ", exit: "← ВЫХОД", promoLabel: "Превратить в:", queen: "Ферзь", rook: "Ладья", bishop: "Слон", knight: "Конь" },
         locked: "🔒", buy: "КУПИТЬ", lockedBtn: "ЗАБЛОКИРОВАНО", needDist: "НУЖНО ДИСТ.", infScore: "БЕСК. СЧЁТ", needGhost: "ПРИЗРАКИ:",
         ghosthunt: {
             name: "ОХОТА НА ПРИЗРАКОВ", btn: "ОХОТА НА ПРИЗРАКОВ",
@@ -126,6 +127,7 @@ const translations = {
         },
         settings: "⚙ НАСТРОЙКИ", settingsBack: "← НАЗАД",
         musicLabel: "🎵 МУЗЫКА", sfxLabel: "🔊 ЗВУКИ",
+        themeLabel: "🌙 ТЕМА МЕНЮ", themeRow: "Оформление:", themeClassic: "КЛАССИКА", themeMoon: "ЛУНА",
         onOff: "Вкл/Выкл:", volume: "Громкость:", trackSelect: "ВЫБОР ТРЕКА:",
         track0: "🏰 ПУТЬ МЕНЕСТРЕЛЯ", track1: "🌙 ДВОР ЗАМКА", track2: "🍂 У ОЧАГА ТАВЕРНЫ",
         fbPlayerJoined: "🎮 ИГРОК ПОДКЛЮЧИЛСЯ!", fbOpponent: "ИГРОК:",
@@ -281,7 +283,8 @@ const translations = {
         online: "ONLINE (beta)", fullscreen: "[ ] FULLSCREEN", player1Label: "PLAYER 1", player2Label: "PLAYER 2",
         easyMode: "EASY MODE", hardMode: "HARD MODE", megaHardMode: "MEGAHARD", infinityMode: "INFINITY",
         classicMode: "CLASSIC", minigamesMode: "MINIGAMES", classicHint: "Choose a mode",
-        minigamesTitle: "MINIGAMES", minigamesDev: "Minigames are in development, stay tuned for upcoming updates",
+        minigamesTitle: "MINIGAMES", minigamesDev: "More minigames soon",
+        chess: { title: "CHESS", local: "LOCAL 2 PLAYERS", online: "ONLINE", lobbyInfo: "Classic chess. Host plays White.", move: "Move", white: "White", black: "Black", check: "Check!", mate: "Checkmate!", win: "win", stalemate: "Stalemate — draw", yourMove: "Your move", oppMove: "Opponent's move", resign: "RESIGN", rematch: "REMATCH", exit: "← EXIT", promoLabel: "Promote to:", queen: "Queen", rook: "Rook", bishop: "Bishop", knight: "Knight" },
         locked: "🔒", buy: "BUY", lockedBtn: "LOCKED", needDist: "NEED DIST", infScore: "INF SCORE", needGhost: "GHOSTS:",
         ghosthunt: {
             name: "GHOST HUNT", btn: "GHOST HUNT",
@@ -398,6 +401,7 @@ const translations = {
         },
         settings: "⚙ SETTINGS", settingsBack: "← BACK",
         musicLabel: "🎵 MUSIC", sfxLabel: "🔊 SOUND FX",
+        themeLabel: "🌙 MENU THEME", themeRow: "Style:", themeClassic: "CLASSIC", themeMoon: "MOON",
         onOff: "On/Off:", volume: "Volume:", trackSelect: "SELECT TRACK:",
         track0: "🏰 MINSTREL'S PATH", track1: "🌙 CASTLE COURTYARD", track2: "🍂 TAVERN HEARTH",
         fbPlayerJoined: "🎮 PLAYER JOINED!", fbOpponent: "PLAYER:",
@@ -632,6 +636,25 @@ function updateAllTexts() {
     safeSetText('minigames-title', t('minigamesTitle'));
     safeSetText('minigames-dev', t('minigamesDev'));
     safeSetText('btn-minigames-back', '← ' + t('back'));
+    safeSetText('btn-mg-chess', t('chess.title'));
+    safeSetText('chess-menu-title', t('chess.title'));
+    safeSetText('btn-chess-local', t('chess.local'));
+    safeSetText('btn-chess-online', t('chess.online'));
+    safeSetText('btn-chess-menu-back', '← ' + t('back'));
+    safeSetText('fb-omode-chess', t('chess.title'));
+    safeSetText('p2p-omode-chess', t('chess.title'));
+    safeSetText('fb-chess-title', t('chess.title'));
+    safeSetText('p2p-chess-title', t('chess.title'));
+    safeSetText('fb-chess-info', t('chess.lobbyInfo'));
+    safeSetText('p2p-chess-info', t('chess.lobbyInfo'));
+    safeSetText('chess-promo-label', t('chess.promoLabel'));
+    safeSetText('cp-q', t('chess.queen'));
+    safeSetText('cp-r', t('chess.rook'));
+    safeSetText('cp-b', t('chess.bishop'));
+    safeSetText('cp-n', t('chess.knight'));
+    safeSetText('btn-chess-resign', t('chess.resign'));
+    safeSetText('btn-chess-rematch', t('chess.rematch'));
+    safeSetText('btn-chess-exit', t('chess.exit'));
     // Охота на призраков
     if (typeof updateGhostHuntTexts === 'function') { try { updateGhostHuntTexts(); } catch (e) {} }
     safeSetText('fb-ghost-title', t('ghosthunt.name'));
@@ -710,6 +733,10 @@ function updateAllTexts() {
     safeSetText('btn-settings', t('settings'));
     safeSetText('set-music-label', t('musicLabel'));
     safeSetText('set-sfx-label', t('sfxLabel'));
+    safeSetText('set-theme-label', t('themeLabel'));
+    safeSetText('set-theme-row-label', t('themeRow'));
+    safeSetText('theme-classic', t('themeClassic'));
+    safeSetText('theme-moon', t('themeMoon'));
     safeSetText('set-music-on-label', t('onOff'));
     safeSetText('set-sfx-on-label', t('onOff'));
     safeSetText('set-music-vol-label', t('volume'));
