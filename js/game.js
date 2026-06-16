@@ -719,14 +719,16 @@ function drawMenuScene() {
     drawRainbow(ctx, -LOGICAL_W / 2); drawSun(ctx, LOGICAL_W - 150, 100, 40, "#f1c40f", "#f39c12");
     ctx.fillStyle = "rgba(255,255,255,0.6)"; let cloudOff = (gameTime * 0.5) % 2000; ctx.fillRect(200 - cloudOff, 100, 100, 30); ctx.fillRect(1500 - cloudOff, 150, 80, 25);
     let groundY = LOGICAL_H - 100;
+    const bgS = Math.max(0.55, Math.min(1, Math.min(LOGICAL_W / 1000, LOGICAL_H / 640))); // адаптация под мобилки
     drawPixelGround(ctx, 0, groundY, LOGICAL_W, 500);
-    const menuScale = 4;
+    const menuScale = Math.max(2, Math.round(4 * bgS));
     const menuStep = (TREE_SPRITE_LEAVES[0].length + 1) * menuScale;
     for (let tx = 0; tx < LOGICAL_W + menuStep; tx += menuStep) {
         if (tx > LOGICAL_W / 2 - 200 && tx < LOGICAL_W / 2 + 200) continue;
         drawPixelTree(ctx, tx, LOGICAL_H - 100, menuScale, Math.sin(tx * 0.37) * 999);
     }
-    drawCastle(ctx, LOGICAL_W / 2, groundY); menuPixies.forEach(p => p.draw(ctx));
+    ctx.save(); ctx.translate(LOGICAL_W / 2, groundY); ctx.scale(bgS, bgS); drawCastle(ctx, 0, 0); ctx.restore();
+    menuPixies.forEach(p => p.draw(ctx));
 }
 
 // ---- Лунная тема главного меню: космос, звёзды, Земля, лунная поверхность, замок ----
@@ -771,7 +773,7 @@ function drawMenuEarth(ex, ey, ew) {
     ctx.drawImage(_menuEarthCache, Math.round(ex), Math.round(ey), bw, bw);
 }
 // Наведение на флаг Перми -> плавное появление perm.jpg (за флагом, чуть за поверхностью)
-let _permImg = null, _permHover = false, _permAlpha = 0, _permFlagRect = null, _permHoverBound = false, _permLastT = 0;
+let _permImg = null, _permHover = false, _permAlpha = 0, _permFlagRect = null, _permHoverBound = false, _permLastT = 0, _permTapShow = false;
 function _bindPermHover() {
     if (_permHoverBound) return;
     _permHoverBound = true;
@@ -784,40 +786,57 @@ function _bindPermHover() {
         const fr = _permFlagRect;
         _permHover = (lx >= fr.x && lx <= fr.x + fr.w && ly >= fr.y && ly <= fr.y + fr.h);
     });
+    // Тап/клик по флагу — показать/скрыть картинку (для мобилок без наведения)
+    window.addEventListener('pointerdown', (e) => {
+        if (menuTheme !== 'moon' || isPlaying || !_permFlagRect) return;
+        const rc = canvas.getBoundingClientRect();
+        if (!rc.width || !rc.height) return;
+        const lx = (e.clientX - rc.left) * (LOGICAL_W / rc.width);
+        const ly = (e.clientY - rc.top) * (LOGICAL_H / rc.height);
+        const fr = _permFlagRect;
+        const onFlag = (lx >= fr.x && lx <= fr.x + fr.w && ly >= fr.y && ly <= fr.y + fr.h);
+        _permTapShow = onFlag ? !_permTapShow : false;
+    });
 }
-function drawPermImage(flagBaseX, groundY) {
-    if (!_permImg) { _permImg = new Image(); _permImg.src = 'media/perm.jpg'; }
+function drawPermImage(flagBaseX, groundY, fs, availRight) {
+    fs = fs || 1; availRight = availRight || LOGICAL_W;
+    if (!_permImg) { _permImg = new Image(); _permImg.src = 'media/Perm.jpg'; }
     const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     const dt = _permLastT ? Math.min(0.1, (now - _permLastT) / 1000) : 0;
     _permLastT = now;
     // плавный переход за ~1 секунду (0 -> 0.5), независимо от FPS
-    _permAlpha = Math.max(0, Math.min(0.5, _permAlpha + (_permHover ? 1 : -1) * 0.5 * dt));
+    _permAlpha = Math.max(0, Math.min(0.5, _permAlpha + ((_permHover || _permTapShow) ? 1 : -1) * 0.5 * dt));
     if (_permAlpha < 0.004) return;
     if (!_permImg.complete || !_permImg.naturalWidth) return;
-    const fw = 76;
-    const imgW = Math.min(6 * fw, LOGICAL_W * 0.86);          // ~6 длин флага
     const nW = _permImg.naturalWidth, nH = _permImg.naturalHeight;
+    const poleW = Math.max(2, Math.round(3 * fs)), fw = Math.round(76 * fs);
+    const flagCx = flagBaseX + poleW + fw / 2;
+    const _ppW = Math.max(4, Math.round(10 * fs));
+    const leftLimit = 8 + _ppW, rightLimit = Math.max(leftLimit + 40, availRight - 6);
+    let imgW = Math.min(6 * fw, LOGICAL_W * 0.9);
+    let ix = Math.round(flagCx - imgW / 2);
+    if (ix < leftLimit) ix = leftLimit;
+    if (ix + imgW > rightLimit) imgW = rightLimit - ix;       // ужать, чтобы не залезть под меню
+    if (imgW < 40) return;
     const imgH = imgW * (nH / nW);
-    const ix = Math.round(flagBaseX + 3 + fw / 2 - imgW / 2); // картинка по центру за флагом
-    const iy = Math.round(groundY - 30 - imgH);               // немного ниже
+    const iy = Math.round(groundY - Math.round(30 * fs) - imgH);
     const ampMax = imgH * 0.018;
-    // ОТДЕЛЬНОЕ ПОЛУПРОЗРАЧНОЕ ДРЕВКО на hoist-крае (слева) — толстое, чтобы держало флаг
-    const _ppW = 10, _ppX = ix - _ppW, _ppTop = iy - 12, _ppBot = groundY + 8;
+    // полупрозрачное древко на левом крае картинки (масштабируется)
+    const _ppX = ix - _ppW, _ppTop = iy - Math.round(12 * fs), _ppBot = groundY + 8, _ppHl = Math.max(1, Math.round(3 * fs));
     ctx.save();
     ctx.globalAlpha = Math.min(0.45, _permAlpha);
-    ctx.fillStyle = '#c9c9d4'; ctx.fillRect(_ppX, _ppTop, _ppW, _ppBot - _ppTop);       // тело древка
-    ctx.fillStyle = '#eef0f6'; ctx.fillRect(_ppX + 1, _ppTop, 3, _ppBot - _ppTop);      // блик слева
-    ctx.fillStyle = '#9a9aa8'; ctx.fillRect(_ppX + _ppW - 3, _ppTop, 3, _ppBot - _ppTop); // тень справа
-    ctx.fillStyle = '#ffd24a'; ctx.fillRect(_ppX - 2, _ppTop - 9, _ppW + 4, 9);          // навершие (шар)
-    ctx.fillStyle = '#ffe79a'; ctx.fillRect(_ppX, _ppTop - 7, 4, 3);                     // блик на навершии
+    ctx.fillStyle = '#c9c9d4'; ctx.fillRect(_ppX, _ppTop, _ppW, _ppBot - _ppTop);
+    ctx.fillStyle = '#eef0f6'; ctx.fillRect(_ppX + 1, _ppTop, _ppHl, _ppBot - _ppTop);
+    ctx.fillStyle = '#9a9aa8'; ctx.fillRect(_ppX + _ppW - 3, _ppTop, 3, _ppBot - _ppTop);
+    ctx.fillStyle = '#ffd24a'; ctx.fillRect(_ppX - 2, _ppTop - 9, _ppW + 4, 9);
     ctx.restore();
-    // ПОЛОТНО — развевается как флаг (спокойнее слева, развевается справа)
+    // полотно — развевается (спокойнее слева, развевается справа)
     ctx.save();
     ctx.globalAlpha = Math.min(0.5, _permAlpha);
     ctx.imageSmoothingEnabled = true;
     const strip = 3;
     for (let sx = 0; sx < imgW; sx += strip) {
-        const tt = sx / imgW;                                 // спокойнее у древка слева, развевается справа
+        const tt = sx / imgW;
         const wob = Math.sin(sx * 0.045 - gameTime * 0.05) * (ampMax * tt) + Math.sin(gameTime * 0.025) * 1.2 * tt;
         const sw = Math.min(strip, imgW - sx);
         ctx.drawImage(_permImg, (sx / imgW) * nW, 0, (sw / imgW) * nW, nH, ix + sx, iy + wob, sw, imgH);
@@ -870,20 +889,22 @@ function drawMoonCraters(groundY) {
     }
 }
 // Статичный пиксельный флаг «Пермь / Perm», воткнутый в поверхность
-function drawMoonFlag(baseX, groundY) {
-    const poleH = 92, poleTop = groundY - poleH;
-    _permFlagRect = { x: baseX - 4, y: poleTop - 6, w: 90, h: poleH + 18 };  // зона наведения
-
-    ctx.fillStyle = '#d7d7e0'; ctx.fillRect(baseX, poleTop, 3, poleH + 10);
-    ctx.fillStyle = '#bcbcc8'; ctx.fillRect(baseX + 2, poleTop, 1, poleH + 10);
-    ctx.fillStyle = '#ffd24a'; ctx.fillRect(baseX - 1, poleTop - 4, 5, 5);
-    const fw = 76, fh = 40, fx = baseX + 3, fy = poleTop + 2;
+function drawMoonFlag(baseX, groundY, fs) {
+    fs = fs || 1;
+    const poleW = Math.max(2, Math.round(3 * fs));
+    const poleH = Math.round(92 * fs), poleTop = groundY - poleH;
+    const fw = Math.round(76 * fs), fh = Math.round(40 * fs);
+    _permFlagRect = { x: baseX - 6, y: poleTop - 8, w: poleW + fw + 16, h: poleH + 22 };  // зона наведения/тапа
+    ctx.fillStyle = '#d7d7e0'; ctx.fillRect(baseX, poleTop, poleW, poleH + 10);
+    ctx.fillStyle = '#ffd24a'; ctx.fillRect(baseX - 1, poleTop - 4, poleW + 2, 5);
+    const fx = baseX + poleW, fy = poleTop + 2;
+    const edge = Math.max(2, Math.round(5 * fs)), tr = Math.max(2, Math.round(3 * fs));
     ctx.fillStyle = '#c0392b'; ctx.fillRect(fx, fy, fw, fh);                 // тело флага
-    ctx.fillStyle = '#9c2b1e'; ctx.fillRect(fx + fw - 5, fy, 5, fh);         // тень у свободного края
-    ctx.fillStyle = '#f5f5ef'; ctx.fillRect(fx, fy, fw, 3); ctx.fillRect(fx, fy + fh - 3, fw, 3); // белые полосы
+    ctx.fillStyle = '#9c2b1e'; ctx.fillRect(fx + fw - edge, fy, edge, fh);   // тень у свободного края
+    ctx.fillStyle = '#f5f5ef'; ctx.fillRect(fx, fy, fw, tr); ctx.fillRect(fx, fy + fh - tr, fw, tr); // белые полосы
     const label = (typeof window !== 'undefined' && window.currentLang === 'en') ? 'PERM' : 'ПЕРМЬ';
     ctx.save();
-    ctx.font = "12px 'Press Start 2P', monospace";
+    ctx.font = Math.max(7, Math.round(12 * fs)) + "px 'Press Start 2P', monospace";
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
     ctx.fillText(label, fx + fw / 2, fy + fh / 2);
@@ -908,7 +929,8 @@ function drawMenuMoonScene() {
     // Кометы (диагональ: слева-сверху → справа-вниз) вместо фей
     drawMenuComets();
     // Земля — справа сверху, размер пропорционален меньшей стороне (адаптация под телефон)
-    const ew = 160; // размер планеты как в мегахарде (40 ячеек × 4px)
+    const bgS = Math.max(0.55, Math.min(1, Math.min(LOGICAL_W / 1000, LOGICAL_H / 640))); // адаптация под мобилки
+    const ew = Math.round(160 * bgS); // планета (на мобиле уменьшается; на десктопе как в мегахарде)
     const ex = Math.round(LOGICAL_W - ew - Math.max(18, LOGICAL_W * 0.05));
     const ey = Math.round(Math.max(20, LOGICAL_H * 0.06));
     const ecx = ex + ew / 2, ecy = ey + ew / 2;
@@ -919,13 +941,22 @@ function drawMenuMoonScene() {
     drawMenuEarth(ex, ey, ew);
     // Лунная поверхность + кратеры + флаг + замок
     const groundY = LOGICAL_H - 100;
-    const flagBaseX = Math.round(LOGICAL_W * 0.2);
+    // Зона слева от центрального меню — флаг и картинка не должны попадать под панель
+    let availRight = LOGICAL_W * 0.5;
+    const _panel = document.getElementById('start-screen');
+    if (_panel && _panel.style.display !== 'none') {
+        const pr = _panel.getBoundingClientRect(), rc = canvas.getBoundingClientRect();
+        if (rc.width && pr.width) availRight = Math.max(150, Math.min(LOGICAL_W, (pr.left - rc.left) * (LOGICAL_W / rc.width) - 12));
+    }
+    const flagFs = bgS;                                   // флаг масштабируется как фон
+    const flagW = Math.round(76 * flagFs);
+    const flagBaseX = Math.max(8, Math.round(Math.min(LOGICAL_W * 0.16, availRight - flagW - 12)));
     _bindPermHover();
-    drawPermImage(flagBaseX, groundY);          // фото за флагом и чуть за поверхностью (по наведению)
+    drawPermImage(flagBaseX, groundY, flagFs, availRight); // фото за флагом, левее меню (наведение/тап)
     drawMoonGround(ctx, 0, groundY, LOGICAL_W, 500);
     drawMoonCraters(groundY);
-    drawCastle(ctx, LOGICAL_W / 2, groundY);
-    drawMoonFlag(flagBaseX, groundY);
+    ctx.save(); ctx.translate(LOGICAL_W / 2, groundY); ctx.scale(bgS, bgS); drawCastle(ctx, 0, 0); ctx.restore();
+    drawMoonFlag(flagBaseX, groundY, flagFs);
 }
 
 function menuLoop() {
