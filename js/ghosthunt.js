@@ -8,7 +8,7 @@
 //
 // Оружия (все доступны сразу, переключение 1-4 / Q):
 //   1. ЛАПА          — быстрый удар вблизи
-//   2. КЛУБОК        — прыгающий снаряд по дуге
+//   2. ПОПРЫГУНЧИК   — прыгающий снаряд по дуге
 //   3. РЫБА-БУМЕРАНГ — летит вперёд и возвращается, пробивает насквозь
 //   4. ЛАЗЕР         — мгновенный луч через всю арену
 // ============================================================
@@ -33,7 +33,7 @@ const GH_PLATFORMS = [
 // ── Оружия ──
 const GH_WEAPONS = [
     { id: 'claw',  cd: 10,  nameKey: 'ghosthunt.weapons.claw'  },
-    { id: 'yarn',  cd: 34,  nameKey: 'ghosthunt.weapons.yarn'  },
+    { id: 'yarn',  cd: 17,  nameKey: 'ghosthunt.weapons.yarn'  },
     { id: 'fish',  cd: 60,  nameKey: 'ghosthunt.weapons.fish'  },
     { id: 'laser', cd: 100, nameKey: 'ghosthunt.weapons.laser' },
 ];
@@ -340,14 +340,18 @@ function ghSpawnAttack(p, visualOnly) {
     } else if (w === 'yarn') {
         AudioEngine.sfx.ghYarn && AudioEngine.sfx.ghYarn();
         if (!visualOnly) {
-            GH.projs.push({ kind: 'yarn', owner: p.idx, x: cx + dir * 16, y: cy - 6,
-                vx: 8.5 * dir, vy: -3.6, bounces: 5, life: 360, r: 9, rot: 0 });
+            // Скорость в 3 раза быстрее, почти прямая траектория (vy=-1.2 вместо -3.6),
+            // дальше летит (life=600), больше радиус (r=9 без изменений)
+            GH.projs.push({ kind: 'yarn', owner: p.idx, x: cx + dir * 20, y: cy - 4,
+                vx: 25.5 * dir, vy: -1.2, bounces: 7, life: 600, r: 9, rot: 0,
+                spawnedBy: p });   // ссылка на игрока для отскока
         }
     } else if (w === 'fish') {
         AudioEngine.sfx.ghFish && AudioEngine.sfx.ghFish();
         if (!visualOnly) {
             GH.projs.push({ kind: 'fish', owner: p.idx, x: cx + dir * 14, y: cy - 4,
-                vx: 15 * dir, vy: 0, out: 38, returning: false, life: 600, hitIds: [], rot: 0 });
+                vx: 15 * dir, vy: 0, out: 38, returning: false, life: 600, hitIds: [], rot: 0,
+                age: p.fishAge || 0 });   // age наследуется от предыдущей рыбы
             p.fishOut = true;
         } else { p.fishOut = true; }
     } else if (w === 'laser') {
@@ -389,6 +393,15 @@ function ghDamageGhost(g, dmg, byPlayer) {
         byPlayer.streak++;
         if (byPlayer.streak > 0 && byPlayer.streak % 5 === 0) {
             ghAddScore(byPlayer, 20, byPlayer.x + 15, byPlayer.y - 30, t('ghosthunt.streak') + ' +20');
+        }
+        // Рыба-убийство: скачок age → рыба увеличивается, размер сохраняется в следующем броске
+        if (byPlayer) {
+            for (const pr of GH.projs) {
+                if (pr.kind === 'fish' && pr.owner === byPlayer.idx) {
+                    pr.age = Math.min(pr.age + 60, 300); // скачок роста, но не выше максимума
+                    pr.killsThisThrow = (pr.killsThisThrow || 0) + 1;
+                }
+            }
         }
         if (GH.online && GH.isHost) {
             GH.netEvents.kills.push([Math.round(g.x), Math.round(g.y), pts, byPlayer.idx]);
@@ -530,13 +543,67 @@ function ghUpdateProjs(ts) {
             pr.vy += 0.32 * ts;
             pr.x += pr.vx * ts; pr.y += pr.vy * ts;
             pr.rot += 0.2 * ts * Math.sign(pr.vx || 1);
+
+            // Отскок от земли
             if (pr.y + pr.r > GH_GROUND) {
                 pr.y = GH_GROUND - pr.r;
                 if (pr.bounces > 0) { pr.vy = -Math.abs(pr.vy) * 0.6; pr.bounces--; }
                 else pr.life = 0;
             }
-            if (pr.x < -40 || pr.x > GH_VW + 40) pr.life = 0;
-            // урон + отскок от моба
+
+            // Отскок от платформ (сверху)
+            if (pr.vy > 0) {
+                for (const pl of GH_PLATFORMS) {
+                    if (pr.x + pr.r > pl.x && pr.x - pr.r < pl.x + pl.w &&
+                        pr.y + pr.r >= pl.y && pr.y + pr.r <= pl.y + 12) {
+                        if (pr.bounces > 0) {
+                            pr.y = pl.y - pr.r;
+                            pr.vy = -Math.abs(pr.vy) * 0.65;
+                            pr.bounces--;
+                        } else { pr.life = 0; }
+                        break;
+                    }
+                }
+            }
+            // Отскок от нижней стороны платформ (если летит снизу вверх)
+            if (pr.vy < 0) {
+                for (const pl of GH_PLATFORMS) {
+                    if (pr.x + pr.r > pl.x && pr.x - pr.r < pl.x + pl.w &&
+                        pr.y - pr.r <= pl.y + 16 && pr.y - pr.r >= pl.y) {
+                        if (pr.bounces > 0) {
+                            pr.y = pl.y + 16 + pr.r;
+                            pr.vy = Math.abs(pr.vy) * 0.65;
+                            pr.bounces--;
+                        } else { pr.life = 0; }
+                        break;
+                    }
+                }
+            }
+
+            // Отскок от самого игрока-владельца (на случай выстрела вплотную к стене)
+            const ownerP = GH.players[pr.owner];
+            if (ownerP && !(pr._noOwner > 0)) {
+                if (pr.x + pr.r > ownerP.x && pr.x - pr.r < ownerP.x + ownerP.w &&
+                    pr.y + pr.r > ownerP.y && pr.y - pr.r < ownerP.y + ownerP.h) {
+                    pr.vx = -pr.vx;
+                    pr.x += pr.vx * 2;
+                    pr._noOwner = 20; // кратковременный иммунитет чтобы не залипнуть
+                }
+            }
+            if (pr._noOwner > 0) pr._noOwner -= ts;
+
+            // Отскок от левой и правой стен арены
+            if (pr.x - pr.r < 0) {
+                pr.x = pr.r;
+                if (pr.bounces > 0) { pr.vx = Math.abs(pr.vx); pr.bounces--; }
+                else pr.life = 0;
+            } else if (pr.x + pr.r > GH_VW) {
+                pr.x = GH_VW - pr.r;
+                if (pr.bounces > 0) { pr.vx = -Math.abs(pr.vx); pr.bounces--; }
+                else pr.life = 0;
+            }
+
+            // Урон + отскок от моба
             if (pr._noHit > 0) pr._noHit -= ts;
             const owner = GH.players[pr.owner];
             if (!(pr._noHit > 0)) for (const g of GH.ghosts) {
@@ -544,9 +611,8 @@ function ghUpdateProjs(ts) {
                 const gw = 30 * g.scale, ghh = 36 * g.scale;
                 if (pr.x > g.x - pr.r && pr.x < g.x + gw + pr.r && pr.y > g.y - pr.r && pr.y < g.y + ghh + pr.r) {
                     ghDamageGhost(g, 1, owner);
-                    if (!g.dead) { const _kd = Math.sign(pr.vx) || 1; g.vx = _kd * 16; g.vy = -6; g.knock = 40; g.flash = 8; } // отброс как у лапы
-                    if (owner) owner.cd = 0;                  // перезарядка сбрасывается при попадании
-                    if (pr.bounces > 0) {                      // клубок отскакивает обратно от моба
+                    if (!g.dead) { const _kd = Math.sign(pr.vx) || 1; g.vx = _kd * 16; g.vy = -6; g.knock = 40; g.flash = 8; }
+                    if (pr.bounces > 0) {
                         pr.bounces--;
                         pr.vx = -pr.vx; pr.vy = -Math.abs(pr.vy || 3) * 0.8 - 1.5;
                         pr.x += pr.vx; pr.y += pr.vy;
@@ -556,6 +622,22 @@ function ghUpdateProjs(ts) {
                 }
             }
         } else if (pr.kind === 'fish') {
+            // Возраст рыбы — основа для масштаба и урона
+            if (pr.age === undefined) pr.age = 0;
+            if (pr.killsThisThrow === undefined) pr.killsThisThrow = 0;
+
+            if (!pr.returning) {
+                pr.age += ts;
+            } else {
+                // На обратном пути — плавно уменьшаемся
+                pr.age = Math.max(0, pr.age - ts * 1.5);
+            }
+
+            // Масштаб: от 1.0 до 3.0 за ~150 тиков полёта (было 300)
+            pr.growScale = 1.0 + Math.min(pr.age / 75, 2.0);
+            // Урон: 1 при старте, максимум 4 (вдвое быстрее порог — было 80)
+            pr.dmgLevel = 1 + Math.floor(Math.min(pr.age / 40, 3));
+
             pr.rot += 0.35 * ts;
             const owner = GH.players[pr.owner];
             if (!pr.returning) {
@@ -567,16 +649,27 @@ function ghUpdateProjs(ts) {
                 const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
                 pr.x += (dx / d) * 16 * ts;
                 pr.y += (dy / d) * 16 * ts;
-                if (d < 30) { pr.life = 0; owner.fishOut = false; }
+                if (d < 30) {
+                    pr.life = 0;
+                    owner.fishOut = false;
+                    // Если убийств не было — передаём уменьшенный age (штраф)
+                    if (pr.killsThisThrow === 0) {
+                        owner.fishAge = Math.max(0, pr.age - 120);
+                    } else {
+                        owner.fishAge = pr.age;
+                    }
+                }
             }
             if (!pr.hitCd) pr.hitCd = {};
+            const gs = pr.growScale || 1;
+            const hr = 13 * gs, vr = 7 * gs; // хитбокс растёт вместе с рыбой
             for (const g of GH.ghosts) {
                 if (g.dead || g.phased) continue;
                 const gw = 30 * g.scale, ghh = 36 * g.scale;
-                if (pr.x + 13 > g.x && pr.x - 13 < g.x + gw && pr.y + 7 > g.y && pr.y - 7 < g.y + ghh) {
-                    if ((pr.hitCd[g.id] || 0) <= gameTime) {   // урон при касании и повторном касании
+                if (pr.x + hr > g.x && pr.x - hr < g.x + gw && pr.y + vr > g.y && pr.y - vr < g.y + ghh) {
+                    if ((pr.hitCd[g.id] || 0) <= gameTime) {
                         pr.hitCd[g.id] = gameTime + 18;
-                        ghDamageGhost(g, 1, owner || GH.players[0]);
+                        ghDamageGhost(g, pr.dmgLevel || 1, owner || GH.players[0]);
                     }
                 }
             }
@@ -841,7 +934,7 @@ function ghSendState(timestamp) {
     const msg = {
         type: 'GH_STATE',
         g: GH.ghosts.map(g => [g.id, Math.round(g.x), Math.round(g.y), GH_TYPES.indexOf(g.type), g.hp, g.phased ? 1 : 0, g.dir ? 1 : 0]),
-        pr: GH.projs.map(pr => [Math.round(pr.x), Math.round(pr.y), pr.kind === 'yarn' ? 0 : 1, pr.owner]),
+        pr: GH.projs.map(pr => [Math.round(pr.x), Math.round(pr.y), pr.kind === 'yarn' ? 0 : 1, pr.owner, Math.round(pr.age || 0)]),
         p0: [Math.round(p0.x), Math.round(p0.y), p0.facingRight ? 1 : 0, p0.isMoving ? 1 : 0, p0.weapon],
         s0: p0.score, s1: p1 ? p1.score : 0,
         tm: Math.ceil(GH.timeLeft / 60), wv: GH.wave,
@@ -871,11 +964,16 @@ function ghApplyState(d) {
     GH.ghosts = Array.from(GH.stateGhosts.values());
 
     // снаряды — просто заменяем (визуал)
-    GH.projs = (d.pr || []).map(a => ({
-        kind: a[2] === 0 ? 'yarn' : 'fish', x: a[0], y: a[1], owner: a[3],
-        vx: 0, vy: 0, r: 9, rot: gameTime * 0.3, life: 10, out: 0, returning: false, hitIds: [],
-    }));
-
+    GH.projs = (d.pr || []).map(a => {
+        const age = a[4] || 0;
+        const gs = 1.0 + Math.min(age / 150, 2.0);
+        const dmg = 1 + Math.floor(Math.min(age / 80, 3));
+        return {
+            kind: a[2] === 0 ? 'yarn' : 'fish', x: a[0], y: a[1], owner: a[3],
+            vx: 0, vy: 0, r: 9, rot: gameTime * 0.3, life: 10, out: 0, returning: false, hitIds: [],
+            age: age, growScale: gs, dmgLevel: dmg,
+        };
+    });
     // кот хоста
     const p0 = GH.players[0];
     if (p0 && d.p0) {
@@ -1040,11 +1138,13 @@ function ghRender() {
         const blink = p.invuln > 0 && Math.floor(gameTime / 4) % 2 === 0;
         if (blink) continue;
         drawPixelCat(ctx, p.x, p.y, p.skin, p.facingRight, null, p.idx === 0, !p.onGround, p.isMoving);
-        // маркер игрока над головой
-        ctx.fillStyle = p.idx === 0 ? '#7df9ff' : '#ffb86c';
-        ctx.font = "8px 'Press Start 2P', monospace";
-        ctx.textAlign = 'center';
-        ctx.fillText('P' + (p.idx + 1), p.x + 15, p.y - (p.skin.hat ? 30 : 12));
+        // маркер игрока над головой (только в дуэли)
+        if (GH.mode === 'duo') {
+            ctx.fillStyle = p.idx === 0 ? '#7df9ff' : '#ffb86c';
+            ctx.font = "8px 'Press Start 2P', monospace";
+            ctx.textAlign = 'center';
+            ctx.fillText('P' + (p.idx + 1), p.x + 15, p.y - (p.skin.hat ? 30 : 12));
+        }
     }
 
     // Эффекты
@@ -1225,16 +1325,31 @@ function ghDrawProj(pr) {
         ctx.fillStyle = '#ffa8c8';
         ctx.fillRect(-5, -5, 4, 4);
     } else if (pr.kind === 'fish') {
+        const gs = pr.growScale || 1;
         ctx.translate(pr.x, pr.y);
         ctx.rotate(pr.rot);
-        ctx.fillStyle = '#ffa726';
+        ctx.scale(gs, gs);
+        // Цвет меняется с ростом урона: 1=оранжевый, 2=красный, 3=малиновый, 4=фиолетовый
+        const dmg = pr.dmgLevel || 1;
+        const bodyColors  = ['#ffa726', '#ff5722', '#e91e63', '#9c27b0'];
+        const tailColors  = ['#f57c00', '#e64a19', '#c2185b', '#7b1fa2'];
+        const bodyCol = bodyColors[Math.min(dmg - 1, 3)];
+        const tailCol = tailColors[Math.min(dmg - 1, 3)];
+        ctx.fillStyle = bodyCol;
         ctx.fillRect(-10, -6, 20, 12);
-        ctx.fillStyle = '#f57c00';
+        ctx.fillStyle = tailCol;
         ctx.fillRect(-15, -4, 5, 8);
         ctx.fillStyle = '#fff';
         ctx.fillRect(4, -4, 4, 4);
         ctx.fillStyle = '#000';
         ctx.fillRect(6, -3, 2, 2);
+        // Лёгкий ореол при высоком уроне
+        if (dmg >= 3) {
+            ctx.globalAlpha = 0.35;
+            ctx.fillStyle = dmg >= 4 ? '#ce93d8' : '#f48fb1';
+            ctx.fillRect(-18, -9, 36, 18);
+            ctx.globalAlpha = 1;
+        }
     }
     ctx.restore();
 }

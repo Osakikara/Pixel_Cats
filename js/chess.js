@@ -374,9 +374,23 @@
         const e = el('minigames-screen'); if (e) e.style.display = 'block';
     };
     window.chessOnlineFromMenu = function () {
-        window.chessOnlinePending = true;
-        const m = el('chess-menu-screen'); if (m) m.style.display = 'none';
-        if (typeof handleOnlineClick === 'function') handleOnlineClick();
+
+        if (!navigator.onLine) {
+        if (typeof _showAccountToast === 'function') {
+            _showAccountToast(
+                (typeof T === 'function' ? T('noInternet', 'Нет доступа к интернету') : 'Нет доступа к интернету'),
+                '#e74c3c'
+            );
+        }
+        return; // меню шахмат остаётся открытым
+    }
+    // Передаём колбэк: меню скроется только при успешном подключении
+    if (typeof handleOnlineClick === 'function') {
+        handleOnlineClick(function onSuccess() {
+            window.chessOnlinePending = true;
+            const m = el('chess-menu-screen'); if (m) m.style.display = 'none';
+        });
+    }
     };
 
     // экспорт движка для тестов
